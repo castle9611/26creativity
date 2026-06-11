@@ -355,6 +355,57 @@ body {
   .portal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .portal-stats { width: 360px; grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── Night theme overrides ── */
+html[data-theme="night"] body {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(56,189,248,.10), transparent 30%),
+    radial-gradient(circle at 88% 2%, rgba(99,102,241,.08), transparent 26%),
+    linear-gradient(180deg, #0b1424, #0a1421);
+}
+html[data-theme="night"] .public-name,
+html[data-theme="night"] .portal-title,
+html[data-theme="night"] .portal-stat strong { color: var(--text-primary); }
+html[data-theme="night"] .public-sub,
+html[data-theme="night"] .portal-desc,
+html[data-theme="night"] .portal-stat span,
+html[data-theme="night"] .portal-links-empty { color: var(--text-muted); }
+html[data-theme="night"] .portal-links-bar,
+html[data-theme="night"] .category-tabs,
+html[data-theme="night"] .portal-title-card,
+html[data-theme="night"] .portal-stat,
+html[data-theme="night"] .portal-panel { background: var(--bg-card); border-color: var(--border); }
+html[data-theme="night"] .portal-links-bar { box-shadow: none; }
+html[data-theme="night"] .portal-link {
+  color: var(--primary-light);
+  background: var(--primary-bg);
+  border-color: rgba(56,189,248,.2);
+}
+html[data-theme="night"] .portal-link:hover {
+  background: #0b2942;
+  border-color: var(--primary);
+}
+html[data-theme="night"] .category-tab {
+  color: var(--text-secondary);
+  background: rgba(255,255,255,.06);
+}
+html[data-theme="night"] .category-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--tab-color, #38bdf8), #1a3a5c);
+}
+html[data-theme="night"] .portal-kicker { color: var(--primary); }
+html[data-theme="night"] .portal-title-card {
+  background:
+    linear-gradient(135deg, rgba(23,32,51,.92), rgba(23,32,51,.7)),
+    linear-gradient(135deg, rgba(56,189,248,.10), transparent 62%);
+}
+html[data-theme="night"] .panel-title,
+html[data-theme="night"] .item-title-link { color: var(--text-primary); }
+html[data-theme="night"] .panel-head { border-color: var(--border); }
+html[data-theme="night"] .item-meta { color: var(--text-muted); }
+html[data-theme="night"] .item-full { color: var(--text-secondary); background: rgba(255,255,255,.04); }
+html[data-theme="night"] .empty { color: var(--text-muted); }
+html[data-theme="night"] .public-logo { box-shadow: 0 12px 26px rgba(0,0,0,.3); }
 </style>
 </head>
 <body>
