@@ -127,9 +127,11 @@ def register_blueprints(app):
             Task.deadline.asc().nullslast(), Task.created_at.desc()
         ).limit(8).all()
         tracking_tasks = task_query.order_by(Task.updated_at.desc()).limit(8).all()
-        reminders = task_query.filter(Task.deadline != None).order_by(
-            Task.deadline.asc()
-        ).limit(8).all()
+        tracking_ids = {t.id for t in tracking_tasks}
+        reminders_query = task_query.filter(Task.deadline != None)
+        if tracking_ids:
+            reminders_query = reminders_query.filter(~Task.id.in_(tracking_ids))
+        reminders = reminders_query.order_by(Task.deadline.asc()).limit(8).all()
         public_files = file_query.order_by(File.created_at.desc()).limit(8).all()
         public_memos = Memo.query.filter(
             Memo.memo_type == 'public',
@@ -143,7 +145,7 @@ def register_blueprints(app):
         portal_stats = {
             'pending': task_query.filter(Task.status.in_(active_statuses)).count(),
             'tracking': task_query.count(),
-            'reminders': task_query.filter(Task.deadline != None, Task.deadline >= date.today()).count(),
+            'reminders': reminders_query.filter(Task.deadline >= date.today()).count(),
             'files': file_query.count(),
         }
 
