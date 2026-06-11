@@ -368,8 +368,10 @@ body {
       </div>
     </div>
     {% if session.get('user_id') %}
+    <span data-theme-slot></span>
     <a class="btn btn-primary login-entry" href="{{ url_for('index_bp.workbench') }}">{{ icon('dashboard') }} 进入工作台</a>
     {% else %}
+    <span data-theme-slot></span>
     <a class="btn btn-primary login-entry" href="{{ url_for('auth.login') }}">{{ icon('lock') }} 登录</a>
     {% endif %}
   </header>
@@ -423,23 +425,10 @@ body {
   <main class="portal-grid">
     <section class="portal-panel">
       <div class="panel-head">
-        <div class="panel-title">{{ icon('task-wait') }} 公共待处理任务、公共备忘</div>
-        <div class="panel-count">{{ pending_tasks|length + public_memos|length }}</div>
+        <div class="panel-title">{{ icon('memo') }} 公共备忘</div>
+        <div class="panel-count">{{ public_memos|length }}</div>
       </div>
       <div class="panel-body">
-        {% for task in pending_tasks %}
-        <div class="item">
-          <span class="item-dot"></span>
-          <div class="item-main">
-            <div class="item-title-row">
-              <a class="item-title-link" href="{{ url_for('index_bp.public_task_detail', task_id=task.id) }}">{{ task.title }}</a>
-              <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
-            </div>
-            <div class="item-meta">{{ task.status|status_label }} · {{ task.department or '未标注部门' }}{% if task.deadline %} · 截止 {{ task.deadline.strftime('%Y-%m-%d') }}{% endif %}</div>
-            <div class="item-full" hidden>{{ task.content|safe if task.content else '暂无详细内容' }}</div>
-          </div>
-        </div>
-        {% endfor %}
         {% for memo in public_memos %}
         <div class="item">
           <span class="item-dot" style="background:#2563eb;"></span>
@@ -452,8 +441,9 @@ body {
             <div class="item-full" hidden>{{ memo.content|safe if memo.content else '暂无详细内容' }}</div>
           </div>
         </div>
+        {% else %}
+        <div class="empty">暂无公共备忘</div>
         {% endfor %}
-        {% if pending_tasks|length == 0 and public_memos|length == 0 %}<div class="empty">暂无公共待处理事项</div>{% endif %}
       </div>
     </section>
 
@@ -487,20 +477,20 @@ body {
         <div class="panel-count">{{ reminders|length }}</div>
       </div>
       <div class="panel-body">
-        {% for task in reminders %}
+        {% for bulletin in reminders %}
         <div class="item">
           <span class="item-dot" style="background:#f59e0b;"></span>
           <div class="item-main">
             <div class="item-title-row">
-              <a class="item-title-link" href="{{ url_for('index_bp.public_task_detail', task_id=task.id) }}">{{ task.title }}</a>
+              <a class="item-title-link" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=bulletin.id) }}">{{ bulletin.title }}</a>
               <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
             </div>
-            <div class="item-meta">{% if task.deadline %}要求完成：{{ task.deadline.strftime('%Y-%m-%d') }}{% else %}未设置期限{% endif %} · {{ priority_names.get(task.priority, '普通优先级') }}</div>
-            <div class="item-full" hidden>{{ task.content|safe if task.content else '暂无详细内容' }}</div>
+            <div class="item-meta">{% if bulletin.expire_date %}有效期至 {{ bulletin.expire_date.strftime('%Y-%m-%d') }}{% else %}长期有效{% endif %} · {{ bulletin.created_at.strftime('%Y-%m-%d') if bulletin.created_at else '' }}</div>
+            <div class="item-full" hidden>{{ bulletin.content|safe if bulletin.content else '暂无详细内容' }}</div>
           </div>
         </div>
         {% else %}
-        <div class="empty">暂无近期提醒</div>
+        <div class="empty">暂无公示提醒</div>
         {% endfor %}
       </div>
     </section>

@@ -107,9 +107,7 @@ def register_blueprints(app):
             BulletinCategory.sort_order.asc(), BulletinCategory.id.asc()
         ).all()
         selected_id = request.args.get('category_id', type=int)
-        active_category = None
-        if categories:
-            active_category = next((c for c in categories if c.id == selected_id), categories[0])
+        active_category = next((c for c in categories if c.id == selected_id), None) if selected_id else None
 
         active_statuses = ['pending', 'processing', 'transferring']
         task_query = Task.query
@@ -127,11 +125,9 @@ def register_blueprints(app):
             Task.deadline.asc().nullslast(), Task.created_at.desc()
         ).limit(8).all()
         tracking_tasks = task_query.order_by(Task.updated_at.desc()).limit(8).all()
-        tracking_ids = {t.id for t in tracking_tasks}
-        reminders_query = task_query.filter(Task.deadline != None)
-        if tracking_ids:
-            reminders_query = reminders_query.filter(~Task.id.in_(tracking_ids))
-        reminders = reminders_query.order_by(Task.deadline.asc()).limit(8).all()
+        reminders = bulletin_query.filter(
+            Bulletin.expire_date == None
+        ).order_by(Bulletin.created_at.desc()).limit(8).all()
         public_files = file_query.order_by(File.created_at.desc()).limit(8).all()
         public_memos = Memo.query.filter(
             Memo.memo_type == 'public',
@@ -145,7 +141,7 @@ def register_blueprints(app):
         portal_stats = {
             'pending': task_query.filter(Task.status.in_(active_statuses)).count(),
             'tracking': task_query.count(),
-            'reminders': reminders_query.filter(Task.deadline >= date.today()).count(),
+            'reminders': len(reminders),
             'files': file_query.count(),
         }
 
