@@ -125,8 +125,9 @@ def register_blueprints(app):
             Task.deadline.asc().nullslast(), Task.created_at.desc()
         ).limit(8).all()
         tracking_tasks = task_query.order_by(Task.updated_at.desc()).limit(8).all()
+        from sqlalchemy import or_
         reminders = bulletin_query.filter(
-            Bulletin.expire_date == None
+            or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
         ).order_by(Bulletin.created_at.desc()).limit(8).all()
         public_files = file_query.order_by(File.created_at.desc()).limit(8).all()
         public_memos = Memo.query.filter(

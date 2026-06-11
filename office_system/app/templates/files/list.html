@@ -104,22 +104,22 @@ body { background: #f1f5f9; }
   <div class="card-body" style="padding:16px;">
     <form method="post" action="{{ url_for('files.upload') }}" enctype="multipart/form-data" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;">
       <input type="file" name="file" required style="flex:1;min-width:220px;padding-top:8px;">
-      <select name="category_id" class="form-select" style="width:160px;">
+      <select name="category_id" class="form-select" style="width:160px;" id="upload-category-select">
         <option value="">不选择类别</option>
         {% for c in categories %}
         <option value="{{ c.id }}">{{ c.name }}</option>
         {% endfor %}
       </select>
       <div class="relation-picker">
-        <select name="relations" class="form-select" multiple>
+        <select name="relations" class="form-select" multiple id="upload-relations">
           <optgroup label="任务">
             {% for item in relation_choices.tasks %}
-            <option value="task:{{ item.id }}">{{ item.title }}</option>
+            <option value="task:{{ item.id }}" data-category-id="{{ item.category_id or '' }}">{{ item.title }}</option>
             {% endfor %}
           </optgroup>
           <optgroup label="公示">
             {% for item in relation_choices.bulletins %}
-            <option value="bulletin:{{ item.id }}">{{ item.title }}</option>
+            <option value="bulletin:{{ item.id }}" data-category-id="{{ item.category_id or '' }}">{{ item.title }}</option>
             {% endfor %}
           </optgroup>
           <optgroup label="备忘">
@@ -220,6 +220,38 @@ body { background: #f1f5f9; }
 </div>
 {% endif %}
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var catSelect = document.getElementById('upload-category-select');
+  var relSelect = document.getElementById('upload-relations');
+  if (!catSelect || !relSelect) return;
+  function filterRelations() {
+    var catId = catSelect.value;
+    var opts = relSelect.querySelectorAll('option');
+    for (var i = 0; i < opts.length; i++) {
+      var o = opts[i];
+      var itemCat = o.getAttribute('data-category-id');
+      if (!catId || !itemCat) {
+        o.style.display = '';
+      } else {
+        o.style.display = itemCat === catId ? '' : 'none';
+      }
+    }
+    var groups = relSelect.querySelectorAll('optgroup');
+    for (var j = 0; j < groups.length; j++) {
+      var g = groups[j];
+      var all = g.querySelectorAll('option');
+      var hasVisible = false;
+      for (var k = 0; k < all.length; k++) {
+        if (all[k].style.display !== 'none') { hasVisible = true; break; }
+      }
+      g.style.display = hasVisible ? '' : 'none';
+    }
+  }
+  catSelect.addEventListener('change', filterRelations);
+  filterRelations();
+});
+</script>
 </body>
 </html>
 
