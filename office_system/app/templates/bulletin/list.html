@@ -1,0 +1,382 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>{{ current_column.name }} - 内容列表</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+
+/* Bulletin Card Grid */
+.bulletin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+.bulletin-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+.bulletin-card:hover {
+    border-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    transform: translateY(-2px);
+}
+.bulletin-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.bulletin-card-pin { font-size: 18px; }
+.bulletin-card-title {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.bulletin-card-preview {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+.bulletin-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #94a3b8;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+.bulletin-card-meta { display: flex; gap: 12px; }
+.bulletin-card-actions {
+    display: flex;
+    gap: 8px;
+}
+.bulletin-card-actions .btn { padding: 4px 8px; font-size: 12px; }
+.bulletin-card-actions form { display: inline; }
+
+/* Modal */
+.bulletin-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.bulletin-modal.show { display: flex; }
+.bulletin-modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 720px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.bulletin-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.bulletin-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0f172a;
+    flex: 1;
+    padding-right: 16px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: calc(100% - 50px);
+}
+.bulletin-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    background: #f1f5f9;
+    border: none;
+    font-size: 18px;
+}
+.bulletin-modal-close:hover { background: #e2e8f0; }
+.bulletin-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    min-height: 0;
+}
+.bulletin-modal-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.bulletin-modal-meta-item { font-size: 13px; color: #64748b; }
+.bulletin-modal-meta-item strong { color: #0f172a; }
+.bulletin-modal-content-text {
+    font-size: 14px;
+    line-height: 1.9;
+    color: #334155;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    max-width: 100%;
+}
+.bulletin-modal-content-text img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+.bulletin-modal-content-text p { margin-bottom: 12px; }
+.bulletin-modal-content-text p:last-child { margin-bottom: 0; }
+.bulletin-modal-content-text table {
+    border-collapse: collapse;
+    width: auto;
+    min-width: 100%;
+    max-width: 100%;
+    margin: 12px 0;
+}
+.bulletin-modal-content-text table td,
+.bulletin-modal-content-text table th {
+    border: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    word-break: break-word;
+}
+.bulletin-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.bulletin-modal-footer-actions { display: flex; gap: 12px; }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('bulletin.index') }}">信息公示</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>{{ icon(current_category.icon|icon_id) }} {{ current_category.name }}</span>
+  <span class="breadcrumb-sep">›</span>
+  <span>{{ current_column.name }}</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('bulletin.index') }}" class="back-btn">← 返回公示首页</a>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">{{ current_column.name }}</h2>
+    <p class="page-subtitle">共 {{ pagination.total if pagination else bulletins|length }} 条内容</p>
+  </div>
+  {% if session.get('role') in ('super_admin','dept_admin') %}
+  <div class="page-actions">
+    <a href="{{ url_for('bulletin.create') }}" class="btn btn-primary">{{ icon('edit') }} 发布内容</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Filters -->
+<div class="toolbar">
+  <form method="get">
+    <div class="toolbar-filters">
+      <input type="text" name="keyword" placeholder="输入关键词" value="{{ keyword }}" class="form-input" style="width:200px;">
+      <select name="search_scope" class="form-select" style="width:130px;">
+        <option value="title" {% if search_scope=='title' %}selected{% endif %}>仅标题</option>
+        <option value="all" {% if search_scope!='title' %}selected{% endif %}>标题+内容</option>
+      </select>
+      <input type="date" name="date_from" value="{{ date_from }}" class="form-input" style="width:140px;">
+      <span style="color:#64748b;">至</span>
+      <input type="date" name="date_to" value="{{ date_to }}" class="form-input" style="width:140px;">
+      <button type="submit" class="btn btn-primary">{{ icon('search') }} 搜索</button>
+      <a href="{{ url_for('bulletin.column_list', column_id=current_column.id) }}" class="btn">重置</a>
+    </div>
+  </form>
+</div>
+
+<!-- Bulletin Cards -->
+{% if bulletins %}
+<div class="bulletin-grid">
+  {% for b in bulletins %}
+  <div class="bulletin-card" onclick="openBulletinModal({{ b.id }})">
+    {% if b.is_pinned %}
+    <span class="bulletin-card-pin">{{ icon('pin') }}</span>
+    {% endif %}
+    <div class="bulletin-card-header">
+      <div class="bulletin-card-title">{{ b.title }}</div>
+    </div>
+    <div class="bulletin-card-preview">{{ b.content|striptags|truncate(150) if b.content else '无内容' }}</div>
+    <div class="bulletin-card-footer">
+      <div class="bulletin-card-meta">
+        <span>{{ b.creator.real_name if b.creator else '' }}</span>
+        <span>{{ b.created_at.strftime('%Y-%m-%d') if b.created_at else '' }}</span>
+        {% if b.expire_date %}
+        <span>有效期至：{{ b.expire_date.strftime('%Y-%m-%d') }}</span>
+        {% endif %}
+      </div>
+      {% if session.get('role') in ('super_admin','dept_admin') %}
+      <div class="bulletin-card-actions" onclick="event.stopPropagation();">
+        <a href="{{ url_for('bulletin.edit', bulletin_id=b.id) }}" class="btn">{{ icon('edit') }}</a>
+        <form method="post" action="{{ url_for('bulletin.archive', bulletin_id=b.id) }}" style="display:inline;">
+          <button type="submit" class="btn">{{ icon('archive') }}</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state" style="padding:60px;">
+    <div class="empty-icon">{{ icon('bulletin') }}</div>
+    <div class="empty-title">暂无内容</div>
+    <div class="empty-desc">
+      {% if session.get('role') in ('super_admin','dept_admin') %}
+      <a href="{{ url_for('bulletin.create') }}" class="btn btn-primary btn-sm" style="margin-top:12px;">发布第一条内容</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Bulletin Detail Modal -->
+<div id="bulletinModal" class="bulletin-modal">
+  <div class="bulletin-modal-content">
+    <div class="bulletin-modal-header">
+      <div class="bulletin-modal-title" id="bulModalTitle"></div>
+      <button class="bulletin-modal-close" onclick="closeBulletinModal()">✕</button>
+    </div>
+    <div class="bulletin-modal-body">
+      <div class="bulletin-modal-meta">
+        <div class="bulletin-modal-meta-item" id="bulModalCreator"></div>
+        <div class="bulletin-modal-meta-item" id="bulModalTime"></div>
+        <div class="bulletin-modal-meta-item" id="bulModalExpire"></div>
+      </div>
+      <div class="bulletin-modal-content-text" id="bulModalContent"></div>
+    </div>
+    <div class="bulletin-modal-footer">
+      <a href="#" id="bulModalDetail" class="btn">查看详情</a>
+      <div class="bulletin-modal-footer-actions">
+        {% if session.get('role') in ('super_admin','dept_admin') %}
+        <a href="#" id="bulModalEdit" class="btn btn-primary">{{ icon('edit') }} 编辑</a>
+        {% endif %}
+        <button onclick="closeBulletinModal()" class="btn">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulletin Data (hidden) -->
+<script type="application/json" id="bulletinData">[{% for b in bulletins %}{"id":{{ b.id }},"title":"{{ b.title|replace('"', '\\\"')|replace('\n', ' ')|replace('\r', ' ') }}","content":{{ (b.content or '')|tojson }},"creator":"{{ b.creator.real_name if b.creator else '' }}","created_at":"{{ b.created_at.strftime('%Y-%m-%d %H:%M') if b.created_at else '' }}","expire_date":"{{ b.expire_date.strftime('%Y-%m-%d') if b.expire_date else '' }}","detail_url":"{{ url_for('bulletin.detail', bulletin_id=b.id) }}","edit_url":"{{ url_for('bulletin.edit', bulletin_id=b.id) }}"}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+
+<script>
+(function(){
+    var modal = document.getElementById('bulletinModal');
+    var bulletinList = [];
+
+    try {
+        bulletinList = JSON.parse(document.getElementById('bulletinData').textContent);
+    } catch(e) {
+        console.error('Failed to parse bulletin data:', e);
+    }
+
+    window.openBulletinModal = function(id) {
+        var b = null;
+        for (var i = 0; i < bulletinList.length; i++) {
+            if (bulletinList[i].id === id) {
+                b = bulletinList[i];
+                break;
+            }
+        }
+        if (!b) return;
+
+        document.getElementById('bulModalTitle').textContent = b.title;
+        document.getElementById('bulModalContent').innerHTML = b.content || '<p style="color:#94a3b8;">无内容</p>';
+        document.getElementById('bulModalCreator').innerHTML = '<strong>发布人：</strong>' + b.creator;
+        document.getElementById('bulModalTime').innerHTML = '<strong>时间：</strong>' + b.created_at;
+        document.getElementById('bulModalExpire').innerHTML = b.expire_date ? '<strong>有效期至：</strong>' + b.expire_date : '';
+        document.getElementById('bulModalDetail').href = b.detail_url;
+        document.getElementById('bulModalEdit').href = b.edit_url;
+
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeBulletinModal = function() {
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
+    };
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeBulletinModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            closeBulletinModal();
+        }
+    });
+})();
+</script>
+
+<!-- Pagination -->
+{% if pagination and pagination.pages>1 %}
+<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('bulletin.column_list', column_id=current_column.id, page=pagination.prev_num, keyword=keyword, search_scope=search_scope, date_from=date_from, date_to=date_to) }}" class="btn">上一页</a>
+  {% endif %}
+  {% for p in range(1,pagination.pages+1) %}
+  <a href="{{ url_for('bulletin.column_list', column_id=current_column.id, page=p, keyword=keyword, search_scope=search_scope, date_from=date_from, date_to=date_to) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
+  {% endfor %}
+  {% if pagination.has_next %}
+  <a href="{{ url_for('bulletin.column_list', column_id=current_column.id, page=pagination.next_num, keyword=keyword, search_scope=search_scope, date_from=date_from, date_to=date_to) }}" class="btn">下一页</a>
+  {% endif %}
+  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 条</span>
+</div>
+{% endif %}
+
+</body>
+</html>

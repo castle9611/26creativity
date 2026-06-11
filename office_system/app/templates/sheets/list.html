@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>在线表格</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+.sheet-card {
+  background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px 20px;
+  float: left; width: calc(33.333% - 12px); min-height: 130px;
+  margin: 0 12px 12px 0; cursor: pointer; transition: all 0.2s;
+}
+.sheet-card:hover { border-color: #2563eb; }
+.sheet-card-title { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+.sheet-card-desc { font-size: 12px; color: #64748b; }
+.sheet-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: 12px; color: #94a3b8; }
+.sheet-card-actions { display: flex; gap: 6px; }
+@media (max-width: 1280px) { .sheet-card { width: calc(50% - 12px); } }
+@media (max-width: 768px) { .sheet-card { float: none; width: 100%; margin-right: 0; } }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>在线表格</span>
+</div>
+
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for c,m in messages %}
+<div class="alert alert-{{ c }}" style="margin-bottom:16px;">{{ m }}</div>
+{% endfor %}{% endif %}
+{% endwith %}
+
+<div class="page-header">
+  <div>
+    <h2 class="page-title">在线表格</h2>
+    <p class="page-subtitle">在线创建和管理电子表格</p>
+  </div>
+  <div class="page-actions">
+    {% if user_role in ('super_admin','dept_admin') %}
+    <a href="{{ url_for('sheets.create_sheet') }}" class="btn btn-primary">{{ icon('add') }} 新建表格</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="toolbar">
+  <form method="get">
+    <div class="toolbar-filters">
+      <input type="text" name="keyword" placeholder="搜索表格名称" value="{{ keyword }}" class="form-input" style="width:200px;">
+      <button type="submit" class="btn btn-primary">{{ icon('search') }} 搜索</button>
+      <a href="{{ url_for('sheets.list_sheets') }}" class="btn">重置</a>
+    </div>
+  </form>
+</div>
+
+{% if sheets %}
+<div style="display:block;overflow:hidden;">
+  {% for s in sheets %}
+  <div class="sheet-card" onclick="location.href='{{ url_for('sheets.edit_sheet', sheet_id=s.id) }}'">
+    <div class="sheet-card-title">{{ icon('memo') }} {{ s.name }}</div>
+    <div class="sheet-card-desc">
+      状态：{% if s.status=='published' %}<span class="badge badge-success">已发布</span>{% else %}<span class="badge badge-warning">草稿</span>{% endif %}
+    </div>
+    <div class="sheet-card-footer">
+      <span>{{ users_dict.get(s.created_by,'') }} · {{ s.updated_at.strftime('%Y-%m-%d') if s.updated_at else '' }}</span>
+      <div class="sheet-card-actions" onclick="event.stopPropagation();">
+        <a href="{{ url_for('sheets.edit_sheet', sheet_id=s.id) }}" class="btn btn-sm">{{ icon('edit') }} 编辑</a>
+        <a href="{{ url_for('sheets.export_xls', sheet_id=s.id) }}" class="btn btn-sm">{{ icon('export') }} XLS</a>
+        <form method="post" action="{{ url_for('sheets.delete_sheet', sheet_id=s.id) }}" style="display:inline;" onsubmit="return confirm('确认删除此表格？');">
+          <button type="submit" class="btn btn-sm btn-danger">{{ icon('trash') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state" style="padding:60px;">
+    <div class="empty-icon">{{ icon('memo') }}</div>
+    <div class="empty-title">暂无表格</div>
+    <div class="empty-desc">
+      {% if user_role in ('super_admin','dept_admin') %}
+      <a href="{{ url_for('sheets.create_sheet') }}" class="btn btn-primary btn-sm" style="margin-top:12px;">创建第一个表格</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if pagination.pages>1 %}
+<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('sheets.list_sheets', page=pagination.prev_num, keyword=keyword) }}" class="btn">上一页</a>
+  {% endif %}
+  {% for p in range(1,pagination.pages+1) %}
+  <a href="{{ url_for('sheets.list_sheets', page=p, keyword=keyword) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
+  {% endfor %}
+  {% if pagination.has_next %}
+  <a href="{{ url_for('sheets.list_sheets', page=pagination.next_num, keyword=keyword) }}" class="btn">下一页</a>
+  {% endif %}
+  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 条</span>
+</div>
+{% endif %}
+
+</body>
+</html>
+

@@ -1,0 +1,147 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>通讯录</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+.contact-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.2s;
+}
+.contact-card:hover { border-color: #2563eb; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
+.contact-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.contact-info { flex: 1; }
+.contact-name { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+.contact-meta { font-size: 13px; color: #64748b; }
+.contact-meta span { margin-right: 16px; }
+.contact-role { margin-left: 8px; }
+.dept-section { margin-bottom: 24px; }
+.dept-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    padding: 8px 0;
+    margin-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+}
+.dept-contacts, .contacts-grid { display: block; overflow: hidden; }
+.contacts-grid .contact-card { float: left; width: calc(33.333% - 12px); margin: 0 12px 12px 0; }
+@media (max-width: 1280px) { .contacts-grid .contact-card { width: calc(50% - 12px); } }
+@media (max-width: 768px) { .contacts-grid .contact-card { float: none; width: 100%; margin-right: 0; } }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>通讯录</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">通讯录</h2>
+    <p class="page-subtitle">内部人员联系方式</p>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="toolbar">
+  <form method="get">
+    <div class="toolbar-filters">
+      <input type="text" name="search" placeholder="搜索姓名" value="{{ search }}" class="form-input" style="width:180px;">
+      <select name="department" class="form-select">
+        <option value="">全部部门</option>
+        {% for dept in departments %}
+        <option value="{{ dept }}" {% if dept_filter==dept %}selected{% endif %}>{{ dept }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary">{{ icon('search') }} 搜索</button>
+      <a href="{{ url_for('contacts.index') }}" class="btn">重置</a>
+    </div>
+  </form>
+</div>
+
+<!-- Contacts List -->
+{% if contacts %}
+<div class="contacts-grid">
+  {% for u in contacts %}
+  <div class="contact-card">
+    <div class="contact-avatar">{{ u.real_name|truncate(1, end='') if u.real_name else u.username|truncate(1, end='') }}</div>
+    <div class="contact-info">
+      <div class="contact-name">{{ u.real_name or u.username }}</div>
+      <div class="contact-meta">
+        <span>👤 {{ u.username }}</span>
+        <span>🏢 {{ u.department or '-' }}</span>
+        <span class="contact-role">
+          {% if u.role=='super_admin' %}<span class="badge badge-super">超管</span>
+          {% elif u.role=='dept_admin' %}<span class="badge badge-dept">管理员</span>
+          {% else %}<span class="badge badge-user">民警</span>{% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state" style="padding:60px;">
+    <div class="empty-icon">{{ icon('users') }}</div>
+    <div class="empty-title">暂无联系人</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('contacts.index', page=pagination.prev_num, search=search, department=dept_filter) }}" class="btn">上一页</a>
+  {% endif %}
+  {% for p in range(1, pagination.pages + 1) %}
+  <a href="{{ url_for('contacts.index', page=p, search=search, department=dept_filter) }}" class="btn {% if p == pagination.page %}btn-primary{% endif %}">{{ p }}</a>
+  {% endfor %}
+  {% if pagination.has_next %}
+  <a href="{{ url_for('contacts.index', page=pagination.next_num, search=search, department=dept_filter) }}" class="btn">下一页</a>
+  {% endif %}
+  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 人</span>
+</div>
+{% endif %}
+
+</body>
+</html>
+

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+{% from '_icon.html' import icon %}
+{% set priority_names = {'high': '高优先级', 'medium': '中优先级', 'normal': '普通优先级', 'low': '低优先级'} %}
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>{{ app_name }}</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body {
+  min-height: 100vh;
+  padding: 0;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(16,185,129,.14), transparent 30%),
+    radial-gradient(circle at 88% 2%, rgba(37,99,235,.12), transparent 26%),
+    linear-gradient(180deg, #f7faf8 0%, #eef4f1 100%);
+}
+.public-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 14px 18px 26px;
+}
+.public-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.public-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.public-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #0f766e, #1d4ed8);
+  box-shadow: 0 12px 26px rgba(15,23,42,.14);
+}
+.public-name {
+  font-size: 19px;
+  font-weight: 800;
+  color: #10231d;
+  letter-spacing: 0;
+}
+.public-sub {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #64756e;
+}
+.login-entry {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+}
+.portal-links-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148,163,184,.24);
+  background: rgba(255,255,255,.74);
+  box-shadow: 0 12px 30px rgba(15,23,42,.055);
+}
+.portal-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+}
+.portal-link {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(4,120,87,.16);
+  color: #0f4f42;
+  background: #f0fdf4;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.portal-link:hover { border-color:#047857; background:#dcfce7; }
+.portal-link .svg-icon { width:16px; height:16px; }
+.portal-links-empty {
+  color: #7c8c85;
+  font-size: 13px;
+}
+.category-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(98px, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 6px;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(148,163,184,.24);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15,23,42,.06);
+}
+.category-tab {
+  position: relative;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 9px;
+  color: #1f2f2a;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  background: #edf1ee;
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+.category-tab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--tab-color, #e5e7eb);
+  opacity: .18;
+}
+.category-tab span { position: relative; z-index: 1; }
+.category-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--tab-color, #047857), #12372d);
+  box-shadow: 0 10px 24px rgba(15,23,42,.14);
+}
+.category-tab.active::before { opacity: 0; }
+.portal-hero {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.portal-title-card {
+  flex: 1;
+  min-height: 72px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(148,163,184,.24);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.88), rgba(255,255,255,.7)),
+    linear-gradient(135deg, rgba(4,120,87,.12), transparent 62%);
+  box-shadow: 0 12px 30px rgba(15,23,42,.06);
+}
+.portal-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #047857;
+  font-weight: 800;
+  font-size: 13px;
+}
+.portal-title {
+  margin-top: 4px;
+  font-size: 23px;
+  font-weight: 900;
+  color: #10231d;
+}
+.portal-desc {
+  margin-top: 3px;
+  color: #60736a;
+  font-size: 14px;
+}
+.portal-stats {
+  width: 430px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.portal-stat {
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(148,163,184,.24);
+  background: rgba(255,255,255,.76);
+  box-shadow: 0 10px 26px rgba(15,23,42,.05);
+}
+.portal-stat strong {
+  display: block;
+  font-size: 21px;
+  color: #10231d;
+  line-height: 1;
+}
+.portal-stat span {
+  display: block;
+  margin-top: 4px;
+  color: #66766f;
+  font-size: 12px;
+}
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.portal-panel {
+  min-height: 190px;
+  border-radius: 10px;
+  border: 1px solid rgba(148,163,184,.28);
+  background: rgba(255,255,255,.84);
+  box-shadow: 0 14px 34px rgba(15,23,42,.065);
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(148,163,184,.18);
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #10231d;
+}
+.panel-count {
+  min-width: 24px;
+  height: 21px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #e9f8f2;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 900;
+}
+.panel-body { padding: 6px 10px 10px; }
+.item {
+  display: flex;
+  gap: 8px;
+  padding: 7px 2px;
+  border-bottom: 1px solid rgba(148,163,184,.15);
+}
+.item:last-child { border-bottom: none; }
+.item-dot {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+.item-main { min-width: 0; flex: 1; }
+.item-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.item-title-link {
+  min-width: 0;
+  flex: 1;
+  color: #10231d;
+  font-weight: 800;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.item-title-link:hover {
+  color: #047857;
+  text-decoration: underline;
+}
+.item-meta {
+  margin-top: 2px;
+  color: #73827b;
+  font-size: 12px;
+}
+.item-toggle {
+  flex: 0 0 auto;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(4,120,87,.18);
+  background: #f0fdf4;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+.item-toggle:hover {
+  border-color: #047857;
+  background: #dcfce7;
+}
+.item-full {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.8;
+  border: 1px solid rgba(148,163,184,.18);
+}
+.item-full[hidden] { display: none; }
+.item-full img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.rich-text {
+  color: #40564e;
+  font-size: 13px;
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.empty {
+  height: 108px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8a9a93;
+  font-size: 14px;
+}
+@media (max-width: 900px) {
+  .public-shell { padding: 18px 14px 28px; }
+  .public-top,
+  .portal-hero { flex-direction: column; }
+  .portal-links-bar { align-items: stretch; flex-direction: column; }
+  .portal-stats { width: 100%; }
+  .portal-grid { grid-template-columns: 1fr; }
+}
+@media (min-width: 901px) and (max-width: 1280px) {
+  .portal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portal-stats { width: 360px; grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="public-shell">
+  <header class="public-top">
+    <div class="public-brand">
+      <div class="public-logo">{{ icon('browser-window') }}</div>
+      <div>
+        <div class="public-name">{{ app_name }}</div>
+        <div class="public-sub">分类查看任务动态、公示信息与近期提醒</div>
+      </div>
+    </div>
+    {% if session.get('user_id') %}
+    <a class="btn btn-primary login-entry" href="{{ url_for('index_bp.workbench') }}">{{ icon('dashboard') }} 进入工作台</a>
+    {% else %}
+    <a class="btn btn-primary login-entry" href="{{ url_for('auth.login') }}">{{ icon('lock') }} 登录</a>
+    {% endif %}
+  </header>
+
+  <nav class="category-tabs">
+    {% if categories %}
+      {% for cat in categories %}
+      <a class="category-tab {% if active_category and cat.id == active_category.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id) }}" style="--tab-color:{{ cat.color or '#047857' }};">
+        <span>{{ icon(cat.icon|icon_id) }}</span>
+        <span>{{ cat.name }}</span>
+      </a>
+      {% endfor %}
+    {% else %}
+      {% for name in ['教育管理', '狱政管理', '劳动改造', '政工后勤', '等等'] %}
+      <span class="category-tab {% if loop.first %}active{% endif %}"><span>{{ name }}</span></span>
+      {% endfor %}
+    {% endif %}
+  </nav>
+
+  <section class="portal-links-bar">
+    <div class="portal-links">
+      {% if public_quick_links %}
+        {% for link in public_quick_links %}
+        <a class="portal-link" href="{{ link.url }}" target="_blank" rel="noopener">
+          {{ icon(link.icon or 'gen-link') }} <span>{{ link.name }}</span>
+        </a>
+        {% endfor %}
+      {% else %}
+        <span class="portal-links-empty">暂无首页快捷链接</span>
+      {% endif %}
+    </div>
+    {% if session.get('role') == 'super_admin' %}
+    <a class="btn" href="{{ url_for('admin.quick_links') }}">{{ icon('settings') }} 管理首页链接</a>
+    {% endif %}
+  </section>
+
+  <section class="portal-hero">
+    <div class="portal-title-card">
+      <div class="portal-kicker">{{ icon('category') }} 当前类别</div>
+      <div class="portal-title">{{ active_category.name if active_category else '公共信息' }}</div>
+      <div class="portal-desc">无需登录即可查看公开任务概览、跟踪动态、近期提醒和文件资料。</div>
+    </div>
+    <div class="portal-stats">
+      <div class="portal-stat"><strong>{{ portal_stats.pending }}</strong><span>公共待处理</span></div>
+      <div class="portal-stat"><strong>{{ portal_stats.tracking }}</strong><span>跟踪任务</span></div>
+      <div class="portal-stat"><strong>{{ portal_stats.reminders }}</strong><span>近期提醒</span></div>
+      <div class="portal-stat"><strong>{{ portal_stats.files }}</strong><span>文件资料</span></div>
+    </div>
+  </section>
+
+  <main class="portal-grid">
+    <section class="portal-panel">
+      <div class="panel-head">
+        <div class="panel-title">{{ icon('task-wait') }} 公共待处理任务、公共备忘</div>
+        <div class="panel-count">{{ pending_tasks|length + public_memos|length }}</div>
+      </div>
+      <div class="panel-body">
+        {% for task in pending_tasks %}
+        <div class="item">
+          <span class="item-dot"></span>
+          <div class="item-main">
+            <div class="item-title-row">
+              <a class="item-title-link" href="{{ url_for('index_bp.public_task_detail', task_id=task.id) }}">{{ task.title }}</a>
+              <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
+            </div>
+            <div class="item-meta">{{ task.status|status_label }} · {{ task.department or '未标注部门' }}{% if task.deadline %} · 截止 {{ task.deadline.strftime('%Y-%m-%d') }}{% endif %}</div>
+            <div class="item-full" hidden>{{ task.content|safe if task.content else '暂无详细内容' }}</div>
+          </div>
+        </div>
+        {% endfor %}
+        {% for memo in public_memos %}
+        <div class="item">
+          <span class="item-dot" style="background:#2563eb;"></span>
+          <div class="item-main">
+            <div class="item-title-row">
+              <a class="item-title-link" href="{{ url_for('index_bp.public_memo_detail', memo_id=memo.id) }}">{{ memo.title }}</a>
+              <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
+            </div>
+            <div class="item-meta">公共备忘 · {{ memo.updated_at.strftime('%Y-%m-%d') if memo.updated_at else '' }}</div>
+            <div class="item-full" hidden>{{ memo.content|safe if memo.content else '暂无详细内容' }}</div>
+          </div>
+        </div>
+        {% endfor %}
+        {% if pending_tasks|length == 0 and public_memos|length == 0 %}<div class="empty">暂无公共待处理事项</div>{% endif %}
+      </div>
+    </section>
+
+    <section class="portal-panel">
+      <div class="panel-head">
+        <div class="panel-title">{{ icon('task-flow') }} 任务跟踪</div>
+        <div class="panel-count">{{ tracking_tasks|length }}</div>
+      </div>
+      <div class="panel-body">
+        {% for task in tracking_tasks %}
+        <div class="item">
+          <span class="item-dot" style="background:#0ea5e9;"></span>
+          <div class="item-main">
+            <div class="item-title-row">
+              <a class="item-title-link" href="{{ url_for('index_bp.public_task_detail', task_id=task.id) }}">{{ task.title }}</a>
+              <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
+            </div>
+            <div class="item-meta">进度 {{ task.progress or 0 }}% · {{ task.status|status_label }} · {{ task.updated_at.strftime('%Y-%m-%d') if task.updated_at else '' }}</div>
+            <div class="item-full" hidden>{{ task.content|safe if task.content else '暂无详细内容' }}</div>
+          </div>
+        </div>
+        {% else %}
+        <div class="empty">暂无跟踪任务</div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="portal-panel">
+      <div class="panel-head">
+        <div class="panel-title">{{ icon('bell') }} 近期工作提醒、要求</div>
+        <div class="panel-count">{{ reminders|length }}</div>
+      </div>
+      <div class="panel-body">
+        {% for task in reminders %}
+        <div class="item">
+          <span class="item-dot" style="background:#f59e0b;"></span>
+          <div class="item-main">
+            <div class="item-title-row">
+              <a class="item-title-link" href="{{ url_for('index_bp.public_task_detail', task_id=task.id) }}">{{ task.title }}</a>
+              <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
+            </div>
+            <div class="item-meta">{% if task.deadline %}要求完成：{{ task.deadline.strftime('%Y-%m-%d') }}{% else %}未设置期限{% endif %} · {{ priority_names.get(task.priority, '普通优先级') }}</div>
+            <div class="item-full" hidden>{{ task.content|safe if task.content else '暂无详细内容' }}</div>
+          </div>
+        </div>
+        {% else %}
+        <div class="empty">暂无近期提醒</div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="portal-panel">
+      <div class="panel-head">
+        <div class="panel-title">{{ icon('folder') }} 文件资料</div>
+        <div class="panel-count">{{ public_files|length }}</div>
+      </div>
+      <div class="panel-body">
+        {% for file in public_files %}
+        <div class="item">
+          <span class="item-dot" style="background:#8b5cf6;"></span>
+          <div class="item-main">
+            <div class="item-title-row">
+              <a class="item-title-link" href="{{ url_for('index_bp.public_file_download', file_id=file.id) }}">{{ file.original_name }}</a>
+              <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
+            </div>
+            <div class="item-meta">
+              {{ file.file_type|upper if file.file_type else 'FILE' }}
+              · {% if file.file_size < 1024 %}{{ file.file_size }}B{% elif file.file_size < 1048576 %}{{ (file.file_size/1024)|round(1) }}KB{% else %}{{ (file.file_size/1048576)|round(1) }}MB{% endif %}
+              {% if file.category %} · {{ file.category.name }}{% endif %}
+              · {{ file.created_at.strftime('%Y-%m-%d') if file.created_at else '' }}
+            </div>
+            <div class="item-full" hidden>
+              <p><strong>文件名：</strong>{{ file.original_name }}</p>
+              <p><strong>文件类型：</strong>{{ file.file_type|upper if file.file_type else '未知' }}</p>
+              <p><strong>任务类别：</strong>{{ file.category.name if file.category else '未分类' }}</p>
+              <p><a class="item-toggle" href="{{ url_for('index_bp.public_file_download', file_id=file.id) }}">下载文件</a></p>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="empty">暂无文件资料</div>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+function togglePublicItem(button) {
+  var item = button.closest('.item-main');
+  if (!item) return;
+  var content = item.querySelector('.item-full');
+  if (!content) return;
+  var isHidden = content.hasAttribute('hidden');
+  if (isHidden) {
+    content.removeAttribute('hidden');
+    button.textContent = '收起';
+  } else {
+    content.setAttribute('hidden', '');
+    button.textContent = '展开查看';
+  }
+}
+</script>
+</body>
+</html>

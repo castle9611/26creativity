@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>浏览器 Tab Logo 预览</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 32px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: #f3f6fb;
+      color: #172033;
+    }
+    h1 { margin: 0 0 18px; font-size: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 16px; max-width: 840px; }
+    .card { background: #fff; border: 1px solid #dfe7f3; border-radius: 8px; padding: 18px; }
+    .icon-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .icon-lg { width: 48px; height: 48px; }
+    .icon-sm { width: 16px; height: 16px; }
+    .name { font-weight: 700; font-size: 15px; }
+    .desc { color: #64748b; font-size: 13px; line-height: 1.6; }
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid #dbe3ef;
+      border-radius: 8px 8px 0 0;
+      background: #fff;
+      font-size: 12px;
+      color: #334155;
+      max-width: 154px;
+    }
+    .tab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <h1>浏览器 Tab Logo 预览</h1>
+  <div class="grid">
+    <div class="card">
+      <div class="icon-row"><img class="icon-lg" src="favicon-premium-1.svg"><div><div class="name">高级 1</div><div class="desc">盾形中枢，稳重、内网安全感强</div></div></div>
+      <div class="tab"><img class="icon-sm" src="favicon-premium-1.svg"><span>内网OA办公系统</span></div>
+    </div>
+    <div class="card">
+      <div class="icon-row"><img class="icon-lg" src="favicon-premium-2.svg"><div><div class="name">高级 2</div><div class="desc">抽象办公窗口，最像产品 logo</div></div></div>
+      <div class="tab"><img class="icon-sm" src="favicon-premium-2.svg"><span>内网OA办公系统</span></div>
+    </div>
+    <div class="card">
+      <div class="icon-row"><img class="icon-lg" src="favicon-premium-3.svg"><div><div class="name">高级 3</div><div class="desc">圆形徽章，正式但不沉重</div></div></div>
+      <div class="tab"><img class="icon-sm" src="favicon-premium-3.svg"><span>内网OA办公系统</span></div>
+    </div>
+    <div class="card">
+      <div class="icon-row"><img class="icon-lg" src="favicon-premium-4.svg"><div><div class="name">高级 4</div><div class="desc">字母 A 标识，品牌感最强</div></div></div>
+      <div class="tab"><img class="icon-sm" src="favicon-premium-4.svg"><span>内网OA办公系统</span></div>
+    </div>
+    <div class="card">
+      <div class="icon-row"><img class="icon-lg" src="favicon-option-1.svg"><div><div class="name">方案 1</div><div class="desc">内网窗口 + 办公清单</div></div></div>
+      <div class="tab"><img class="icon-sm" src="favicon-option-1.svg"><span>内网OA办公系统</span></div>
+    </div>
+    <div class="card">
+      <div class="icon-row"><img class="icon-lg" src="favicon-option-2.svg"><div><div class="name">方案 2</div><div class="desc">文档审批，办公感更强</div></div></div>
+      <div class="tab"><img class="icon-sm" src="favicon-option-2.svg"><span>内网OA办公系统</span></div>
+    </div>
+    <div class="card">
+      <div class="icon-row"><img class="icon-lg" src="favicon-option-3.svg"><div><div class="name">方案 3</div><div class="desc">盾牌 + 审批，偏内网安全</div></div></div>
+      <div class="tab"><img class="icon-sm" src="favicon-option-3.svg"><span>内网OA办公系统</span></div>
+    </div>
+    <div class="card">
+      <div class="icon-row"><img class="icon-lg" src="favicon-option-4.svg"><div><div class="name">方案 4</div><div class="desc">深色浏览器窗口，识别度高</div></div></div>
+      <div class="tab"><img class="icon-sm" src="favicon-option-4.svg"><span>内网OA办公系统</span></div>
+    </div>
+  </div>
+</body>
+</html>

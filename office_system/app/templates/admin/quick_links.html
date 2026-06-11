@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+{% from '_icon.html' import icon %}
+<html>
+<head>
+<meta charset="utf-8"><title>首页快捷链接</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { padding:24px; background:#f1f5f9; }
+.link-layout { display:grid; grid-template-columns: 360px 1fr; gap:16px; align-items:start; }
+.link-form { display:grid; gap:12px; }
+.link-row { display:grid; grid-template-columns: 140px 1fr 90px 92px 80px 132px; gap:8px; align-items:center; padding:12px; border-bottom:1px solid #e2e8f0; }
+.link-row:last-child { border-bottom:none; }
+.link-cell-title { font-size:12px; color:#64748b; font-weight:700; }
+.link-preview { display:flex; align-items:center; gap:8px; min-width:0; }
+.link-preview .svg-icon { width:18px; height:18px; color:#047857; }
+.link-preview span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:800; color:#10231d; }
+.form-input.small { height:34px; padding:6px 8px; font-size:13px; }
+.hint { color:#64748b; font-size:12px; line-height:1.7; }
+.actions { display:flex; gap:6px; justify-content:flex-end; }
+@media (max-width: 1100px) { .link-layout { grid-template-columns:1fr; } .link-row { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>首页快捷链接</span>
+</div>
+
+<div class="page-header">
+  <div>
+    <h2 class="page-title">首页快捷链接</h2>
+    <p class="page-subtitle">配置公开首页右上方快捷跳转，最多 {{ max_links }} 个，仅超级管理员可维护。</p>
+  </div>
+  <a class="btn" href="{{ url_for('index_bp.index') }}" target="_blank">{{ icon('globe') }} 查看首页</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="link-layout">
+  <div class="card">
+    <div class="card-header"><div class="card-title">新增链接</div></div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('admin.quick_link_add') }}" class="link-form">
+        <input class="form-input" name="name" maxlength="120" placeholder="链接名称，例如 政务平台">
+        <input class="form-input" name="url" maxlength="1000" placeholder="https://example.com">
+        <input class="form-input" name="icon" maxlength="50" value="gen-link" placeholder="图标 ID">
+        <input class="form-input" name="sort_order" type="number" value="0" placeholder="排序">
+        <label style="display:flex;align-items:center;gap:8px;color:#334155;font-size:13px;">
+          <input type="checkbox" name="is_active" value="1" checked> 启用
+        </label>
+        <button class="btn btn-primary" type="submit">{{ icon('add') }} 添加到首页</button>
+        <div class="hint">可用图标示例：gen-link、globe、browser-window、gen-bookmark、gen-star、gen-compass。</div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card card-nopad">
+    <div class="link-row" style="background:#f8fafc;">
+      <div class="link-cell-title">名称</div>
+      <div class="link-cell-title">链接地址</div>
+      <div class="link-cell-title">图标</div>
+      <div class="link-cell-title">排序</div>
+      <div class="link-cell-title">状态</div>
+      <div class="link-cell-title" style="text-align:right;">操作</div>
+    </div>
+    {% for link in links %}
+    <form method="post" action="{{ url_for('admin.quick_link_edit', link_id=link.id) }}" class="link-row">
+      <input class="form-input small" name="name" value="{{ link.name }}" maxlength="120">
+      <input class="form-input small" name="url" value="{{ link.url }}" maxlength="1000">
+      <input class="form-input small" name="icon" value="{{ link.icon or 'gen-link' }}" maxlength="50">
+      <input class="form-input small" name="sort_order" type="number" value="{{ link.sort_order }}">
+      <select class="form-input small" name="is_active">
+        <option value="1" {% if link.is_active %}selected{% endif %}>启用</option>
+        <option value="0" {% if not link.is_active %}selected{% endif %}>停用</option>
+      </select>
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">保存</button>
+        <button class="btn btn-danger" type="submit" form="delete-public-link-{{ link.id }}">删除</button>
+      </div>
+    </form>
+    <form id="delete-public-link-{{ link.id }}" method="post" action="{{ url_for('admin.quick_link_delete', link_id=link.id) }}"></form>
+    {% else %}
+    <div class="empty-state" style="padding:56px 0;">
+      <div class="empty-icon">{{ icon('gen-link') }}</div>
+      <div class="empty-text">还没有首页快捷链接</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+</body>
+</html>

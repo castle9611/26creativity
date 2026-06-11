@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>{% if is_edit %}编辑任务{% else %}创建任务{% endif %}</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+.form-card { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 32px; }
+.form-card h3 { font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('tasks.list_tasks') }}">任务列表</a>
+  <span class="breadcrumb-sep">›</span>
+  {% if is_edit %}<a href="{{ url_for('tasks.detail_task', task_id=task.id) }}">{{ task.title[:20] }}</a><span class="breadcrumb-sep">›</span>{% endif %}
+  <span>{% if is_edit %}编辑任务{% else %}创建任务{% endif %}</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  {% if is_edit %}
+  <a href="{{ url_for('tasks.detail_task', task_id=task.id) }}" class="back-btn">← 返回任务详情</a>
+  {% else %}
+  <a href="{{ url_for('tasks.list_tasks') }}" class="back-btn">← 返回列表</a>
+  {% endif %}
+</div>
+
+<div class="form-card">
+  <h3>{% if is_edit %}{{ icon('edit') }} 编辑任务{% else %}{{ icon('task') }} 创建新任务{% endif %}</h3>
+
+  <form method="post" enctype="multipart/form-data">
+    <div class="form-group">
+      <label class="form-label">任务标题 <span style="color:#dc2626;">*</span></label>
+      <input type="text" name="title" class="form-input" placeholder="请输入任务标题" required style="height:48px;font-size:15px;" value="{{ task.title if is_edit else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">任务内容</label>
+      <textarea name="content" class="form-textarea" placeholder="请输入任务详细描述..." rows="6" style="font-size:14px;line-height:1.8;">{{ task.content if is_edit else '' }}</textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+      <div class="form-group">
+        <label class="form-label">任务类别</label>
+        <select name="category_id" id="taskCatSelect" class="form-select" style="height:48px;" onchange="updateColumnSelect()">
+          <option value="">未分类</option>
+          {% for c in categories %}
+          <option value="{{ c.id }}" {% if is_edit and task.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">栏目（可选）</label>
+        <select name="column_id" id="taskColSelect" class="form-select" style="height:48px;">
+          <option value="">不选择栏目</option>
+          {% for cat in categories %}
+          {% set cat_cols = cols_by_cat.get(cat.id, []) %}
+          {% for col in cat_cols %}
+          <option value="{{ col.id }}" data-cat="{{ cat.id }}" style="display:none;">{{ col.name }}</option>
+          {% endfor %}
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+      <div class="form-group">
+        <label class="form-label">优先级</label>
+        <select name="priority" class="form-select" style="height:48px;">
+          <option value="normal" {% if is_edit and task.priority=='normal' %}selected{% endif %}>普通</option>
+          <option value="low" {% if is_edit and task.priority=='low' %}selected{% endif %}>低优先级</option>
+          <option value="medium" {% if is_edit and task.priority=='medium' %}selected{% endif %}>中优先级</option>
+          <option value="high" {% if is_edit and task.priority=='high' %}selected{% endif %}>高优先级</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+      <div class="form-group">
+        <label class="form-label">负责部门</label>
+        <input type="text" name="department" class="form-input" placeholder="请输入部门名称" style="height:48px;" list="dept-list" value="{{ task.department if is_edit else '' }}">
+        <datalist id="dept-list">
+          {% for d in departments %}
+          <option value="{{ d }}">
+          {% endfor %}
+        </datalist>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">负责人（可多选）</label>
+        <select name="assignee_ids" class="form-select" multiple style="height:128px;padding:8px;">
+          {% for u in users %}
+          <option value="{{ u.id }}" {% if u.id in selected_assignee_ids %}selected{% endif %}>{{ u.real_name or u.username }} ({{ u.department }})</option>
+          {% endfor %}
+        </select>
+        <div style="margin-top:6px;font-size:12px;color:#64748b;">按住 Ctrl 可选择多个负责人；第一个选中人员会作为主负责人用于兼容旧流程。</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+      <div class="form-group">
+        <label class="form-label">截止日期</label>
+        <input type="date" name="deadline" class="form-input" style="height:48px;" value="{{ task.deadline.strftime('%Y-%m-%d') if is_edit and task.deadline else '' }}">
+      </div>
+
+      {% if is_edit %}
+      <div class="form-group">
+        <label class="form-label">状态</label>
+        <select name="status" class="form-select" style="height:48px;">
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if task.status == s %}selected{% endif %}>{{ s|status_label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Attachments -->
+    <div class="form-group" style="margin-top:16px;">
+      <label class="form-label">附件（可选）</label>
+      <div style="border:2px dashed #e2e8f0;border-radius:12px;padding:24px;text-align:center;background:#fafafa;cursor:pointer;transition:all 0.2s;" onclick="document.getElementById('fileInput').click()" ondragover="this.style.borderColor='#2563eb';this.style.background='#eff6ff'" ondragleave="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'" ondrop="event.preventDefault();this.style.borderColor='#e2e8f0';this.style.background='#fafafa';handleDrop(event)">
+        <div style="font-size:32px;margin-bottom:8px;">{{ icon('attach') }}</div>
+        <div style="color:#64748b;font-size:14px;">点击或拖拽文件到此处上传</div>
+        <input type="file" id="fileInput" multiple style="display:none;" onchange="handleFiles(this.files)">
+      </div>
+      <div id="fileList" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+
+    <!-- Link Online Docs/Sheets (collapsible) -->
+    <div class="form-group" style="margin-top:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleLinkSection()">
+        <label class="form-label" style="font-size:14px;cursor:pointer;margin:0;">{{ icon('file') }} 关联在线文档/表格</label>
+        <span id="linkToggleBtn" style="font-size:12px;color:#2563eb;">展开选择 →</span>
+      </div>
+      <div id="linkSectionBody" style="display:none;margin-top:12px;">
+        <div style="font-size:12px;color:#64748b;margin-bottom:10px;">选择已有的在线文档/表格关联到此任务</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:12px;font-weight:600;color:#2563eb;margin-bottom:6px;">📄 在线文档 <a href="{{ url_for('docs.create_doc') }}" target="_blank" style="font-weight:400;font-size:11px;color:#2563eb;text-decoration:none;">+新建</a></div>
+            {% if available_docs %}
+            <div style="max-height:150px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:4px;padding:6px;">
+              {% for d in available_docs %}
+              <label style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:13px;cursor:pointer;border-radius:4px;">
+                <input type="checkbox" name="linked_doc_ids" value="{{ d.id }}" {% if is_edit and d.id in linked_doc_ids %}checked{% endif %}> {{ d.title[:30] }}
+              </label>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div style="color:#94a3b8;font-size:12px;">暂无可用文档，<a href="{{ url_for('docs.create_doc') }}" target="_blank">新建</a></div>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div style="font-size:12px;font-weight:600;color:#059669;margin-bottom:6px;">📊 在线表格 <a href="{{ url_for('sheets.create_sheet') }}" target="_blank" style="font-weight:400;font-size:11px;color:#059669;text-decoration:none;">+新建</a></div>
+            {% if available_sheets %}
+            <div style="max-height:150px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:4px;padding:6px;">
+              {% for s in available_sheets %}
+              <label style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:13px;cursor:pointer;border-radius:4px;">
+                <input type="checkbox" name="linked_sheet_ids" value="{{ s.id }}" {% if is_edit and s.id in linked_sheet_ids %}checked{% endif %}> {{ s.name[:30] }}
+              </label>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div style="color:#94a3b8;font-size:12px;">暂无可用表格，<a href="{{ url_for('sheets.create_sheet') }}" target="_blank">新建</a></div>
+            {% endif %}
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;font-size:12px;">
+          <span style="color:#64748b;">关联文档编辑权限：</span>
+          <select name="doc_edit_role" class="form-select" style="width:auto;padding:4px 8px;font-size:12px;height:32px;">
+            <option value='["super_admin","dept_admin","user"]' selected>干警可编辑</option>
+            <option value='["super_admin","dept_admin"]'>仅管理员可编辑</option>
+            <option value='["super_admin"]'>仅超管可编辑</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid #e2e8f0;">
+      <button type="submit" class="btn btn-primary btn-lg">{% if is_edit %}{{ icon('save') }} 保存修改{% else %}{{ icon('save') }} 创建任务{% endif %}</button>
+      {% if is_edit %}
+      <a href="{{ url_for('tasks.detail_task', task_id=task.id) }}" class="btn btn-lg">取消</a>
+      {% else %}
+      <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-lg">取消</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<script>
+function updateColumnSelect(keepSelection) {
+    var catId = document.getElementById('taskCatSelect').value;
+    var colSelect = document.getElementById('taskColSelect');
+    var selected = keepSelection ? colSelect.value : '';
+    var opts = colSelect.querySelectorAll('option');
+    for (var i = 0; i < opts.length; i++) {
+        if (opts[i].value === '') continue;
+        if (!catId || opts[i].dataset.cat === catId) {
+            opts[i].style.display = '';
+        } else {
+            opts[i].style.display = 'none';
+        }
+    }
+    colSelect.value = selected;
+    if (!keepSelection || (colSelect.selectedIndex >= 0 && colSelect.options[colSelect.selectedIndex].style.display === 'none')) {
+        colSelect.value = '';
+    }
+}
+// When a column is selected, auto-set its category
+document.getElementById('taskColSelect').onchange = function() {
+    var opt = this.options[this.selectedIndex];
+    if (opt && opt.dataset.cat) {
+        var selectedColumn = this.value;
+        document.getElementById('taskCatSelect').value = opt.dataset.cat;
+        updateColumnSelect(true);
+        this.value = selectedColumn;
+    }
+};
+updateColumnSelect(true);
+
+var selectedFiles = [];
+
+function handleFiles(files) {
+    for (var i = 0; i < files.length; i++) {
+        if (files[i].size > 50 * 1024 * 1024) {
+            alert('文件 "' + files[i].name + '" 超过50MB限制');
+            continue;
+        }
+        selectedFiles.push(files[i]);
+    }
+    renderFileList();
+}
+
+function handleDrop(e) {
+    var files = e.dataTransfer.files;
+    handleFiles(files);
+}
+
+function removeFile(idx) {
+    selectedFiles.splice(idx, 1);
+    renderFileList();
+}
+
+function renderFileList() {
+    var list = document.getElementById('fileList');
+    list.innerHTML = '';
+    for (var i = 0; i < selectedFiles.length; i++) {
+        (function(idx) {
+            var f = selectedFiles[idx];
+            var size = f.size >= 1024 * 1024 ? (f.size / 1024 / 1024).toFixed(1) + 'MB' : (f.size / 1024).toFixed(0) + 'KB';
+            var div = document.createElement('div');
+            div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;';
+            div.innerHTML = '<span>附件</span><span style="flex:1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span><span style="color:#94a3b8;font-size:11px;">' + size + '</span><button type="button" style="width:18px;height:18px;border-radius:50%;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;font-size:12px;" onclick="removeFile(' + idx + ')">×</button>';
+            list.appendChild(div);
+        })(i);
+    }
+}
+
+// Append files to form on submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    var input = document.getElementById('fileInput');
+    var dt = new DataTransfer();
+    for (var i = 0; i < selectedFiles.length; i++) {
+        dt.items.add(selectedFiles[i]);
+    }
+    input.files = dt.files;
+});
+
+// Collapsible link section toggle
+function toggleLinkSection() {
+    var body = document.getElementById('linkSectionBody');
+    var btn = document.getElementById('linkToggleBtn');
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        btn.textContent = '收起 ↑';
+    } else {
+        body.style.display = 'none';
+        btn.textContent = '展开选择 →';
+    }
+}
+</script>
+
+</body>
+</html>

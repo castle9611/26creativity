@@ -1,0 +1,555 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>业务类别管理</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+
+/* Info Box */
+.info-box { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #1e40af; }
+.info-box strong { color: #1d4ed8; }
+
+/* Category List */
+.category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.category-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: grab;
+    transition: all 0.2s;
+}
+.category-card:hover { border-color: #2563eb; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1); }
+.category-card.dragging { opacity: 0.5; border-style: dashed; }
+.category-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+.category-info { flex: 1; min-width: 0; }
+.category-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.category-actions { display: flex; gap: 8px; }
+.category-actions .btn { padding: 4px 8px; font-size: 12px; }
+.icon-option .svg-icon,
+.category-icon .svg-icon { width: 22px; height: 22px; }
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal.show { display: flex; }
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.modal-title { font-size: 16px; font-weight: 600; color: #0f172a; }
+.modal-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    background: #f1f5f9;
+    border: none;
+    font-size: 16px;
+}
+.modal-close:hover { background: #e2e8f0; }
+.modal-body { padding: 20px; }
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+}
+.form-group { margin-bottom: 16px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+.form-input, .form-select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.form-input:focus, .form-select:focus { border-color: #2563eb; }
+.form-hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+.icon-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.icon-option {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+.icon-option:hover { border-color: #e2e8f0; }
+.icon-option.selected { border-color: #2563eb; background: #eff6ff; }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <a href="{{ url_for('settings.index') }}">系统设置</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>业务类别管理</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  {% if return_url %}
+  <a href="{{ return_url }}" class="back-btn">← 返回上一页</a>
+  {% else %}
+  <a href="{{ url_for('settings.index') }}" class="back-btn">← 返回系统设置</a>
+  {% endif %}
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">业务类别管理</h2>
+    <p class="page-subtitle">任务和公示共用的业务分类，拖拽排序，自定义名称和图标</p>
+  </div>
+  <div class="page-actions">
+    <button onclick="openCreateModal()" class="btn btn-primary">{{ icon('add') }} 添加类别</button>
+  </div>
+</div>
+
+<!-- Info Box -->
+<div class="info-box">
+  <strong>{{ icon('help') }} 说明：</strong>业务类别用于组织和分类任务、公示等内容。
+  创建类别后，还需要在「业务栏目管理」中添加具体的栏目。
+</div>
+
+<!-- Category List -->
+{% if categories %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:12px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;">
+  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="width:16px;height:16px;"> 全选
+  </label>
+  <div style="display:flex;gap:8px;">
+    <span id="selectedCount" style="font-size:13px;color:#64748b;display:none;">已选择 0 项</span>
+    <button type="button" class="btn btn-danger" id="batchDeleteBtn" style="display:none;" onclick="batchDeleteCategories()">{{ icon('trash') }} 批量删除</button>
+  </div>
+</div>
+<div class="category-grid" id="categoryList">
+  {% for cat in categories %}
+  <div class="category-card" data-id="{{ cat.id }}" draggable="true">
+    <input type="checkbox" class="cat-checkbox" value="{{ cat.id }}" onchange="updateSelectionUI()" style="width:18px;height:18px;cursor:pointer;margin-right:8px;">
+    <div class="category-icon" style="background: {{ cat.color }}20; color: {{ cat.color }};">{{ icon(cat.icon|icon_id) }}</div>
+    <div class="category-info">
+      <div class="category-name">{{ cat.name }}</div>
+    </div>
+    <div class="category-actions">
+      <button class="btn" onclick="openEditModal({{ cat.id }}, '{{ cat.name|e }}', '{{ cat.icon|icon_id|e }}', '{{ cat.color|e }}', '{{ cat.tab_id or '' }}', '{{ cat.visible_roles or 'all' }}', {{ cat.is_active or 1 }})">{{ icon('edit') }}</button>
+      <button class="btn btn-danger" onclick="deleteCategory({{ cat.id }})">{{ icon('trash') }}</button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state" style="padding:60px;">
+    <div class="empty-icon">{{ icon('category') }}</div>
+    <div class="empty-title">暂无任务类别</div>
+    <div class="empty-desc">
+      <button onclick="openCreateModal()" class="btn btn-primary" style="margin-top:16px;">添加第一个类别</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Create/Edit Modal -->
+<div id="categoryModal" class="modal">
+  <div class="modal-content" style="width:520px;">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">添加类别</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="categoryForm">
+        <input type="hidden" id="editId" value="">
+        <div class="form-group">
+          <label class="form-label">类别名称</label>
+          <input type="text" id="catName" class="form-input" placeholder="例如：日常任务" maxlength="50" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">关联栏目（可选）</label>
+          <select id="catTabId" class="form-select">
+            <option value="">-- 不关联特定栏目 --</option>
+            {% for t in tabs %}
+            <option value="{{ t.id }}">{{ t.icon }} {{ t.name }}</option>
+            {% endfor %}
+          </select>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">选择后，该类别将在对应栏目下显示</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">可见角色</label>
+          <select id="catVisibleRoles" class="form-select">
+            <option value="all">全部用户可见</option>
+            <option value="super_admin">仅超级管理员</option>
+            <option value="dept_admin">管理员及以上</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">图标</label>
+          <div class="icon-picker" id="iconPicker">
+            <span class="icon-option selected" data-icon="cat-production" title="生产劳动">{{ icon('cat-production') }}</span>
+            <span class="icon-option" data-icon="cat-education" title="教育改造">{{ icon('cat-education') }}</span>
+            <span class="icon-option" data-icon="cat-politics" title="政工党建">{{ icon('cat-politics') }}</span>
+            <span class="icon-option" data-icon="cat-supervision" title="监管安全">{{ icon('cat-supervision') }}</span>
+            <span class="icon-option" data-icon="cat-prison-admin" title="狱政管理">{{ icon('cat-prison-admin') }}</span>
+            <span class="icon-option" data-icon="cat-security" title="安防设施">{{ icon('cat-security') }}</span>
+            <span class="icon-option" data-icon="cat-patrol" title="巡查督导">{{ icon('cat-patrol') }}</span>
+            <span class="icon-option" data-icon="cat-medical" title="医疗卫生">{{ icon('cat-medical') }}</span>
+            <span class="icon-option" data-icon="cat-psychology" title="心理矫治">{{ icon('cat-psychology') }}</span>
+            <span class="icon-option" data-icon="cat-logistics" title="后勤保障">{{ icon('cat-logistics') }}</span>
+            <span class="icon-option" data-icon="cat-equipment" title="装备管理">{{ icon('cat-equipment') }}</span>
+            <span class="icon-option" data-icon="cat-meeting" title="会议活动">{{ icon('cat-meeting') }}</span>
+            <span class="icon-option" data-icon="cat-notice" title="通知公告">{{ icon('cat-notice') }}</span>
+            <span class="icon-option" data-icon="cat-training" title="培训学习">{{ icon('cat-training') }}</span>
+            <span class="icon-option" data-icon="cat-assessment" title="考核评估">{{ icon('cat-assessment') }}</span>
+            <span class="icon-option" data-icon="cat-discipline" title="纪律规范">{{ icon('cat-discipline') }}</span>
+            <span class="icon-option" data-icon="cat-visitor" title="会见管理">{{ icon('cat-visitor') }}</span>
+            <span class="icon-option" data-icon="cat-finance" title="财务物资">{{ icon('cat-finance') }}</span>
+            <span class="icon-option" data-icon="cat-kitchen" title="生活伙食">{{ icon('cat-kitchen') }}</span>
+            <span class="icon-option" data-icon="cat-maintenance" title="维修维护">{{ icon('cat-maintenance') }}</span>
+            <span class="icon-option" data-icon="gen-star" title="重点事项">{{ icon('gen-star') }}</span>
+            <span class="icon-option" data-icon="gen-target" title="目标任务">{{ icon('gen-target') }}</span>
+            <span class="icon-option" data-icon="gen-briefcase" title="综合办公">{{ icon('gen-briefcase') }}</span>
+            <span class="icon-option" data-icon="gen-layers" title="层级模块">{{ icon('gen-layers') }}</span>
+            <span class="icon-option" data-icon="gen-shield-star" title="重点安保">{{ icon('gen-shield-star') }}</span>
+          </div>
+          <input type="hidden" id="catIcon" value="cat-production">
+        </div>
+        <div class="form-group">
+          <label class="form-label">颜色</label>
+          <div class="icon-picker">
+            <span class="icon-option color-option" data-color="#3b82f6" style="background:#3b82f6;"></span>
+            <span class="icon-option color-option selected" data-color="#10b981" style="background:#10b981;"></span>
+            <span class="icon-option color-option" data-color="#f59e0b" style="background:#f59e0b;"></span>
+            <span class="icon-option color-option" data-color="#ef4444" style="background:#ef4444;"></span>
+            <span class="icon-option color-option" data-color="#8b5cf6" style="background:#8b5cf6;"></span>
+            <span class="icon-option color-option" data-color="#ec4899" style="background:#ec4899;"></span>
+            <span class="icon-option color-option" data-color="#64748b" style="background:#64748b;"></span>
+            <span class="icon-option color-option" data-color="#0f172a" style="background:#0f172a;"></span>
+          </div>
+          <input type="hidden" id="catColor" value="#10b981">
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal()" class="btn">取消</button>
+      <button onclick="saveCategory()" class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Icon picker
+document.querySelectorAll('.icon-picker').forEach = Array.prototype.forEach; // Polyfill for IE
+document.querySelectorAll('.icon-picker').forEach(function(picker) {
+    picker.addEventListener('click', function(e) {
+        var option = e.target.closest('.icon-option');
+        if (!option) return;
+
+        var parent = option.parentElement;
+        var siblings = parent.querySelectorAll('.icon-option');
+        Array.prototype.forEach.call(siblings, function(o) { o.classList.remove('selected'); });
+        option.classList.add('selected');
+
+        if (option.classList.contains('color-option')) {
+            document.getElementById('catColor').value = option.dataset.color;
+        } else {
+            document.getElementById('catIcon').value = option.dataset.icon;
+        }
+    });
+});
+
+function normalizeIconId(icon) {
+    var map = {'\uD83D\uDCCB':'task','\uD83D\uDCDD':'memo','\uD83D\uDCC1':'folder','\uD83D\uDCE2':'bulletin','\uD83D\uDCCA':'chart','\uD83D\uDCCC':'pin','\u26A1':'gen-light','\u2696':'cat-discipline','\uD83D\uDD12':'lock','\uD83D\uDCC2':'archive'};
+    return map[icon] || icon || 'cat-production';
+}
+
+// Modal functions
+function openCreateModal() {
+    document.getElementById('modalTitle').textContent = '添加类别';
+    document.getElementById('editId').value = '';
+    document.getElementById('catName').value = '';
+    document.getElementById('catIcon').value = 'cat-production';
+    document.getElementById('catColor').value = '#10b981';
+    document.getElementById('catTabId').value = '';
+    document.getElementById('catVisibleRoles').value = 'all';
+
+    // Reset selections
+    var iconOptions = document.querySelectorAll('#iconPicker .icon-option');
+    Array.prototype.forEach.call(iconOptions, function(o) { o.classList.remove('selected'); });
+    var defaultIcon = document.querySelector('#iconPicker .icon-option[data-icon="cat-production"]');
+    if (defaultIcon) defaultIcon.classList.add('selected');
+    var colorOptions = document.querySelectorAll('.color-option');
+    Array.prototype.forEach.call(colorOptions, function(o) { o.classList.remove('selected'); });
+    var defaultColor = document.querySelector('.color-option[data-color="#10b981"]');
+    if (defaultColor) defaultColor.classList.add('selected');
+
+    document.getElementById('categoryModal').classList.add('show');
+}
+
+function openEditModal(id, name, icon, color, tabId, visibleRoles, isActive) {
+    icon = normalizeIconId(icon);
+    document.getElementById('modalTitle').textContent = '编辑类别';
+    document.getElementById('editId').value = id;
+    document.getElementById('catName').value = name;
+    document.getElementById('catIcon').value = icon;
+    document.getElementById('catColor').value = color;
+    document.getElementById('catTabId').value = tabId || '';
+    document.getElementById('catVisibleRoles').value = visibleRoles || 'all';
+
+    // Set icon selection
+    var iconOpts = document.querySelectorAll('#iconPicker .icon-option');
+    Array.prototype.forEach.call(iconOpts, function(o) {
+        o.classList.toggle('selected', o.dataset.icon === icon);
+    });
+    // Set color selection
+    var colorOpts = document.querySelectorAll('.color-option');
+    Array.prototype.forEach.call(colorOpts, function(o) {
+        o.classList.toggle('selected', o.dataset.color === color);
+    });
+
+    document.getElementById('categoryModal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('categoryModal').classList.remove('show');
+}
+
+function saveCategory() {
+    var id = document.getElementById('editId').value;
+    var name = document.getElementById('catName').value.trim();
+    var icon = document.getElementById('catIcon').value;
+    var color = document.getElementById('catColor').value;
+    var tabId = document.getElementById('catTabId').value;
+    var visibleRoles = document.getElementById('catVisibleRoles').value;
+
+    if (!name) {
+        alert('请输入类别名称');
+        return;
+    }
+
+    var url = id ? '/settings/task-categories/' + id + '/edit' : '/settings/task-categories/create';
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    var formData = new FormData();
+    formData.append('name', name);
+    formData.append('icon', icon);
+    formData.append('color', color);
+    formData.append('tab_id', tabId);
+    formData.append('visible_roles', visibleRoles);
+    xhr.send(formData);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch(e) {
+                location.reload();
+            }
+        } else {
+            alert('保存失败');
+        }
+    };
+    xhr.onerror = function() { alert('保存失败'); };
+}
+
+function deleteCategory(id) {
+    if (!confirm('确认删除该类别？')) return;
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/settings/task-categories/' + id + '/delete', true);
+    xhr.send();
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch(e) {
+                location.reload();
+            }
+        } else {
+            alert('删除失败');
+        }
+    };
+    xhr.onerror = function() { alert('删除失败'); };
+}
+
+function toggleSelectAll() {
+    var selectAll = document.getElementById('selectAll');
+    var checkboxes = document.querySelectorAll('.cat-checkbox');
+    checkboxes.forEach(function(cb) { cb.checked = selectAll.checked; });
+    updateSelectionUI();
+}
+
+function updateSelectionUI() {
+    var selected = document.querySelectorAll('.cat-checkbox:checked');
+    var count = selected.length;
+    var countText = document.getElementById('selectedCount');
+    var batchBtn = document.getElementById('batchDeleteBtn');
+    var selectAll = document.getElementById('selectAll');
+
+    if (count > 0) {
+        countText.style.display = '';
+        countText.textContent = '已选择 ' + count + ' 项';
+        batchBtn.style.display = '';
+        selectAll.indeterminate = (count > 0 && count < document.querySelectorAll('.cat-checkbox').length);
+    } else {
+        countText.style.display = 'none';
+        batchBtn.style.display = 'none';
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    }
+}
+
+function batchDeleteCategories() {
+    var selected = document.querySelectorAll('.cat-checkbox:checked');
+    var ids = Array.from(selected).map(function(cb) { return parseInt(cb.value); });
+
+    if (ids.length === 0) {
+        alert('请先选择类别');
+        return;
+    }
+
+    if (!confirm('确定要删除选中的 ' + ids.length + ' 个类别吗？')) return;
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/settings/task-categories/batch-delete', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || '删除失败');
+                }
+            } catch(e) {
+                location.reload();
+            }
+        } else {
+            alert('删除失败');
+        }
+    };
+    xhr.onerror = function() { alert('删除失败'); };
+    xhr.send('ids=' + encodeURIComponent(JSON.stringify(ids)));
+}
+
+// Drag and drop
+var list = document.getElementById('categoryList');
+if (list) {
+    var dragged = null;
+    var cards = list.querySelectorAll('.category-card');
+    Array.prototype.forEach.call(cards, function(card) {
+        card.addEventListener('dragstart', function(e) {
+            dragged = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+            dragged = null;
+            saveOrder();
+        });
+        card.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            if (this !== dragged) {
+                const rect = this.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (e.clientY < mid) {
+                    this.parentNode.insertBefore(dragged, this);
+                } else {
+                    this.parentNode.insertBefore(dragged, this.nextSibling);
+                }
+            }
+        });
+    });
+}
+
+function saveOrder() {
+    const orderIds = Array.from(list.querySelectorAll('.category-card')).map(c => c.dataset.id);
+    const formData = new FormData();
+    orderIds.forEach(id => formData.append('order_ids', id));
+
+    fetch('/settings/task-categories/reorder', {
+        method: 'POST',
+        body: formData
+    });
+}
+</script>
+
+</body>
+</html>
+

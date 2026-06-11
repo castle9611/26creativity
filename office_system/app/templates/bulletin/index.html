@@ -1,0 +1,312 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>信息公示</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+
+/* Category Filter Tabs */
+.cat-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+.cat-filter .cat-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #475569;
+  background: #f1f5f9;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+.cat-filter .cat-tab:hover { background: #e2e8f0; color: #0f172a; }
+.cat-filter .cat-tab.active { background: #eff6ff; border-color: #2563eb; color: #2563eb; font-weight: 600; }
+.cat-tab .cat-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px; height: 20px;
+  padding: 0 6px; border-radius: 10px;
+  font-size: 11px; font-weight: 600;
+  background: #e2e8f0; color: #64748b;
+}
+.cat-tab.active .cat-count { background: #2563eb; color: white; }
+
+/* Bulletin Card List */
+.bulletin-grid { display: block; overflow: hidden; }
+.bulletin-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  float: left;
+  width: calc(33.333% - 12px);
+  min-height: 190px;
+  margin: 0 12px 12px 0;
+}
+.bulletin-card:hover { border-color: #2563eb; box-shadow: none; transform: none; }
+.bulletin-card-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.bulletin-card-title {
+  flex: 1; font-size: 15px; font-weight: 600; color: #0f172a;
+  line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.bulletin-card-preview {
+  font-size: 13px; color: #64748b; line-height: 1.7;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 16px;
+}
+.bulletin-card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: #94a3b8; padding-top: 12px; border-top: 1px solid #f1f5f9;
+}
+.bulletin-card-meta { display: flex; gap: 12px; }
+.bulletin-card-actions { display: flex; gap: 8px; }
+.bulletin-card-actions .btn { padding: 4px 8px; font-size: 12px; }
+.bulletin-card-actions form { display: inline; }
+.read-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  background: #e0f2fe; color: #0369a1;
+}
+.read-badge.unread { background: #fee2e2; color: #b91c1c; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-title { font-size: 16px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+.empty-desc { font-size: 13px; color: #94a3b8; }
+
+/* Batch bar */
+.batch-bar {
+  display: none; background: #1e293b; color: white;
+  padding: 12px 16px; border-radius: 10px;
+  margin-bottom: 16px; align-items: center; justify-content: space-between;
+}
+.batch-bar .b-btn {
+  padding: 6px 12px; font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1);
+  color: white; text-decoration: none; border-radius: 6px; cursor: pointer;
+}
+.batch-bar .b-btn:hover { background: rgba(255,255,255,0.2); }
+.batch-bar .b-btn.danger { background: #dc2626; border-color: #dc2626; }
+.batch-bar .b-btn.danger:hover { background: #b91c1c; }
+
+/* Card checkbox - make room so it doesn't overlap title */
+.bulletin-card.has-checkbox { padding-left: 44px; }
+.card-checkbox {
+  position: absolute; top: 20px; left: 16px;
+  width: 18px; height: 18px; cursor: pointer; z-index: 2;
+}
+@media (max-width: 1280px) { .bulletin-card { width: calc(50% - 12px); } }
+@media (max-width: 768px) { .bulletin-card { float: none; width: 100%; margin-right: 0; } }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</h2>
+    <p class="page-subtitle">选择业务类别查看公示信息</p>
+  </div>
+  {% if session.get('role') in ('super_admin','dept_admin') %}
+  <div class="page-actions">
+    <a href="{{ url_for('bulletin.create') }}" class="btn btn-primary">{{ icon('edit') }} 发布内容</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Category Filter Tabs with Counts -->
+{% if categories %}
+<div class="cat-filter">
+  <a href="{{ url_for('bulletin.index') }}" class="cat-tab {% if not filter_cat_id %}active{% endif %}">
+    {{ icon('category') }} 全部 <span class="cat-count">{{ cat_counts.values()|sum if cat_counts else 0 }}</span>
+  </a>
+  {% for cat in categories %}
+  <a href="{{ url_for('bulletin.index', category_id=cat.id) }}" class="cat-tab {% if filter_cat_id == cat.id %}active{% endif %}">
+    <span>{{ icon(cat.icon|icon_id) }}</span> <span>{{ cat.name }}</span>
+    <span class="cat-count">{{ cat_counts.get(cat.id, 0) }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if session.get('role') in ('super_admin','dept_admin') %}
+<!-- Batch Actions Bar -->
+<div id="batchBar" class="batch-bar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="batchCount">已选择 0 项</span>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+      <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="width:16px;height:16px;"> 全选
+    </label>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button type="button" class="b-btn" onclick="batchOp('archive')">📦 批量归档</button>
+    <button type="button" class="b-btn danger" onclick="batchOp('delete')">{{ icon('trash') }} 批量删除</button>
+    <button type="button" class="b-btn" onclick="clearSelection()">✕ 取消</button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Bulletin Cards -->
+{% if bulletins %}
+<div class="bulletin-grid">
+  {% for b in bulletins %}
+  <div class="bulletin-card{% if session.get('role') in ('super_admin','dept_admin') %} has-checkbox{% endif %}" data-id="{{ b.id }}" onclick="if(!event.target.closest('.card-checkbox'))window.location.href='{{ url_for('bulletin.detail', bulletin_id=b.id) }}'">
+    {% if b.is_pinned %}
+    <div style="position:absolute;top:12px;right:12px;font-size:18px;">{{ icon('pin') }}</div>
+    {% endif %}
+    {% if session.get('role') in ('super_admin','dept_admin') %}
+    <input type="checkbox" class="card-checkbox" value="{{ b.id }}" onchange="updateBatchBar()">
+    {% endif %}
+    <div class="bulletin-card-header">
+      <div class="bulletin-card-title">{{ b.title }}</div>
+    </div>
+    <div style="margin-bottom:10px;">
+      {% if b.id in read_ids %}
+      <span class="read-badge">已读</span>
+      {% else %}
+      <span class="read-badge unread">未读</span>
+      {% endif %}
+    </div>
+    <div class="bulletin-card-preview">{{ b.content|striptags|truncate(150) if b.content else '无内容' }}</div>
+    <div class="bulletin-card-footer">
+      <div class="bulletin-card-meta">
+        {% if b.category %}<span>{{ icon(b.category.icon|icon_id) }} {{ b.category.name }}</span>{% endif %}
+        <span>{{ b.creator.real_name if b.creator else '' }}</span>
+        <span>{{ b.created_at.strftime('%Y-%m-%d') if b.created_at else '' }}</span>
+      </div>
+      {% if session.get('role') in ('super_admin','dept_admin') %}
+      <div class="bulletin-card-actions" onclick="event.stopPropagation();">
+        <a href="{{ url_for('bulletin.edit', bulletin_id=b.id) }}" class="btn">{{ icon('edit') }}</a>
+        <form method="post" action="{{ url_for('bulletin.archive', bulletin_id=b.id) }}" style="display:inline;">
+          <button type="submit" class="btn">{{ icon('archive') }}</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-icon">{{ icon('bulletin') }}</div>
+    <div class="empty-title">暂无公示内容</div>
+    <div class="empty-desc">
+      {% if filter_cat_id %}此业务类别下暂无内容{% endif %}
+      {% if session.get('role') in ('super_admin','dept_admin') %}
+      <div style="margin-top:12px;"><a href="{{ url_for('bulletin.create') }}" class="btn btn-primary">发布第一条内容</a></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if pagination and pagination.pages > 1 %}
+<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('bulletin.index', page=pagination.prev_num, category_id=filter_cat_id) }}" class="btn">上一页</a>
+  {% endif %}
+  {% for p in range(1, pagination.pages+1) %}
+  <a href="{{ url_for('bulletin.index', page=p, category_id=filter_cat_id) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
+  {% endfor %}
+  {% if pagination.has_next %}
+  <a href="{{ url_for('bulletin.index', page=pagination.next_num, category_id=filter_cat_id) }}" class="btn">下一页</a>
+  {% endif %}
+  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 条</span>
+</div>
+{% endif %}
+
+{% if session.get('role') in ('super_admin','dept_admin') %}
+<script>
+function getSelectedIds() {
+  var cbs = document.querySelectorAll('.card-checkbox:checked');
+  var ids = [];
+  for (var i = 0; i < cbs.length; i++) ids.push(parseInt(cbs[i].value));
+  return ids;
+}
+function updateBatchBar() {
+  var ids = getSelectedIds();
+  var bar = document.getElementById('batchBar');
+  var count = document.getElementById('batchCount');
+  if (ids.length > 0) {
+    bar.style.display = 'flex';
+    count.textContent = '已选择 ' + ids.length + ' 项';
+  } else {
+    bar.style.display = 'none';
+  }
+  var all = document.querySelectorAll('.card-checkbox');
+  var selAll = document.getElementById('selectAll');
+  selAll.checked = (ids.length === all.length && ids.length > 0);
+  selAll.indeterminate = (ids.length > 0 && ids.length < all.length);
+}
+function toggleSelectAll() {
+  var checked = document.getElementById('selectAll').checked;
+  var cbs = document.querySelectorAll('.card-checkbox');
+  for (var i = 0; i < cbs.length; i++) cbs[i].checked = checked;
+  updateBatchBar();
+}
+function clearSelection() {
+  var cbs = document.querySelectorAll('.card-checkbox');
+  for (var i = 0; i < cbs.length; i++) cbs[i].checked = false;
+  updateBatchBar();
+}
+function batchOp(action) {
+  var ids = getSelectedIds();
+  if (ids.length === 0) { alert('请先选择内容'); return; }
+  var msg = action === 'archive' ? '确定要归档选中的 ' + ids.length + ' 个内容吗？' : '确定要删除选中的 ' + ids.length + ' 个内容吗？（不可恢复）';
+  if (!confirm(msg)) return;
+  var url = action === 'archive' ? '{{ url_for("bulletin.batch_archive") }}' : '{{ url_for("bulletin.batch_delete") }}';
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      try { var d = JSON.parse(xhr.responseText); if(d.success) location.reload(); else alert(d.message||'操作失败'); }
+      catch(e) { location.reload(); }
+    } else { alert('操作失败'); }
+  };
+  xhr.onerror = function(){ alert('操作失败'); };
+  xhr.send('ids=' + encodeURIComponent(JSON.stringify(ids)));
+}
+</script>
+{% endif %}
+
+</body>
+</html>
+

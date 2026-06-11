@@ -1,0 +1,13 @@
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://198.18.0.1:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [10/Jun/2026 10:40:37] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [10/Jun/2026 10:40:37] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [10/Jun/2026 10:40:37] "GET /static/css/app.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Jun/2026 10:40:37] "GET /static/icons.svg HTTP/1.1" 200 -
+127.0.0.1 - - [10/Jun/2026 10:40:37] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [10/Jun/2026 10:40:44] "POST /login HTTP/1.1" 302 -
+127.0.0.1 - - [10/Jun/2026 10:40:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [10/Jun/2026 10:40:44] "GET /static/css/app.css HTTP/1.1" 304 -
+127.0.0.1 - - [10/Jun/2026 10:40:44] "GET /static/avatars/user_1.png HTTP/1.1" 200 -
+127.0.0.1 - - [10/Jun/2026 10:40:44] "GET /static/icons.svg HTTP/1.1" 304 -

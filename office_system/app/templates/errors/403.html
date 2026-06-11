@@ -1,0 +1,20 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>403 - 无权访问</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
+</head>
+<body>
+<div class="error-page">
+  <div class="error-code">403</div>
+  <div class="error-msg">权限不足，无权访问此页面</div>
+  <p style="color:#666;">请确认您拥有相应的访问权限</p>
+  <a href="{{ url_for('index_bp.index') }}" class="btn btn-primary" style="margin-top:20px;">返回首页</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>系统配置</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #64748b;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>系统配置</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
+</div>
+
+<div class="page-header">
+  <div>
+    <h2 class="page-title">系统配置</h2>
+    <p class="page-subtitle">系统参数设置</p>
+  </div>
+</div>
+
+<!-- System Stats -->
+<div class="stats-grid" style="margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-icon blue">{{ icon('users') }}</div>
+    <div class="stat-info"><div class="stat-value">{{ stats.user_count }}</div><div class="stat-label">用户数</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">{{ icon('gen-tag') }}</div>
+    <div class="stat-info"><div class="stat-value">{{ stats.tab_count }}</div><div class="stat-label">Tab标签</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange">{{ icon('column') }}</div>
+    <div class="stat-info"><div class="stat-value">{{ stats.column_count }}</div><div class="stat-label">栏目数</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon cyan">{{ icon('folder') }}</div>
+    <div class="stat-info"><div class="stat-value">{{ stats.file_count }}</div><div class="stat-label">文件数</div></div>
+  </div>
+</div>
+
+<!-- Config Form -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">参数配置</div>
+  </div>
+  <div class="card-body" style="padding:24px;">
+    <form method="post">
+      <div class="form-group">
+        <label class="form-label">系统名称</label>
+        <input type="text" name="system_name" class="form-input" value="{{ configs.get('system_name', '') }}" placeholder="内网OA办公系统">
+      </div>
+      <div class="form-group">
+        <label class="form-label">联系电话</label>
+        <input type="text" name="contact_phone" class="form-input" value="{{ configs.get('contact_phone', '') }}" placeholder="0000-00000000">
+      </div>
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button type="submit" class="btn btn-primary btn-lg">{{ icon('save') }} 保存配置</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for c,m in messages %}
+<div class="alert alert-{{ c }}" style="max-width:800px;margin:16px auto;">{{ m }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+</body>
+</html>
+

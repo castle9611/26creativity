@@ -1,0 +1,361 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>工作看板 - 统计中心</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+
+/* Stats Cards */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+.stats-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.stats-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+.stats-icon.blue { background: #eff6ff; }
+.stats-icon.green { background: #ecfdf5; }
+.stats-icon.orange { background: #fff7ed; }
+.stats-icon.red { background: #fef2f2; }
+.stats-icon.purple { background: #f5f3ff; }
+.stats-icon.gray { background: #f8fafc; }
+.stats-info { flex: 1; }
+.stats-value { font-size: 28px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+.stats-label { font-size: 13px; color: #64748b; margin-top: 4px; }
+.stats-trend { font-size: 12px; margin-top: 4px; }
+.stats-trend.up { color: #059669; }
+.stats-trend.down { color: #dc2626; }
+
+/* Section Cards */
+.section-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+.section-body { padding: 16px 20px; }
+
+/* Task List */
+.task-list { list-style: none; padding: 0; margin: 0; }
+.task-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f8fafc;
+}
+.task-item:last-child { border-bottom: none; }
+.task-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.task-status.pending { background: #f59e0b; }
+.task-status.processing { background: #3b82f6; }
+.task-status.completed { background: #10b981; }
+.task-status.overdue { background: #ef4444; }
+.task-title { flex: 1; font-size: 14px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-meta { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+.task-link { color: #2563eb; text-decoration: none; font-size: 13px; }
+.task-link:hover { text-decoration: underline; }
+
+/* Quick Actions */
+.quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #334155;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.quick-action:hover { background: #eff6ff; border-color: #2563eb; color: #2563eb; }
+.quick-action-icon { font-size: 20px; }
+
+/* Progress Bar */
+.progress-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.progress-item { }
+.progress-label { display: flex; justify-content: space-between; font-size: 13px; color: #64748b; margin-bottom: 8px; }
+.progress-bar { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.progress-fill.blue { background: #3b82f6; }
+.progress-fill.green { background: #10b981; }
+.progress-fill.orange { background: #f59e0b; }
+.progress-fill.red { background: #ef4444; }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>工作看板</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">工作看板</h2>
+    <p class="page-subtitle">实时数据统计与分析</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('stats.story') }}" class="btn btn-primary">{{ icon('chart') }} 数据故事</a>
+  </div>
+</div>
+
+<!-- Main Stats Cards -->
+<div class="stats-grid">
+  <div class="stats-card">
+    <div class="stats-icon blue">{{ icon('task') }}</div>
+    <div class="stats-info">
+      <div class="stats-value">{{ task_stats.total }}</div>
+      <div class="stats-label">任务总数</div>
+      <div class="stats-trend up">📈 本周新增 {{ task_stats.week_new }} 个</div>
+    </div>
+  </div>
+
+  <div class="stats-card">
+    <div class="stats-icon orange">{{ icon('task-wait') }}</div>
+    <div class="stats-info">
+      <div class="stats-value">{{ task_stats.pending + task_stats.processing }}</div>
+      <div class="stats-label">进行中</div>
+      <div class="stats-trend">待处理 {{ task_stats.pending }} / 处理中 {{ task_stats.processing }}</div>
+    </div>
+  </div>
+
+  <div class="stats-card">
+    <div class="stats-icon green">{{ icon('progress') }}</div>
+    <div class="stats-info">
+      <div class="stats-value">{{ task_stats.completed }}</div>
+      <div class="stats-label">已完成</div>
+    </div>
+  </div>
+
+  <div class="stats-card">
+    <div class="stats-icon red">{{ icon('warning') }}</div>
+    <div class="stats-info">
+      <div class="stats-value">{{ task_stats.overdue }}</div>
+      <div class="stats-label">已逾期</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+  <!-- Left Column -->
+  <div>
+    <!-- Bulletin Stats -->
+    <div class="stats-grid" style="margin-bottom:16px;">
+      <div class="stats-card">
+        <div class="stats-icon purple">{{ icon('bulletin') }}</div>
+        <div class="stats-info">
+          <div class="stats-value">{{ bulletin_stats.total }}</div>
+          <div class="stats-label">公示信息</div>
+          <div class="stats-trend">本周新增 {{ bulletin_stats.week_new }} 条</div>
+        </div>
+      </div>
+
+      <div class="stats-card">
+        <div class="stats-icon blue">{{ icon('memo') }}</div>
+        <div class="stats-info">
+          <div class="stats-value">{{ memo_stats.total }}</div>
+          <div class="stats-label">工作备忘</div>
+          <div class="stats-trend">我的 {{ memo_stats.my_memos }} 条</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">{{ icon('gen-light') }} 快捷操作</div>
+      </div>
+      <div class="section-body">
+        <div class="quick-actions">
+          <a href="{{ url_for('tasks.create_task') }}" class="quick-action">
+            <span class="quick-action-icon">{{ icon('add') }}</span>
+            <span>创建任务</span>
+          </a>
+          <a href="{{ url_for('tasks.list_tasks') }}" class="quick-action">
+            <span class="quick-action-icon">{{ icon('task') }}</span>
+            <span>任务列表</span>
+          </a>
+          <a href="{{ url_for('memo.create_memo') }}" class="quick-action">
+            <span class="quick-action-icon">{{ icon('memo') }}</span>
+            <span>新建备忘</span>
+          </a>
+          <a href="{{ url_for('contacts.index') }}" class="quick-action">
+            <span class="quick-action-icon">{{ icon('phone') }}</span>
+            <span>通讯录</span>
+          </a>
+          {% if user_role in ('super_admin','dept_admin') %}
+          <a href="{{ url_for('bulletin.create') }}" class="quick-action">
+            <span class="quick-action-icon">{{ icon('edit') }}</span>
+            <span>发布公示</span>
+          </a>
+          {% endif %}
+          <a href="{{ url_for('files.list_files') }}" class="quick-action">
+            <span class="quick-action-icon">{{ icon('folder') }}</span>
+            <span>文件管理</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Completion Progress -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">{{ icon('chart') }} 任务进度</div>
+      </div>
+      <div class="section-body">
+        <div class="progress-stats">
+          {% set total = task_stats.total %}
+          {% if total > 0 %}
+          {% set completed_pct = (task_stats.completed / total * 100)|round|int %}
+          {% set processing_pct = (task_stats.processing / total * 100)|round|int %}
+          {% set pending_pct = (task_stats.pending / total * 100)|round|int %}
+          {% else %}
+          {% set completed_pct = 0 %}{% set processing_pct = 0 %}{% set pending_pct = 0 %}
+          {% endif %}
+          <div class="progress-item">
+            <div class="progress-label">
+              <span>已完成</span>
+              <span>{{ completed_pct }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill green" style="width:{{ completed_pct }}%"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-label">
+              <span>处理中</span>
+              <span>{{ processing_pct }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill blue" style="width:{{ processing_pct }}%"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-label">
+              <span>待处理</span>
+              <span>{{ pending_pct }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill orange" style="width:{{ pending_pct }}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div>
+    <!-- Recent Tasks -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">🕐 最近更新</div>
+        <a href="{{ url_for('tasks.list_tasks') }}" class="task-link">查看全部 →</a>
+      </div>
+      <div class="section-body" style="padding:8px 20px;">
+        {% if recent_tasks %}
+        <ul class="task-list">
+          {% for task in recent_tasks %}
+          <li class="task-item">
+            <span class="task-status {% if task.status=='completed' %}completed{% elif task.status=='processing' %}processing{% elif task.deadline and task.deadline < current_date %}overdue{% else %}pending{% endif %}"></span>
+            <a href="{{ url_for('tasks.detail_task', task_id=task.id) }}" class="task-title">{{ task.title }}</a>
+            <span class="task-meta">{{ task.status|status_label }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div style="padding:20px;text-align:center;color:#94a3b8;">暂无任务数据</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Admin Stats (Super Admin Only) -->
+    {% if user_role == 'super_admin' %}
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">{{ icon('users') }} 系统概况</div>
+        <a href="{{ url_for('admin.users') }}" class="task-link">管理 →</a>
+      </div>
+      <div class="section-body">
+        <div class="stats-grid" style="grid-template-columns:1fr 1fr;">
+          <div style="padding:12px;background:#f8fafc;border-radius:8px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#0f172a;">{{ user_stats.total }}</div>
+            <div style="font-size:12px;color:#64748b;">总用户数</div>
+          </div>
+          <div style="padding:12px;background:#f8fafc;border-radius:8px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#10b981;">{{ user_stats.active }}</div>
+            <div style="font-size:12px;color:#64748b;">活跃用户</div>
+          </div>
+          <div style="padding:12px;background:#f8fafc;border-radius:8px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#3b82f6;">{{ tab_stats.tabs }}</div>
+            <div style="font-size:12px;color:#64748b;">信息分类</div>
+          </div>
+          <div style="padding:12px;background:#f8fafc;border-radius:8px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#f59e0b;">{{ tab_stats.columns }}</div>
+            <div style="font-size:12px;color:#64748b;">栏目数量</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+</body>
+</html>
+

@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>新建表格</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; padding: 24px; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.form-card { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 32px; }
+.form-card h3 { font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <a href="{{ url_for('sheets.list_sheets') }}">在线表格</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>新建表格</span>
+</div>
+
+<div class="form-card">
+  <h3>{{ icon('memo') }} 新建在线表格</h3>
+
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label">表格名称 <span style="color:#dc2626;">*</span></label>
+      <input type="text" name="name" class="form-input" placeholder="请输入表格名称" required style="height:48px;font-size:15px;">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">查看权限</label>
+      <select name="view_roles" class="form-select" style="height:48px;">
+        <option value="all">全部</option>
+        <option value='["super_admin","dept_admin"]'>管理员和超管</option>
+        <option value='["super_admin"]'>超管</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">编辑权限</label>
+      <select name="edit_roles" class="form-select" style="height:48px;">
+        <option value='["super_admin","dept_admin"]'>管理员和超管可编辑</option>
+        <option value='["super_admin"]'>超管</option>
+        <option value="all">全部人员</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid #e2e8f0;">
+      <button type="submit" class="btn btn-primary btn-lg">{{ icon('save') }} 创建</button>
+      <a href="{{ url_for('sheets.list_sheets') }}" class="btn btn-lg">取消</a>
+    </div>
+  </form>
+</div>
+
+</body>
+</html>
+

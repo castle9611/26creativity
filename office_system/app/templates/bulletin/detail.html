@@ -1,0 +1,289 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>{{ bulletin.title }}</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #64748b;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+.detail-content img, .detail-content-text img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+.comment-item { padding: 14px 0; border-bottom: 1px solid #f1f5f9; display:flex; gap:10px; align-items:flex-start; }
+.comment-item:last-child { border-bottom: none; }
+.comment-avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; overflow:hidden; }
+.comment-avatar img { width:100%; height:100%; object-fit:cover; }
+.comment-content { flex:1; min-width:0; }
+.comment-actions { display:flex; gap:12px; margin-top:6px; }
+.comment-actions button { background:none; border:none; cursor:pointer; font-size:12px; color:#94a3b8; padding:2px 6px; border-radius:4px; display:flex; align-items:center; gap:4px; }
+.comment-actions button:hover { color:#2563eb; background:#eef2ff; }
+.reply-form { display:none; margin-top:8px; margin-left:42px; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; }
+.reply-form.show { display:block; }
+.reply-form textarea { width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:13px; resize:vertical; min-height:60px; outline:none; }
+.reply-form textarea:focus { border-color:#2563eb; }
+.replies { margin-left:42px; margin-top:8px; padding-left:12px; border-left:2px solid #e2e8f0; }
+.comment-meta { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+.comment-meta .name { color:#0f172a; font-weight:600; }
+.comment-body { font-size: 14px; color: #334155; line-height: 1.7; white-space: pre-wrap; }
+.read-panel { padding: 10px 16px 16px; }
+.read-toggle { width: 100%; padding: 10px 12px; margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #334155; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; }
+.read-toggle:after { content: '+'; float: right; color: #64748b; }
+.read-toggle.open:after { content: '-'; }
+.read-list { display: none; flex-wrap: wrap; gap: 8px; padding: 12px 0 2px; }
+.read-list.show { display: flex; }
+.read-chip { padding: 6px 10px; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 600; }
+.read-chip.unread { background: #fee2e2; color: #b91c1c; }
+.read-empty { color: #64748b; font-size: 13px; padding: 12px 0 2px; }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('bulletin.index') }}">{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>详情</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('bulletin.index') }}" class="back-btn">← 返回公示</a>
+</div>
+
+<!-- Bulletin Header -->
+<div class="detail-header">
+  <h1 class="detail-title">{{ bulletin.title }}</h1>
+  <div class="detail-meta">
+    {% if column %}
+    <div class="detail-meta-item">
+      <span style="color:#64748b;">所属栏目：</span>
+      <strong>{{ column.name }}</strong>
+    </div>
+    {% endif %}
+    <div class="detail-meta-item">
+      <span style="color:#64748b;">发布人：</span>
+      <strong>{{ bulletin.creator.real_name if bulletin.creator else '-' }}</strong>
+    </div>
+    <div class="detail-meta-item">
+      <span style="color:#64748b;">发布时间：</span>
+      <strong>{{ bulletin.created_at.strftime('%Y-%m-%d %H:%M') if bulletin.created_at else '' }}</strong>
+    </div>
+    {% if bulletin.expire_date %}
+    <div class="detail-meta-item">
+      <span style="color:#64748b;">有效期至：</span>
+      <strong>{{ bulletin.expire_date.strftime('%Y-%m-%d') }}</strong>
+    </div>
+    {% endif %}
+    {% if bulletin.is_pinned %}
+    <div class="detail-meta-item">
+      <span class="badge badge-danger">{{ icon('pin') }} 置顶</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Bulletin Content -->
+<div class="detail-content">
+  <div style="line-height:1.9;font-size:15px;color:#334155;">{{ bulletin.content|safe }}</div>
+</div>
+
+{% if related_docs or related_sheets %}
+<div class="card" style="margin-top:24px;">
+  <div class="card-header"><div class="card-title">{{ icon('file') }} 关联在线文档/表格</div></div>
+  <div class="card-body" style="padding:16px;">
+    {% if related_docs %}
+    <div style="margin-bottom:6px;font-size:12px;color:#64748b;font-weight:600;">📄 在线文档</div>
+    {% for d in related_docs %}
+    <a href="{{ url_for('docs.view_doc', doc_id=d.id) }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin:3px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;text-decoration:none;color:#1a56db;font-size:13px;">
+      {{ icon('file') }} {{ d.title }}
+      <span style="color:#64748b;font-size:11px;">{% if d.status=='published' %}已发布{% else %}草稿{% endif %}</span>
+    </a>
+    {% endfor %}
+    {% endif %}
+    {% if related_sheets %}
+    <div style="margin:8px 0 4px;font-size:12px;color:#64748b;font-weight:600;">📊 在线表格</div>
+    {% for s in related_sheets %}
+    <a href="{{ url_for('sheets.edit_sheet', sheet_id=s.id) }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin:3px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;text-decoration:none;color:#059669;font-size:13px;">
+      {{ icon('memo') }} {{ s.name }}
+    </a>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Attachments -->
+{% set attachment_list = bulletin.files.all() %}
+{% if attachment_list %}
+<div class="card" style="margin-top:24px;">
+  <div class="card-header">
+    <div class="card-title">{{ icon('attach') }} 附件 ({{ attachment_list|length }})</div>
+  </div>
+  <div class="card-body" style="padding:16px;">
+    {% for f in attachment_list %}
+    <a href="{{ f.file_path }}" class="btn" style="margin:4px;" target="_blank">
+      {{ icon('attach') }} {{ f.original_name }}
+      <span style="color:#94a3b8;font-size:11px;margin-left:4px;">({{ (f.file_size/1024)|round|int }}KB)</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if session.get('role') in ('super_admin','dept_admin') %}
+<div class="card" style="margin-top:24px;">
+  <div class="card-header">
+    <div class="card-title">阅读人员追踪</div>
+  </div>
+  <div class="read-panel">
+    <button type="button" class="read-toggle" onclick="toggleReadList(this, 'bulletinUnreadList')">未读人员 {{ unread_users|length }} 人</button>
+    <div id="bulletinUnreadList" class="read-list">
+      {% if unread_users %}
+      {% for u in unread_users %}
+      <span class="read-chip unread">{{ u.real_name or u.username }}</span>
+      {% endfor %}
+      {% else %}
+      <div class="read-empty">暂无未读人员。</div>
+      {% endif %}
+    </div>
+    <button type="button" class="read-toggle" onclick="toggleReadList(this, 'bulletinReadList')">已读人员 {{ read_users|length }} 人</button>
+    <div id="bulletinReadList" class="read-list">
+      {% if read_users %}
+      {% for u in read_users %}
+      <span class="read-chip">{{ u.real_name or u.username }}</span>
+      {% endfor %}
+      {% else %}
+      <div class="read-empty">暂无已读记录。</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:24px;">
+  <div class="card-header">
+    <div class="card-title">评论交流</div>
+  </div>
+  <div class="card-body" style="padding:16px;">
+    {% if comments %}
+    {% for c in comments %}
+    <div class="comment-item">
+      <div class="comment-avatar">{% if c.creator and c.creator.avatar %}<img src="{{ c.creator.avatar }}">{% else %}{{ (c.creator.real_name or c.creator.username or "?")[-1] if c.creator else "?" }}{% endif %}</div>
+      <div class="comment-content">
+        <div class="comment-meta"><span class="name">{{ c.creator.real_name if c.creator else '用户' }} · {{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '' }}</div>
+        <div class="comment-body">{{ c.content }}</div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px;">暂无评论，可以补充说明或反馈。</div>
+    {% endif %}
+    <form method="post" action="{{ url_for('bulletin.add_comment', bulletin_id=bulletin.id) }}" style="margin-top:14px;">
+      <textarea name="content" class="form-textarea" rows="3" required placeholder="写下评论..." style="width:100%;"></textarea>
+      <div style="margin-top:10px;text-align:right;">
+        <button type="submit" class="btn btn-primary">发表评论</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="detail-actions" style="background:#f8fafc;border-radius:12px;">
+  {% if session.get('role') in ('super_admin','dept_admin') %}
+  <a href="{{ url_for('bulletin.edit', bulletin_id=bulletin.id) }}" class="btn btn-lg">{{ icon('edit') }} 编辑</a>
+  <form method="post" action="{{ url_for('bulletin.archive', bulletin_id=bulletin.id) }}" style="display:inline;">
+    <button type="submit" class="btn btn-lg">{{ icon('archive') }} 归档</button>
+  </form>
+  <form method="post" action="{{ url_for('bulletin.delete', bulletin_id=bulletin.id) }}" style="display:inline;" onsubmit="return confirm('确认删除该内容？');">
+    <button type="submit" class="btn btn-danger btn-lg">{{ icon('trash') }} 删除</button>
+  </form>
+  {% endif %}
+  {% if bulletin.column_id %}
+  <a href="{{ url_for('bulletin.column_list', column_id=bulletin.column_id) }}" class="btn btn-lg" style="margin-left:auto;">← 返回列表</a>
+  {% else %}
+  <a href="{{ url_for('bulletin.index', category_id=bulletin.category_id) }}" class="btn btn-lg" style="margin-left:auto;">← 返回列表</a>
+  {% endif %}
+</div>
+
+<script>
+function toggleReadList(btn, id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var open = el.className.indexOf('show') === -1;
+  el.className = open ? 'read-list show' : 'read-list';
+  btn.className = open ? 'read-toggle open' : 'read-toggle';
+}
+</script>
+
+<script>
+function toggleReply(commentId) {
+    var form = document.getElementById('reply-form-' + commentId);
+    if (form) form.classList.toggle('show');
+}
+function cancelReply(commentId) {
+    var form = document.getElementById('reply-form-' + commentId);
+    if (form) { form.classList.remove('show'); document.getElementById('reply-text-' + commentId).value = ''; }
+}
+function submitReply(commentId, targetType, targetId) {
+    var text = document.getElementById('reply-text-' + commentId).value.trim();
+    if (!text) { alert('请输入回复内容'); return; }
+    var xhr = new XMLHttpRequest();
+    var url = '/' + targetType + 's/' + targetId + '/comments/reply/' + commentId;
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) { location.reload(); }
+        else { try { var d = JSON.parse(xhr.responseText); alert(d.message); } catch(e) { alert('回复失败'); } }
+    };
+    xhr.onerror = function() { alert('请求失败'); };
+    xhr.send('content=' + encodeURIComponent(text));
+}
+function voteComment(commentId, voteType) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/comments/' + commentId + '/vote', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var d = JSON.parse(xhr.responseText);
+                document.getElementById('like-count-' + commentId).textContent = d.likes;
+                document.getElementById('dislike-count-' + commentId).textContent = d.dislikes;
+            } catch(e) {}
+        }
+    };
+    xhr.send('vote=' + voteType);
+}
+</script>
+</body>
+</html>

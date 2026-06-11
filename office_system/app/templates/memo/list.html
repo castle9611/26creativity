@@ -1,0 +1,570 @@
+﻿<!DOCTYPE html>
+{% from '_icon.html' import icon %}
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><title>工作备忘</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+
+/* Memo Card Styles */
+.memo-grid { display: block; overflow: hidden; }
+.memo-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.2s;
+    cursor: pointer;
+    float: left;
+    width: calc(33.333% - 12px);
+    min-height: 188px;
+    margin: 0 12px 12px 0;
+}
+.memo-card:hover { border-color: #2563eb; box-shadow: none; transform: none; }
+.memo-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.memo-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.memo-card-badge { margin-left: 8px; }
+.memo-card-preview {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.memo-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #f8fafc;
+    font-size: 12px;
+    color: #94a3b8;
+}
+.memo-card-actions { display: flex; gap: 8px; }
+.memo-card-actions .btn { padding: 4px 8px; font-size: 12px; }
+.memo-expand-icon { color: #94a3b8; transition: transform 0.2s; }
+.memo-card.expanded .memo-expand-icon { transform: rotate(180deg); }
+.memo-card.expanded .memo-card-preview { -webkit-line-clamp: unset; display: block; }
+
+/* Modal Styles */
+.memo-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.memo-modal.show { display: flex; }
+.memo-modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.memo-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.memo-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0f172a;
+    flex: 1;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: calc(100% - 40px);
+}
+.memo-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    background: #f1f5f9;
+    border: none;
+    font-size: 18px;
+    transition: all 0.2s;
+}
+.memo-modal-close:hover { background: #e2e8f0; color: #0f172a; }
+.memo-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    min-height: 0;
+}
+.memo-modal-meta {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.memo-modal-meta-item {
+    font-size: 13px;
+    color: #64748b;
+}
+.memo-modal-meta-item strong { color: #0f172a; }
+.memo-modal-content-text {
+    font-size: 14px;
+    line-height: 1.9;
+    color: #334155;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    max-width: 100%;
+}
+.memo-modal-content-text img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+}
+.memo-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+/* Type Toggle Buttons */
+.type-toggle {
+    display: flex;
+    gap: 4px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 8px;
+}
+.type-toggle .btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    background: transparent;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.type-toggle .btn:hover {
+    color: #0f172a;
+    background: #e2e8f0;
+}
+.type-toggle .btn.btn-primary {
+    color: white;
+    background: #2563eb;
+}
+.type-toggle .btn.btn-primary:hover {
+    background: #1d4ed8;
+}
+.group-panel {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+.group-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    margin: 3px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    color: #475569;
+    background: #f8fafc;
+    text-decoration: none;
+    font-size: 13px;
+}
+.group-chip.active { border-color: #2563eb; color: #2563eb; background: #eff6ff; font-weight: 600; }
+.group-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+@media (max-width: 1280px) { .memo-card { width: calc(50% - 12px); } }
+@media (max-width: 768px) { .memo-card { float: none; width: 100%; margin-right: 0; } }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for c,m in messages %}
+<div class="alert alert-{{ c }}" style="margin-bottom:16px;">{{ m }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>工作备忘</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">工作备忘</h2>
+    <p class="page-subtitle">记录重要事项，方便随时查看</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary">{{ icon('add') }} 新建备忘</a>
+  </div>
+</div>
+
+<!-- Stats Bar -->
+<div class="stats-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+  <a href="{{ url_for('memo.list_memos') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if memo_type == 'all' or memo_type == '' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if memo_type == 'all' or memo_type == '' %}#2563eb{% else %}#e2e8f0{% endif %}'">
+    <span style="font-size:18px;">{{ icon('memo') }}</span>
+    <div>
+      <div style="font-size:18px;font-weight:700;color:#1e293b;white-space:nowrap;">{{ total }}</div>
+      <div style="font-size:11px;color:#64748b;white-space:nowrap;">备忘总数</div>
+    </div>
+  </a>
+  <a href="{{ url_for('memo.list_memos', type='private') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if memo_type == 'private' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if memo_type == 'private' %}#2563eb{% else %}#e2e8f0{% endif %}'">
+    <span style="font-size:18px;">{{ icon('lock') }}</span>
+    <div>
+      <div style="font-size:18px;font-weight:700;color:#8b5cf6;white-space:nowrap;">{{ private_count }}</div>
+      <div style="font-size:11px;color:#64748b;white-space:nowrap;">私人备忘</div>
+    </div>
+  </a>
+  <a href="{{ url_for('memo.list_memos', type='public') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if memo_type == 'public' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if memo_type == 'public' %}#2563eb{% else %}#e2e8f0{% endif %}'">
+    <span style="font-size:18px;">{{ icon('globe') }}</span>
+    <div>
+      <div style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ public_count }}</div>
+      <div style="font-size:11px;color:#64748b;white-space:nowrap;">公共备忘</div>
+    </div>
+  </a>
+</div>
+
+<!-- Filters -->
+<div class="toolbar">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <!-- Type Toggle Buttons -->
+    <div class="type-toggle">
+      <a href="{{ url_for('memo.list_memos', type='all', keyword=keyword, group_id=group_id) }}" class="btn {% if memo_type=='all' %}btn-primary{% endif %}">全部</a>
+      <a href="{{ url_for('memo.list_memos', type='private', keyword=keyword, group_id=group_id) }}" class="btn {% if memo_type=='private' %}btn-primary{% endif %}">{{ icon('lock') }} 个人</a>
+      <a href="{{ url_for('memo.list_memos', type='public', keyword=keyword, group_id=group_id) }}" class="btn {% if memo_type=='public' %}btn-primary{% endif %}">{{ icon('globe') }} 公共</a>
+    </div>
+    <!-- Search -->
+    <form method="get" style="display:flex;gap:8px;align-items:center;">
+      <input type="hidden" name="type" value="{{ memo_type }}">
+      <input type="hidden" name="group_id" value="{{ group_id }}">
+      <input type="text" name="keyword" placeholder="搜索标题或内容" value="{{ keyword }}" class="form-input" style="width:180px;">
+      <button type="submit" class="btn btn-primary">{{ icon('search') }}</button>
+      {% if keyword %}
+      <a href="{{ url_for('memo.list_memos', type=memo_type, group_id=group_id) }}" class="btn">重置</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="group-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div style="font-size:14px;font-weight:700;color:#0f172a;">备忘分组</div>
+    <a href="{{ url_for('memo.list_memos', type=memo_type, keyword=keyword) }}" class="group-chip {% if not group_id %}active{% endif %}">全部分组</a>
+  </div>
+  <div style="margin-top:8px;">
+    {% for g in groups %}
+    <a href="{{ url_for('memo.list_memos', type=memo_type, keyword=keyword, group_id=g.id) }}" class="group-chip {% if group_id == g.id %}active{% endif %}">
+      {% if g.memo_type == 'public' %}公共{% else %}个人{% endif %} · {{ g.name }}
+    </a>
+    {% endfor %}
+    {% if not groups %}
+    <span style="font-size:13px;color:#94a3b8;">暂无分组，可以先创建一个。</span>
+    {% endif %}
+  </div>
+  <form method="post" action="{{ url_for('memo.add_group') }}" class="group-form">
+    <input type="text" name="name" class="form-input" placeholder="新分组名称" required style="width:180px;">
+    <select name="memo_type" class="form-select" style="width:130px;">
+      <option value="private">个人分组</option>
+      {% if session.get('role') in ('super_admin','dept_admin') %}
+      <option value="public">公共分组</option>
+      {% endif %}
+    </select>
+    <button type="submit" class="btn">新增分组</button>
+  </form>
+</div>
+
+<!-- Batch Actions Bar -->
+<div id="batchBar" style="display:none;background:#1e293b;color:white;padding:12px 16px;border-radius:10px;margin-bottom:16px;align-items:center;justify-content:space-between;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="batchCount">已选择 0 项</span>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+      <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="width:16px;height:16px;"> 全选
+    </label>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('archive')">📦 批量归档</button>
+    <button type="button" class="btn-sm" style="background:#dc2626;border:1px solid #dc2626;color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('delete')">{{ icon('trash') }} 批量删除</button>
+    <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="clearSelection()">✕ 取消</button>
+  </div>
+</div>
+
+<!-- Memo Cards -->
+{% if memos %}
+<div class="memo-grid">
+  {% for m in memos %}
+  <div class="memo-card" data-id="{{ m.id }}" onclick="if(!event.target.closest('.card-cb'))openMemoModal({{ m.id }})" style="position:relative;">
+    <input type="checkbox" class="card-cb" value="{{ m.id }}" onchange="updateBatchBar()" style="position:absolute;top:12px;left:12px;width:18px;height:18px;cursor:pointer;z-index:2;">
+    <div class="memo-card-header" style="padding-left:36px;">
+      <div class="memo-card-title">{{ m.title }}</div>
+      <span class="badge {% if m.memo_type=='public' %}badge-info{% else %}badge-gray{% endif %} memo-card-badge">
+        {% if m.memo_type=='public' %}公共{% else %}个人{% endif %}
+      </span>
+    </div>
+    <div class="memo-card-preview">{{ (m.content or '无内容')|strip_html }}</div>
+    <div class="memo-card-footer">
+      <span>{% if m.group %}{{ m.group.name }} · {% endif %}{{ m.creator.real_name if m.creator else '' }} · {{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</span>
+      <div class="memo-card-actions" onclick="event.stopPropagation();">
+        <a href="{{ url_for('memo.edit_memo', memo_id=m.id) }}" class="btn">{{ icon('edit') }}</a>
+        <form method="post" action="{{ url_for('memo.archive_memo', memo_id=m.id) }}" style="display:inline;">
+          <button type="submit" class="btn">{{ icon('archive') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('memo.delete_memo', memo_id=m.id) }}" style="display:inline;" onsubmit="return confirm('确认删除该备忘？');">
+          <button type="submit" class="btn btn-danger">{{ icon('trash') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state" style="padding:60px;">
+    <div class="empty-icon">{{ icon('memo') }}</div>
+    <div class="empty-title">暂无备忘</div>
+    <div class="empty-desc">
+      <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary" style="margin-top:16px;">创建第一条备忘</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Memo Detail Modal -->
+<div id="memoModal" class="memo-modal">
+  <div class="memo-modal-content">
+    <div class="memo-modal-header">
+      <div class="memo-modal-title" id="memoModalTitle">备忘详情</div>
+      <button class="memo-modal-close" onclick="closeMemoModal()">✕</button>
+    </div>
+    <div class="memo-modal-body">
+      <div class="memo-modal-meta">
+        <div class="memo-modal-meta-item" id="memoModalCreator"></div>
+        <div class="memo-modal-meta-item" id="memoModalTime"></div>
+        <div class="memo-modal-meta-item"><span class="badge" id="memoModalType"></span></div>
+      </div>
+      <div class="memo-modal-content-text" id="memoModalContent"></div>
+      <div id="memoModalLinks" style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;display:none;">
+        <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:8px;">{{ icon('file') }} 关联文档/表格</div>
+        <div id="memoModalLinksContent"></div>
+      </div>
+    </div>
+    <div class="memo-modal-footer">
+      <a href="#" id="memoModalEdit" class="btn btn-primary">{{ icon('edit') }} 编辑</a>
+      <button onclick="closeMemoModal()" class="btn">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Memo Data (hidden) -->
+<script type="application/json" id="memoData">[{% for m in memos %}{"id":{{ m.id }},"title":{{ m.title|tojson }},"content":{{ (m.content or '')|tojson }},"memo_type":"{{ m.memo_type }}","group":{{ (m.group.name if m.group else '')|tojson }},"creator":"{{ m.creator.real_name if m.creator else '' }}","created_at":"{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}","edit_url":"{{ url_for('memo.edit_memo', memo_id=m.id) }}"}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+<script type="application/json" id="memoLinksData">{{ memo_links|tojson }}</script>
+
+<script>
+(function(){
+    var memoModal = document.getElementById('memoModal');
+    var memoList = [];
+
+    // Parse memo data
+    try {
+        memoList = JSON.parse(document.getElementById('memoData').textContent);
+    } catch(e) {
+        console.error('Failed to parse memo data:', e);
+    }
+
+    window.openMemoModal = function(id) {
+        var memo = null;
+        for (var i = 0; i < memoList.length; i++) {
+            if (memoList[i].id === id) {
+                memo = memoList[i];
+                break;
+            }
+        }
+        if (!memo) return;
+
+        document.getElementById('memoModalTitle').textContent = memo.title;
+        document.getElementById('memoModalContent').innerHTML = memo.content || '<span style="color:#94a3b8;">无内容</span>';
+        document.getElementById('memoModalCreator').innerHTML = '<strong>创建人：</strong>' + memo.creator;
+        document.getElementById('memoModalTime').innerHTML = '<strong>时间：</strong>' + memo.created_at + (memo.group ? ' · <strong>分组：</strong>' + memo.group : '');
+        document.getElementById('memoModalType').textContent = memo.memo_type === 'public' ? '公共备忘' : '个人备忘';
+        document.getElementById('memoModalType').className = 'badge ' + (memo.memo_type === 'public' ? 'badge-info' : 'badge-gray');
+        document.getElementById('memoModalEdit').href = memo.edit_url;
+
+        // Show linked docs/sheets
+        var linksContainer = document.getElementById('memoModalLinks');
+        var linksContent = document.getElementById('memoModalLinksContent');
+        try {
+            var allLinks = JSON.parse(document.getElementById('memoLinksData').textContent);
+            var memoLinks = allLinks['' + id] || allLinks[id] || null;
+            if (memoLinks && (memoLinks.docs.length > 0 || memoLinks.sheets.length > 0)) {
+                var html = '';
+                if (memoLinks.docs.length > 0) {
+                    html += '<div style="margin-bottom:4px;font-size:12px;color:#64748b;">📄 在线文档</div>';
+                    for (var di = 0; di < memoLinks.docs.length; di++) {
+                        html += '<a href="' + memoLinks.docs[di].url + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;margin:2px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;text-decoration:none;color:#1a56db;font-size:12px;">📄 ' + memoLinks.docs[di].title + '</a>';
+                    }
+                }
+                if (memoLinks.sheets.length > 0) {
+                    html += '<div style="margin:6px 0 4px;font-size:12px;color:#64748b;">📊 在线表格</div>';
+                    for (var si = 0; si < memoLinks.sheets.length; si++) {
+                        html += '<a href="' + memoLinks.sheets[si].url + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;margin:2px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;text-decoration:none;color:#059669;font-size:12px;">📊 ' + memoLinks.sheets[si].name + '</a>';
+                    }
+                }
+                linksContent.innerHTML = html;
+                linksContainer.style.display = 'block';
+            } else {
+                linksContainer.style.display = 'none';
+            }
+        } catch(e) { linksContainer.style.display = 'none'; }
+
+        memoModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeMemoModal = function() {
+        memoModal.classList.remove('show');
+        document.body.style.overflow = '';
+    };
+
+    // Close on backdrop click
+    memoModal.addEventListener('click', function(e) {
+        if (e.target === memoModal) {
+            closeMemoModal();
+        }
+    });
+
+    // Close on ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && memoModal.classList.contains('show')) {
+            closeMemoModal();
+        }
+    });
+})();
+
+// Batch operations
+function getSelectedIds() {
+    var cbs = document.querySelectorAll('.card-cb:checked');
+    var ids = [];
+    for (var i = 0; i < cbs.length; i++) ids.push(parseInt(cbs[i].value));
+    return ids;
+}
+function updateBatchBar() {
+    var ids = getSelectedIds();
+    var bar = document.getElementById('batchBar');
+    var ct = document.getElementById('batchCount');
+    if (ids.length > 0) { bar.style.display = 'flex'; ct.textContent = '已选择 ' + ids.length + ' 项'; }
+    else { bar.style.display = 'none'; }
+    var all = document.querySelectorAll('.card-cb');
+    var sa = document.getElementById('selectAll');
+    sa.checked = (ids.length === all.length && ids.length > 0);
+    sa.indeterminate = (ids.length > 0 && ids.length < all.length);
+}
+function toggleSelectAll() {
+    var checked = document.getElementById('selectAll').checked;
+    var cbs = document.querySelectorAll('.card-cb');
+    for (var i = 0; i < cbs.length; i++) cbs[i].checked = checked;
+    updateBatchBar();
+}
+function clearSelection() {
+    var cbs = document.querySelectorAll('.card-cb');
+    for (var i = 0; i < cbs.length; i++) cbs[i].checked = false;
+    updateBatchBar();
+}
+function batchOp(action) {
+    var ids = getSelectedIds();
+    if (ids.length === 0) { alert('请先选择备忘'); return; }
+    var msg = action === 'archive' ? '确定要归档选中的 ' + ids.length + ' 个备忘吗？' : '确定要删除选中的 ' + ids.length + ' 个备忘吗？（不可恢复）';
+    if (!confirm(msg)) return;
+    var url = action === 'archive' ? '{{ url_for("memo.batch_archive") }}' : '{{ url_for("memo.batch_delete") }}';
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try { var d = JSON.parse(xhr.responseText); if(d.success) location.reload(); else alert(d.message||'操作失败'); }
+            catch(e) { location.reload(); }
+        } else { alert('操作失败'); }
+    };
+    xhr.onerror = function(){ alert('操作失败'); };
+    xhr.send('ids=' + encodeURIComponent(JSON.stringify(ids)));
+}
+</script>
+
+<!-- Pagination -->
+{% if has_prev or has_next %}
+<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+  {% if has_prev %}
+  <a href="{{ url_for('memo.list_memos', page=page-1, type=memo_type, keyword=keyword, group_id=group_id) }}" class="btn">上一页</a>
+  {% endif %}
+  <span class="badge badge-gray" style="padding:8px 16px;font-size:13px;">第 {{ page }} 页</span>
+  {% if has_next %}
+  <a href="{{ url_for('memo.list_memos', page=page+1, type=memo_type, keyword=keyword, group_id=group_id) }}" class="btn">下一页</a>
+  {% endif %}
+  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ total }} 条</span>
+</div>
+{% endif %}
+
+</body>
+</html>
+

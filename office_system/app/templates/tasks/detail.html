@@ -1,0 +1,399 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>{{ task.title }}</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; transition: color 0.2s; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; cursor: pointer; }
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+.comment-item { padding: 14px 0; border-bottom: 1px solid #f1f5f9; display:flex; gap:10px; align-items:flex-start; }
+.comment-item:last-child { border-bottom: none; }
+.comment-avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; overflow:hidden; }
+.comment-avatar img { width:100%; height:100%; object-fit:cover; }
+.comment-content { flex:1; min-width:0; }
+.comment-actions { display:flex; gap:12px; margin-top:6px; }
+.comment-actions button { background:none; border:none; cursor:pointer; font-size:12px; color:#94a3b8; padding:2px 6px; border-radius:4px; display:flex; align-items:center; gap:4px; }
+.comment-actions button:hover { color:#2563eb; background:#eef2ff; }
+.comment-actions button.voted { color:#2563eb; font-weight:600; }
+.comment-actions button.dislike-voted { color:#dc2626; font-weight:600; }
+.reply-form { display:none; margin-top:8px; margin-left:42px; padding:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; }
+.reply-form.show { display:block; }
+.reply-form textarea { width:100%; padding:8px 12px; border:1px solid #e2e8f0; border-radius:6px; font-size:13px; resize:vertical; min-height:60px; outline:none; }
+.reply-form textarea:focus { border-color:#2563eb; }
+.replies { margin-left:42px; margin-top:8px; padding-left:12px; border-left:2px solid #e2e8f0; }
+.comment-meta { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+.comment-meta .name { color:#0f172a; font-weight:600; }
+.comment-body { font-size: 14px; color: #334155; line-height: 1.7; white-space: pre-wrap; }
+.read-panel { padding: 10px 16px 16px; }
+.read-toggle { width: 100%; padding: 10px 12px; margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #334155; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; }
+.read-toggle:after { content: '+'; float: right; color: #64748b; }
+.read-toggle.open:after { content: '-'; }
+.read-list { display: none; flex-wrap: wrap; gap: 8px; padding: 12px 0 2px; }
+.read-list.show { display: flex; }
+.read-chip { padding: 6px 10px; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 600; }
+.read-chip.unread { background: #fee2e2; color: #b91c1c; }
+.read-empty { color: #64748b; font-size: 13px; padding: 12px 0 2px; }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<div class="breadcrumb">
+  <a href="{{ url_for('tasks.list_tasks') }}">任务列表</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>任务详情</span>
+</div>
+
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('tasks.list_tasks') }}" class="back-btn">← 返回列表</a>
+</div>
+
+<div class="detail-header">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+    <h1 class="detail-title" style="font-size:22px;">{{ task.title }}</h1>
+    {% if task.status=='pending' %}<span class="badge badge-info" style="font-size:13px;padding:6px 14px;">待接收</span>
+    {% elif task.status=='processing' %}<span class="badge badge-primary" style="font-size:13px;padding:6px 14px;">处理中</span>
+    {% elif task.status=='transferring' %}<span class="badge badge-warning" style="font-size:13px;padding:6px 14px;">待交接</span>
+    {% elif task.status=='completed' %}<span class="badge badge-success" style="font-size:13px;padding:6px 14px;">已完成</span>
+    {% elif task.status=='rejected' %}<span class="badge badge-danger" style="font-size:13px;padding:6px 14px;">已驳回</span>
+    {% elif task.status=='archived' %}<span class="badge badge-gray" style="font-size:13px;padding:6px 14px;">已归档</span>
+    {% endif %}
+  </div>
+
+  <div class="detail-meta" style="margin-top:16px;">
+    <div class="detail-meta-item"><span style="color:#64748b;">优先级：</span>
+      {% if task.priority=='high' %}<span class="badge badge-danger">高优先级</span>
+      {% elif task.priority=='medium' %}<span class="badge badge-warning">中优先级</span>
+      {% elif task.priority=='low' %}<span class="badge badge-gray">低优先级</span>
+      {% else %}<span class="badge badge-gray">普通</span>
+      {% endif %}
+    </div>
+    <div class="detail-meta-item"><span style="color:#64748b;">任务类别：</span><strong>{% if task.category %}{{ icon(task.category.icon|icon_id) }} {{ task.category.name }}{% else %}-{% endif %}</strong></div>
+    <div class="detail-meta-item"><span style="color:#64748b;">部门：</span><strong>{{ task.department or '-' }}</strong></div>
+    <div class="detail-meta-item"><span style="color:#64748b;">负责人：</span><strong>{{ task.assignee_names }}</strong></div>
+    <div class="detail-meta-item"><span style="color:#64748b;">创建人：</span><strong>{{ task.creator.real_name if task.creator else '-' }}</strong></div>
+    <div class="detail-meta-item"><span style="color:#64748b;">截止日期：</span><strong>{{ task.deadline.strftime('%Y-%m-%d') if task.deadline else '未设置' }}</strong></div>
+    <div class="detail-meta-item"><span style="color:#64748b;">创建时间：</span><strong>{{ task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else '' }}</strong></div>
+  </div>
+</div>
+
+<!-- Progress Bar -->
+{% set p = task.progress|default(0) %}
+<div class="card" style="margin-top:20px;">
+  <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="card-title">{{ icon('progress') }} 任务进度</div>
+    {% if is_current_assignee or session.get('role') in ('super_admin','dept_admin') %}
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button type="button" class="btn btn-sm" onclick="updateProgress(-10)" style="font-size:16px;font-weight:700;padding:2px 10px;">−</button>
+      <span id="progressVal" style="font-size:18px;font-weight:700;color:#2563eb;min-width:50px;text-align:center;">{{ p }}%</span>
+      <button type="button" class="btn btn-sm" onclick="updateProgress(10)" style="font-size:16px;font-weight:700;padding:2px 10px;">+</button>
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-body" style="padding:16px;">
+    <div id="progressTrack" style="height:24px;background:#e2e8f0;border-radius:12px;overflow:hidden;{% if is_current_assignee or session.get('role') in ('super_admin','dept_admin') %}cursor:pointer;{% endif %}">
+      <div id="progressBar" style="height:100%;width:{{ p }}%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:12px;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#94a3b8;">
+      <span>0%</span>
+      <span>50%</span>
+      <span>100%</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function setProgress(val) {
+    val = Math.max(0, Math.min(100, Math.round(val / 10) * 10));
+    var pb = document.getElementById('progressBar');
+    var pv = document.getElementById('progressVal');
+    if (!pb || !pv) return;
+    pb.style.width = val + '%';
+    pv.textContent = val + '%';
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '{{ url_for("tasks.update_progress", task_id=task.id) }}', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try { var d = JSON.parse(xhr.responseText); if(d.status === 'completed') location.reload(); }
+            catch(e) {}
+        }
+    };
+    xhr.send('progress=' + val);
+}
+
+function updateProgress(delta) {
+    var cur = parseInt(document.getElementById('progressVal').textContent) || 0;
+    setProgress(cur + delta);
+}
+
+(function(){
+    var track = document.getElementById('progressTrack');
+    if (track) {
+        track.onclick = function(e) {
+            var rect = track.getBoundingClientRect();
+            var pct = Math.round((e.clientX - rect.left) / rect.width * 100);
+            setProgress(pct);
+        };
+    }
+})();
+</script>
+
+{% if task.content %}
+<div class="detail-content" style="margin-top:20px;">
+  <h4 style="font-size:15px;font-weight:600;margin-bottom:12px;color:#0f172a;">任务内容</h4>
+  <div style="line-height:1.8;color:#334155;">{{ task.content|safe }}</div>
+</div>
+{% endif %}
+
+<!-- Related Online Documents/Sheets -->
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><div class="card-title">{{ icon('file') }} 关联在线文档/表格</div></div>
+  <div class="card-body" style="padding:16px;">
+    {% if related_docs %}
+    <div style="margin-bottom:8px;font-size:12px;color:#64748b;font-weight:600;">📄 在线文档</div>
+    {% for d in related_docs %}
+    <a href="{{ url_for('docs.view_doc', doc_id=d.id) }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin:3px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;text-decoration:none;color:#1a56db;font-size:13px;">
+      {{ icon('file') }} {{ d.title }}
+      <span style="color:#64748b;font-size:11px;">{% if d.status=='published' %}已发布{% else %}草稿{% endif %}</span>
+    </a>
+    {% endfor %}
+    {% endif %}
+    {% if related_sheets %}
+    <div style="margin:8px 0 4px;font-size:12px;color:#64748b;font-weight:600;">📊 在线表格</div>
+    {% for s in related_sheets %}
+    <a href="{{ url_for('sheets.edit_sheet', sheet_id=s.id) }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin:3px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:6px;text-decoration:none;color:#059669;font-size:13px;">
+      {{ icon('memo') }} {{ s.name }}
+    </a>
+    {% endfor %}
+    {% endif %}
+    {% if not related_docs and not related_sheets %}
+    <div style="color:#94a3b8;font-size:13px;text-align:center;padding:12px;">暂无关联 — 在创建/编辑任务时选择关联的在线文档或表格</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if task_attachments %}
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><div class="card-title">{{ icon('attach') }} 附件 ({{ task_attachments|length }})</div></div>
+  <div class="card-body" style="padding:16px;">
+    {% for af in task_attachments %}
+    <a href="{{ af.path }}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;margin:4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:#2563eb;font-size:13px;">
+      {{ icon('attach') }} {{ af.original }}
+      <span style="color:#94a3b8;font-size:11px;">{% if af.size %}{{ (af.size/1024)|round|int }}KB{% endif %}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if session.get('role') in ('super_admin','dept_admin') %}
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><div class="card-title">阅读人员追踪</div></div>
+  <div class="read-panel">
+    <button type="button" class="read-toggle" onclick="toggleReadList(this, 'taskUnreadList')">未读人员 {{ unread_users|length }} 人</button>
+    <div id="taskUnreadList" class="read-list">
+      {% if unread_users %}
+      {% for u in unread_users %}
+      <span class="read-chip unread">{{ u.real_name or u.username }}</span>
+      {% endfor %}
+      {% else %}
+      <div class="read-empty">暂无未读人员。</div>
+      {% endif %}
+    </div>
+    <button type="button" class="read-toggle" onclick="toggleReadList(this, 'taskReadList')">已读人员 {{ read_users|length }} 人</button>
+    <div id="taskReadList" class="read-list">
+      {% if read_users %}
+      {% for u in read_users %}
+      <span class="read-chip">{{ u.real_name or u.username }}</span>
+      {% endfor %}
+      {% else %}
+      <div class="read-empty">暂无已读记录。</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><div class="card-title">任务评论</div></div>
+  <div class="card-body" style="padding:16px;">
+    {% if comments %}
+    {% for c in comments %}
+    <div class="comment-item">
+      <div class="comment-avatar">{% if c.creator and c.creator.avatar %}<img src="{{ c.creator.avatar }}">{% else %}{{ (c.creator.real_name or c.creator.username or "?")[-1] if c.creator else "?" }}{% endif %}</div>
+      <div class="comment-content">
+        <div class="comment-meta"><span class="name">{{ c.creator.real_name if c.creator else '用户' }} · {{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '' }}</div>
+        <div class="comment-body">{{ c.content }}</div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px;">暂无评论，可以在这里同步进展或补充说明。</div>
+    {% endif %}
+    <form method="post" action="{{ url_for('tasks.add_comment', task_id=task.id) }}" style="margin-top:14px;">
+      <textarea name="content" class="form-textarea" rows="3" required placeholder="写下评论..." style="width:100%;"></textarea>
+      <div style="margin-top:10px;text-align:right;">
+        <button type="submit" class="btn btn-primary">发表评论</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="detail-actions" style="background:#f8fafc;border-radius:12px;">
+  {% if task.status == 'pending' and is_current_assignee %}
+  <form method="post" action="{{ url_for('tasks.update_status', task_id=task.id) }}" style="display:inline;">
+    <input type="hidden" name="action" value="accept">
+    <button type="submit" class="btn btn-success btn-lg">{{ icon('progress') }} 接收任务</button>
+  </form>
+  {% endif %}
+
+  {% if task.status == 'processing' and is_current_assignee %}
+  <form method="post" action="{{ url_for('tasks.update_status', task_id=task.id) }}" style="display:inline;">
+    <input type="hidden" name="action" value="complete">
+    <button type="submit" class="btn btn-success btn-lg">{{ icon('progress') }} 完成任务</button>
+  </form>
+  <a href="{{ url_for('tasks.transfer_task', task_id=task.id) }}" class="btn btn-lg">{{ icon('task-flow') }} 申请交接</a>
+  {% endif %}
+
+  {% if task.status in ('pending','processing') and session.get('role') in ('super_admin','dept_admin') %}
+  <form method="post" action="{{ url_for('tasks.update_status', task_id=task.id) }}" style="display:inline;">
+    <input type="hidden" name="action" value="reject">
+    <button type="submit" class="btn btn-danger btn-lg">驳回</button>
+  </form>
+  {% endif %}
+
+  {% if task.status == 'completed' and session.get('role') in ('super_admin','dept_admin') %}
+  <form method="post" action="{{ url_for('tasks.update_status', task_id=task.id) }}" style="display:inline;">
+    <input type="hidden" name="action" value="archive">
+    <button type="submit" class="btn btn-lg">{{ icon('archive') }} 归档</button>
+  </form>
+  {% endif %}
+
+  {% if session.get('role') in ('super_admin','dept_admin') %}
+  <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="btn btn-lg">{{ icon('edit') }} 编辑</a>
+  <button type="button" class="btn btn-warning btn-lg" onclick="openReassignModal()">{{ icon('user-key') }} 强制分配</button>
+  {% endif %}
+
+  {% if task.status in ('pending','processing','completed') and (is_current_assignee or session.get('user_id') == task.created_by or session.get('role') in ('super_admin','dept_admin')) %}
+  <form method="post" action="{{ url_for('tasks.task_to_memo', task_id=task.id) }}" style="display:inline;">
+    <button type="submit" class="btn btn-lg">{{ icon('memo') }} 转为备忘</button>
+  </form>
+  {% endif %}
+
+  {% if session.get('role') in ('super_admin','dept_admin') %}
+  <form method="post" action="{{ url_for('tasks.delete_task', task_id=task.id) }}" style="display:inline;" onsubmit="return confirm('确认删除该任务？此操作不可恢复。');">
+    <button type="submit" class="btn btn-danger btn-lg">{{ icon('trash') }} 删除</button>
+  </form>
+  {% endif %}
+
+  <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-lg" style="margin-left:auto;">← 返回列表</a>
+</div>
+
+{% if transfers|length>0 %}
+<div class="card" style="margin-top:24px;">
+  <div class="card-header"><div class="card-title">流转记录</div></div>
+  <div class="card-body" style="padding:16px;">
+    <div class="timeline">
+      {% for t in transfers %}
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:{% if t.status=='approved' %}#059669{% elif t.status=='rejected' %}#dc2626{% else %}#2563eb{% endif %};"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">
+            {% if t.status=='pending' %}<span class="badge badge-warning">待审批</span>
+            {% elif t.status=='approved' %}<span class="badge badge-success">已通过</span>
+            {% elif t.status=='rejected' %}<span class="badge badge-danger">已驳回</span>
+            {% endif %}
+            {{ t.from_user.real_name if t.from_user else '-' }} → {{ t.to_user.real_name if t.to_user else '-' }}
+          </div>
+          {% if t.reason %}<div style="font-size:13px;color:#64748b;margin-top:6px;">原因：{{ t.reason }}</div>{% endif %}
+          {% if t.review_comment %}<div style="font-size:13px;color:#059669;margin-top:6px;">审批意见：{{ t.review_comment }}</div>{% endif %}
+          <div class="timeline-time">{{ t.created_at.strftime('%Y-%m-%d %H:%M') if t.created_at else '' }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if transfers and transfers[0].status == 'pending' and session.get('role') in ('super_admin','dept_admin') %}
+<div class="card" style="margin-top:24px;">
+  <div class="card-header"><div class="card-title">审批流转</div></div>
+  <div class="card-body" style="padding:16px;">
+    <form method="post" action="{{ url_for('tasks.review_transfer', transfer_id=transfers[0].id) }}">
+      <div class="form-group"><textarea name="comment" class="form-textarea" placeholder="审批意见（可选）" rows="3"></textarea></div>
+      <div style="display:flex;gap:12px;">
+        <button type="submit" class="btn btn-success btn-lg" onclick="this.form.action.value='approve';">{{ icon('progress') }} 通过</button>
+        <button type="submit" class="btn btn-danger btn-lg" onclick="this.form.action.value='reject';">驳回</button>
+      </div>
+      <input type="hidden" name="action" value="approve">
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div id="reassignModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:12px;width:420px;max-width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
+      <h3 style="margin:0;font-size:18px;color:#0f172a;">{{ icon('user-key') }} 强制分配任务</h3>
+      <button type="button" onclick="closeReassignModal()" style="background:none;border:none;font-size:20px;color:#64748b;cursor:pointer;">✕</button>
+    </div>
+    <form id="reassignForm" method="post" action="{{ url_for('tasks.reassign_task', task_id=task.id) }}" style="padding:20px 24px;">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:13px;font-weight:500;color:#334155;margin-bottom:6px;">当前任务</label>
+        <div style="padding:10px 12px;background:#f8fafc;border-radius:6px;font-size:14px;color:#0f172a;">{{ task.title }}</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:13px;font-weight:500;color:#334155;margin-bottom:6px;">当前负责人</label>
+        <div style="padding:10px 12px;background:#f8fafc;border-radius:6px;font-size:14px;color:#0f172a;">{{ task.assignee_names }}</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label for="reassignToUser" style="display:block;font-size:13px;font-weight:500;color:#334155;margin-bottom:6px;">分配给 <span style="color:#dc2626;">*</span></label>
+        <select id="reassignToUser" name="to_user_id" required style="width:100%;height:40px;padding:0 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;background:white;">
+          <option value="">请选择用户</option>
+          {% for u in users %}
+          <option value="{{ u.id }}">{{ u.real_name or u.username }} ({{ u.role|role_label }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label for="reassignPassword" style="display:block;font-size:13px;font-weight:500;color:#334155;margin-bottom:6px;">操作人密码确认 <span style="color:#dc2626;">*</span></label>
+        <input type="password" id="reassignPassword" name="password" required placeholder="请输入你的登录密码" style="width:100%;height:40px;padding:0 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;">
+        <p style="margin:6px 0 0;font-size:12px;color:#64748b;">验证通过后将直接变更负责人，无需对方确认</p>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="button" onclick="closeReassignModal()" class="btn" style="height:40px;padding:0 20px;">取消</button>
+        <button type="submit" class="btn btn-warning" style="height:40px;padding:0 20px;">确认强制分配</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openReassignModal() {
+  document.getElementById('reassignModal').style.display = 'flex';
+}
+function closeReassignModal() {
+  document.getElementById('reassignModal').style.display = 'none';
+}
+document.getElementById('reassignModal').addEventListener('click', function(e) {
+  if (e.target === this) closeReassignModal();
+});
+function toggleReadList(btn, id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var open = el.className.indexOf('show') === -1;
+  el.className = open ? 'read-list show' : 'read-list';
+  btn.className = open ? 'read-toggle open' : 'read-toggle';
+}
+</script>
+
+</body>
+</html>

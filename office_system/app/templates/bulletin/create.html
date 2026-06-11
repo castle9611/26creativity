@@ -1,0 +1,618 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>发布内容</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; }
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #64748b;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+.form-card {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 32px;
+}
+.form-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+.editor-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+}
+.editor-toolbar .btn {
+    padding: 4px 10px;
+    font-size: 13px;
+}
+.editor-wrapper {
+    border: 1px solid #e2e8f0;
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+}
+.editor-content {
+    min-height: 300px;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.8;
+    outline: none;
+    overflow-y: auto;
+}
+.editor-content:empty:before {
+    content: attr(data-placeholder);
+    color: #94a3b8;
+}
+.editor-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 12px 0;
+    cursor: pointer;
+}
+.editor-content img:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.editor-content p { margin-bottom: 8px; }
+.editor-content p:last-child { margin-bottom: 0; }
+
+/* Attachment styles */
+.attachment-area {
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    background: #fafafa;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.attachment-area:hover, .attachment-area.dragover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+.attachment-area input[type="file"] { display: none; }
+.attachment-list {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+}
+.attachment-item .remove-btn {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fee2e2;
+    color: #dc2626;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.attachment-item .remove-btn:hover { background: #fecaca; }
+</style>
+</head>
+<body style="padding:24px;background:#f1f5f9;">
+
+<!-- Breadcrumb -->
+<div class="breadcrumb">
+  <a href="{{ url_for('bulletin.index') }}">{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>发布内容</span>
+</div>
+
+<!-- Back Button -->
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('bulletin.index') }}" class="back-btn">← 返回公示首页</a>
+</div>
+
+<div class="form-card">
+  <h3>{{ icon('bulletin') }} 发布新内容</h3>
+
+  <form method="post">
+    <!-- Business Category Selection (direct, no column) -->
+    <div class="form-group">
+      <label class="form-label">
+        选择业务类别 <span style="color:#dc2626;">*</span>
+        {% if categories %}
+        <a href="{{ url_for('settings.task_categories', next=url_for('bulletin.create', _external=True)) }}" style="font-size:12px;font-weight:400;margin-left:8px;color:#2563eb;text-decoration:none;">{{ icon('category') }} 管理类别</a>
+        {% endif %}
+      </label>
+      <div id="categoryPicker" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        {% if categories %}
+          {% for cat in categories %}
+          <label class="category-btn {% if loop.first %}active{% endif %}" style="padding:8px 16px;background:#f1f5f9;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:13px;transition:all 0.2s;" onclick="selectCategory(this)">
+            <input type="radio" name="category_id" value="{{ cat.id }}" {% if loop.first %}checked{% endif %} style="display:none;">
+            <span>{{ icon(cat.icon|icon_id) }}</span>
+            <span>{{ cat.name }}</span>
+          </label>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center;padding:20px;color:#94a3b8;">
+            <div style="margin-bottom:8px;">暂无可用业务类别</div>
+            <a href="{{ url_for('settings.task_categories', next=url_for('bulletin.create', _external=True)) }}" class="btn btn-primary btn-sm">{{ icon('add') }} 去创建业务类别</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">栏目（可选）</label>
+      <select name="column_id" id="bulletinColSelect" class="form-select" style="height:48px;">
+        <option value="">不选择栏目</option>
+        {% for cat in categories %}
+        {% for col in cols_by_cat.get(cat.id, []) %}
+        <option value="{{ col.id }}" data-cat="{{ cat.id }}" style="display:none;">{{ col.name }}</option>
+        {% endfor %}
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">标题 <span style="color:#dc2626;">*</span></label>
+      <input type="text" name="title" class="form-input" placeholder="请输入内容标题" required style="height:48px;font-size:15px;">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">内容</label>
+      <div class="editor-toolbar">
+        <button type="button" class="btn" onclick="formatText('bold')" title="加粗">B</button>
+        <button type="button" class="btn" onclick="formatText('italic')" title="斜体">I</button>
+        <button type="button" class="btn" onclick="formatText('underline')" title="下划线">U</button>
+        <span style="border-left:1px solid #e2e8f0;margin:0 4px;"></span>
+        <button type="button" class="btn" onclick="formatText('insertUnorderedList')" title="无序列表">• 列表</button>
+        <button type="button" class="btn" onclick="formatText('insertOrderedList')" title="有序列表">1. 列表</button>
+        <span style="border-left:1px solid #e2e8f0;margin:0 4px;"></span>
+        <button type="button" class="btn" onclick="insertLink()" title="插入链接">🔗 链接</button>
+        <button type="button" class="btn" onclick="document.getElementById('imageInput').click()" title="插入图片">🖼 图片</button>
+        <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
+      </div>
+      <div class="editor-wrapper">
+        <div id="editorContent" class="editor-content" contenteditable="true" data-placeholder="请输入内容详情..." onpaste="handlePaste(event)"></div>
+      </div>
+      <input type="hidden" name="content" id="hiddenContent">
+    </div>
+
+    <!-- Attachments -->
+    <div class="form-group">
+      <label class="form-label">附件</label>
+      <div class="attachment-area" id="attachmentArea" onclick="document.getElementById('attachmentInput').click()">
+        <div style="font-size:32px;margin-bottom:8px;">{{ icon('attach') }}</div>
+        <div style="color:#64748b;font-size:14px;">点击或拖拽文件到此处上传</div>
+        <div style="color:#94a3b8;font-size:12px;margin-top:4px;">支持任意文件格式，单个文件不超过50MB</div>
+        <input type="file" id="attachmentInput" multiple style="display:none;" onchange="handleAttachmentSelect(this)">
+      </div>
+      <div class="attachment-list" id="attachmentList"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="form-group">
+        <label class="form-label">
+          <input type="checkbox" name="is_pinned" value="1" style="margin-right:6px;"> 置顶显示
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">有效期至</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="date" name="expire_date" id="expireDate" class="form-input" style="height:40px;flex:1;">
+          <select id="quickExpire" class="form-select" style="height:40px;width:100px;" onchange="setQuickExpire(this.value)">
+            <option value="">快捷设置</option>
+            <option value="1week">1周</option>
+            <option value="1month">1月</option>
+            <option value="1year">1年</option>
+            <option value="forever">长期有效</option>
+          </select>
+        </div>
+        <input type="hidden" name="quick_expire" id="quickExpireValue">
+      </div>
+    </div>
+
+    <!-- Link Online Docs/Sheets (collapsible) -->
+    <div class="form-group" style="margin-top:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="var b=document.getElementById('bulLinkBody');var t=document.getElementById('bulLinkToggle');if(b.style.display==='none'){b.style.display='block';t.textContent='收起 ↑'}else{b.style.display='none';t.textContent='展开选择 →'}">
+        <label style="font-size:14px;font-weight:600;cursor:pointer;margin:0;">{{ icon('file') }} 关联在线文档/表格</label>
+        <span id="bulLinkToggle" style="font-size:12px;color:#2563eb;">展开选择 →</span>
+      </div>
+      <div id="bulLinkBody" style="display:none;margin-top:12px;">
+        <div style="font-size:12px;color:#64748b;margin-bottom:10px;">选择已有文档/表格关联到此公示</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:12px;font-weight:600;color:#2563eb;margin-bottom:6px;">📄 在线文档</div>
+          {% if available_docs %}
+          <div style="max-height:120px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:4px;padding:6px;">
+            {% for d in available_docs %}
+            <label style="display:flex;align-items:center;gap:6px;padding:4px 6px;font-size:13px;cursor:pointer;border-radius:4px;">
+              <input type="checkbox" name="linked_doc_ids" value="{{ d.id }}"> {{ d.title[:30] }}
+            </label>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="color:#94a3b8;font-size:12px;">暂无可用文档，<a href="{{ url_for('docs.create_doc') }}" target="_blank">新建</a></div>
+          {% endif %}
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:12px;font-weight:600;color:#059669;margin-bottom:6px;">📊 在线表格</div>
+          {% if available_sheets %}
+          <div style="max-height:120px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:4px;padding:6px;">
+            {% for s in available_sheets %}
+            <label style="display:flex;align-items:center;gap:6px;padding:4px 6px;font-size:13px;cursor:pointer;border-radius:4px;">
+              <input type="checkbox" name="linked_sheet_ids" value="{{ s.id }}"> {{ s.name[:30] }}
+            </label>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="color:#94a3b8;font-size:12px;">暂无可用表格，<a href="{{ url_for('sheets.create_sheet') }}" target="_blank">新建</a></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid #e2e8f0;">
+      <button type="button" class="btn btn-primary btn-lg" onclick="submitForm()">{{ icon('export') }} 发布</button>
+      <a href="{{ url_for('bulletin.index') }}" class="btn btn-lg">取消</a>
+    </div>
+  </form>
+</div>
+
+<script>
+// Category selection visual feedback
+function selectCategory(label) {
+    var picker = document.getElementById('categoryPicker');
+    var labels = picker.querySelectorAll('.category-btn');
+    for (var i = 0; i < labels.length; i++) {
+        labels[i].classList.remove('active');
+        labels[i].style.borderColor = '#e2e8f0';
+        labels[i].style.background = '#f1f5f9';
+    }
+    label.classList.add('active');
+    label.style.borderColor = '#2563eb';
+    label.style.background = '#eff6ff';
+    // Check the radio inside this label
+    var radio = label.querySelector('input[type="radio"]');
+    if (radio) {
+        radio.checked = true;
+        updateBulletinColumnSelect(false);
+    }
+}
+
+function updateBulletinColumnSelect(keepSelection) {
+    var checked = document.querySelector('input[name="category_id"]:checked');
+    var catId = checked ? checked.value : '';
+    var colSelect = document.getElementById('bulletinColSelect');
+    if (!colSelect) return;
+    var selected = keepSelection ? colSelect.value : '';
+    var opts = colSelect.querySelectorAll('option');
+    for (var i = 0; i < opts.length; i++) {
+        if (opts[i].value === '') continue;
+        opts[i].style.display = (!catId || opts[i].dataset.cat === catId) ? '' : 'none';
+    }
+    colSelect.value = selected;
+    if (!keepSelection || (colSelect.selectedIndex >= 0 && colSelect.options[colSelect.selectedIndex].style.display === 'none')) {
+        colSelect.value = '';
+    }
+}
+
+// Quick expire setting
+function setQuickExpire(value) {
+    var expireDateInput = document.getElementById('expireDate');
+    var quickExpireValue = document.getElementById('quickExpireValue');
+    quickExpireValue.value = value;
+
+    if (!value) {
+        expireDateInput.value = '';
+        return;
+    }
+
+    var today = new Date();
+    var futureDate;
+
+    if (value === '1week') {
+        today.setDate(today.getDate() + 7);
+    } else if (value === '1month') {
+        today.setMonth(today.getMonth() + 1);
+    } else if (value === '1year') {
+        today.setFullYear(today.getFullYear() + 1);
+    } else if (value === 'forever') {
+        expireDateInput.value = '';
+        return;
+    }
+
+    var year = today.getFullYear();
+    var month = String(today.getMonth() + 1).padStart(2, '0');
+    var day = String(today.getDate()).padStart(2, '0');
+    expireDateInput.value = year + '-' + month + '-' + day;
+}
+
+// Submit form - copy editor content to hidden field and submit with files
+function submitForm() {
+    var title = document.querySelector('input[name="title"]').value.trim();
+    if (!title) {
+        alert('请填写标题');
+        return;
+    }
+
+    var editor = document.getElementById('editorContent');
+    document.getElementById('hiddenContent').value = editor.innerHTML;
+
+    var form = document.querySelector('.form-card form');
+    var formData = new FormData(form);
+
+    // Add selected files
+    for (var i = 0; i < selectedFiles.length; i++) {
+        formData.append('attachments', selectedFiles[i]);
+    }
+
+    // Add linked docs/sheets
+    var docCbs = document.querySelectorAll('input[name="linked_doc_ids"]:checked');
+    for (var j = 0; j < docCbs.length; j++) formData.append('linked_doc_ids', docCbs[j].value);
+    var sheetCbs = document.querySelectorAll('input[name="linked_sheet_ids"]:checked');
+    for (var k = 0; k < sheetCbs.length; k++) formData.append('linked_sheet_ids', sheetCbs[k].value);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action || window.location.href, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    window.location.href = response.redirect || '{{ url_for("bulletin.index") }}';
+                } else {
+                    alert(response.message || '提交失败，请重试');
+                }
+            } catch (e) {
+                // If not JSON, check for redirect or just go to index
+                window.location.href = '{{ url_for("bulletin.index") }}';
+            }
+        } else {
+            alert('提交失败，请重试');
+        }
+    };
+    xhr.onerror = function() {
+        alert('提交失败，请重试');
+    };
+    xhr.send(formData);
+}
+
+// Format text
+function formatText(command) {
+    document.execCommand(command, false, null);
+    document.getElementById('editorContent').focus();
+}
+
+// Insert link
+function insertLink() {
+    var url = prompt('请输入链接地址：');
+    if (url) {
+        document.execCommand('createLink', false, url);
+    }
+    document.getElementById('editorContent').focus();
+}
+
+// Handle image selection
+function handleImageSelect(input) {
+    if (input.files && input.files[0]) {
+        var file = input.files[0];
+        if (!file.type.startsWith('image/')) {
+            alert('请选择图片文件！');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            alert('图片大小不能超过5MB！');
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('editorContent').focus();
+            document.execCommand('insertImage', false, e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+    input.value = '';
+}
+
+// Handle paste event - convert pasted images to base64
+function handlePaste(e) {
+    var items = e.clipboardData.items;
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            e.preventDefault();
+            var file = items[i].getAsFile();
+            if (file && file.size > 5 * 1024 * 1024) {
+                alert('图片大小不能超过5MB！');
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('editorContent').focus();
+                document.execCommand('insertImage', false, e.target.result);
+            };
+            reader.readAsDataURL(file);
+            return;
+        }
+    }
+}
+
+// Keep editor focused when clicking toolbar buttons
+document.getElementById('editorContent').addEventListener('focus', function() {
+    this.style.borderColor = '#2563eb';
+});
+document.getElementById('editorContent').addEventListener('blur', function() {
+    this.style.borderColor = '#e2e8f0';
+});
+
+// Attachment handling
+var selectedFiles = [];
+
+function handleAttachmentSelect(input) {
+    if (input.files) {
+        for (var i = 0; i < input.files.length; i++) {
+            addAttachmentFile(input.files[i]);
+        }
+    }
+    input.value = '';
+}
+
+function addAttachmentFile(file) {
+    if (file.size > 50 * 1024 * 1024) {
+        alert('文件 "' + file.name + '" 超过50MB限制');
+        return;
+    }
+    selectedFiles.push(file);
+    renderAttachmentList();
+}
+
+function removeAttachment(index) {
+    selectedFiles.splice(index, 1);
+    renderAttachmentList();
+}
+
+function renderAttachmentList() {
+    var list = document.getElementById('attachmentList');
+    list.innerHTML = '';
+    for (var i = 0; i < selectedFiles.length; i++) {
+        (function(idx) {
+            var file = selectedFiles[idx];
+            var size = file.size;
+            var sizeStr = size >= 1024 * 1024 ? (size / 1024 / 1024).toFixed(1) + 'MB' : (size / 1024).toFixed(0) + 'KB';
+            var item = document.createElement('div');
+            item.className = 'attachment-item';
+            item.innerHTML = '<span>附件</span><span style="flex:1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + file.name + '</span><span style="color:#94a3b8;font-size:11px;">' + sizeStr + '</span><button type="button" class="remove-btn" onclick="removeAttachment(' + idx + ')">×</button>';
+            list.appendChild(item);
+        })(i);
+    }
+}
+
+// Drag and drop
+var dropArea = document.getElementById('attachmentArea');
+dropArea.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('dragover');
+});
+dropArea.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+});
+dropArea.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+    var files = e.dataTransfer.files;
+    for (var i = 0; i < files.length; i++) {
+        addAttachmentFile(files[i]);
+    }
+});
+
+// Override form submit to include files
+document.querySelector('.form-card form').addEventListener('submit', function(e) {
+    var editor = document.getElementById('editorContent');
+    document.getElementById('hiddenContent').value = editor.innerHTML;
+});
+
+
+// Image resize: click image → 4-corner drag handles
+(function() {
+  var ed = document.getElementById('editorContent') || document.getElementById('editorBox');
+  if (!ed) return;
+  var sel = null, hs = [];
+  function rm() {
+    hs.forEach(function(h) { if (h.parentNode) h.parentNode.removeChild(h); });
+    hs = []; if (sel) { sel.style.outline = ''; sel = null; }
+  }
+  function mkH(d) {
+    var h = document.createElement('div');
+    h.style.cssText = 'position:fixed;width:10px;height:10px;border:2px solid #2563eb;background:white;z-index:9999;cursor:se-resize;margin:-5px 0 0 -5px;';
+    var sx, sy, sw, sh;
+    h.addEventListener('mousedown', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      sx = e.clientX; sy = e.clientY; sw = sel.offsetWidth; sh = sel.offsetHeight;
+      function mm(ev) {
+        var dx = ev.clientX - sx, dy = ev.clientY - sy, nw = sw, nh = sh;
+        if (d[0]) nw = Math.max(50, d[0] > 0 ? sw + dx : sw - dx);
+        if (d[1]) nh = Math.max(30, d[1] > 0 ? sh + dy : sh - dy);
+        sel.style.width = nw + 'px'; sel.style.height = nh + 'px';
+        pos();
+      }
+      function mu() { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); }
+      document.addEventListener('mousemove', mm);
+      document.addEventListener('mouseup', mu);
+    });
+    return h;
+  }
+  function pos() {
+    if (!sel) return;
+    var r = sel.getBoundingClientRect();
+    var dd = [[-1,-1],[1,-1],[1,1],[-1,1]];
+    dd.forEach(function(d, i) {
+      hs[i].style.left = (d[0] < 0 ? r.left : r.left + r.width) + 'px';
+      hs[i].style.top = (d[1] < 0 ? r.top : r.top + r.height) + 'px';
+    });
+  }
+  ed.addEventListener('click', function(e) {
+    if (e.target.tagName === 'IMG') {
+      e.stopPropagation(); rm();
+      sel = e.target; sel.style.outline = '2px dashed #2563eb'; sel.style.outlineOffset = '2px';
+      var dd = [[-1,-1],[1,-1],[1,1],[-1,1]];
+      for (var i = 0; i < 4; i++) { var h = mkH(dd[i]); document.body.appendChild(h); hs.push(h); }
+      pos();
+    } else { rm(); }
+  });
+  document.addEventListener('click', function(e) { if (hs.indexOf(e.target) < 0 && e.target !== sel) rm(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') rm(); });
+  window.addEventListener('scroll', pos);
+  window.addEventListener('resize', pos);
+})();
+
+updateBulletinColumnSelect(false);
+
+</script>
+
+</body>
+</html>

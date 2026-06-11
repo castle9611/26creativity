@@ -1,0 +1,73 @@
+﻿<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>{{ doc.title }} - 版本历史</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background: #f1f5f9; padding: 24px; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb a { color: #64748b; text-decoration: none; }
+.breadcrumb a:hover { color: #2563eb; }
+.breadcrumb-sep { color: #cbd5e1; }
+.version-item { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; }
+.version-item:last-child { border-bottom: none; }
+.version-num { width: 40px; height: 40px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.version-info { flex: 1; }
+.version-meta { font-size: 13px; color: #64748b; }
+.version-meta strong { color: #0f172a; }
+.version-actions { flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <span class="breadcrumb-sep">›</span>
+  <a href="{{ url_for('docs.list_docs') }}">在线文档</a>
+  <span class="breadcrumb-sep">›</span>
+  <a href="{{ url_for('docs.view_doc', doc_id=doc.id) }}">{{ doc.title|truncate(20) }}</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>版本历史</span>
+</div>
+
+<div class="page-header">
+  <div>
+    <h2 class="page-title">{{ icon('file') }} {{ doc.title }} - 版本历史</h2>
+    <p class="page-subtitle">共 {{ doc_versions|length }} 个版本</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('docs.view_doc', doc_id=doc.id) }}" class="btn">← 返回文档</a>
+  </div>
+</div>
+
+<div class="card card-nopad">
+  {% if doc_versions %}
+  {% for v in doc_versions %}
+  <div class="version-item">
+    <div class="version-num">v{{ v.version_num }}</div>
+    <div class="version-info">
+      <div style="font-weight:600;color:#0f172a;">{{ v.change_summary or '更新' }}</div>
+      <div class="version-meta"><strong>{{ users_dict.get(v.created_by,'') }}</strong> · {{ v.created_at.strftime('%Y-%m-%d %H:%M') if v.created_at else '' }}</div>
+    </div>
+    <div class="version-actions">
+      {% if session.get('role') in ('super_admin','dept_admin') and v.version_num > 1 %}
+      <form method="post" action="{{ url_for('docs.restore_version', doc_id=doc.id, version_id=v.id) }}" style="display:inline;" onsubmit="return confirm('确认回退到 v{{ v.version_num }}？当前内容将先自动保存为新版本。');">
+        <button type="submit" class="btn btn-sm btn-warning">↩ 回退</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div style="padding:60px;text-align:center;color:#94a3b8;">
+    <div style="font-size:48px;margin-bottom:12px;">{{ icon('file') }}</div>
+    <div>暂无版本记录</div>
+  </div>
+  {% endif %}
+</div>
+
+</body>
+</html>
+

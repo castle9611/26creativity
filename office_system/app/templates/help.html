@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><title>帮助与维护</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background:#eef2f7; padding:24px; color:#334155; }
+.help-shell { max-width:1100px; margin:0 auto; }
+.breadcrumb { display:flex; gap:8px; font-size:13px; color:#64748b; margin-bottom:16px; }
+.breadcrumb a { color:#64748b; text-decoration:none; }
+.hero { background:linear-gradient(135deg,#0f766e,#2563eb); color:white; border-radius:16px; padding:28px 32px; margin-bottom:18px; box-shadow:0 16px 36px rgba(15,23,42,.16); }
+.hero h1 { margin:0 0 8px; font-size:26px; }
+.hero p { margin:0; opacity:.9; line-height:1.8; }
+.grid { display:grid; grid-template-columns:240px 1fr; gap:18px; align-items:start; }
+.toc { position:sticky; top:18px; background:white; border:1px solid #e2e8f0; border-radius:12px; padding:14px; }
+.toc a { display:block; padding:9px 10px; color:#475569; text-decoration:none; border-radius:8px; font-size:14px; }
+.toc a:hover { background:#eff6ff; color:#1d4ed8; }
+.doc { background:white; border:1px solid #e2e8f0; border-radius:12px; padding:24px 28px; }
+.doc section { padding:8px 0 22px; border-bottom:1px solid #eef2f7; }
+.doc section:last-child { border-bottom:0; }
+.doc h2 { font-size:20px; color:#0f172a; margin:0 0 14px; }
+.doc h3 { font-size:15px; color:#0f766e; margin:16px 0 8px; }
+.doc p,.doc li { font-size:14px; line-height:1.8; }
+.doc ul { padding-left:22px; }
+.doc table { width:100%; border-collapse:collapse; margin:12px 0; font-size:14px; }
+.doc th,.doc td { border:1px solid #e2e8f0; padding:9px 10px; text-align:left; }
+.doc th { background:#f8fafc; color:#0f172a; }
+code { background:#f1f5f9; padding:2px 5px; border-radius:4px; color:#0f172a; }
+pre { background:#0f172a; color:#e2e8f0; border-radius:10px; padding:12px 14px; overflow:auto; }
+.tip { background:#f0fdfa; border:1px solid #99f6e4; color:#115e59; border-radius:10px; padding:12px 14px; margin:12px 0; }
+@media (max-width:900px) { .grid { grid-template-columns:1fr; } .toc { position:static; } }
+</style>
+</head>
+<body>
+<div class="help-shell">
+  <div class="breadcrumb">
+    <a href="{{ url_for('index_bp.workbench') }}">工作台</a><span>›</span><span>帮助与维护</span>
+  </div>
+
+  <div class="hero">
+    <h1>系统帮助与维护手册</h1>
+    <p>这里集中说明日常使用、权限规则、在线表格、后台启动、开机自启、备份恢复和 Win7 离线部署维护方法。</p>
+  </div>
+
+  <div class="grid">
+    <nav class="toc">
+      <a href="#login">登录与角色</a>
+      <a href="#daily">日常功能</a>
+      <a href="#sheets">在线表格</a>
+      <a href="#files">文件与附件</a>
+      <a href="#runtime">启动与自启</a>
+      <a href="#backup">备份与恢复</a>
+      <a href="#deploy">离线部署</a>
+      <a href="#maintain">目录维护</a>
+      <a href="#faq">故障排查</a>
+    </nav>
+
+    <main class="doc">
+      <section id="login">
+        <h2>一、登录与角色</h2>
+        <p>浏览器访问 <code>http://127.0.0.1:5000</code>。局域网访问时，使用启动窗口显示的 LAN 地址。</p>
+        <table>
+          <tr><th>角色</th><th>默认账号</th><th>权限说明</th></tr>
+          <tr><td>超级管理员</td><td><code>admin / admin123</code></td><td>用户、系统配置、栏目、日志和全部数据管理</td></tr>
+          <tr><td>监区管理员</td><td><code>dept_admin / admin123</code></td><td>本部门任务、公示、文件、表格和任务流转审批</td></tr>
+          <tr><td>普通用户</td><td><code>user / admin123</code></td><td>查看公示、处理任务、维护备忘、上传下载文件</td></tr>
+        </table>
+        <div class="tip">首次部署后建议立即修改默认密码。</div>
+      </section>
+
+      <section id="daily">
+        <h2>二、日常功能</h2>
+        <h3>工作台</h3>
+        <ul>
+          <li>查看待处理任务、最新公示、备忘和快捷入口。</li>
+          <li>左侧导航支持多标签页，可同时打开多个功能页面。</li>
+        </ul>
+        <h3>任务管理</h3>
+        <ul>
+          <li>管理员创建任务，指定负责人、部门、优先级和截止日期。</li>
+          <li>负责人可接收、处理、完成任务或申请交接。</li>
+          <li>任务交接需管理员审批。</li>
+        </ul>
+        <h3>信息公示与备忘</h3>
+        <ul>
+          <li>公示采用“分类/栏目/内容”结构，支持置顶、有效期和富文本。</li>
+          <li>个人备忘仅本人可见，公共备忘可按角色设置可见范围。</li>
+        </ul>
+      </section>
+
+      <section id="sheets">
+        <h2>三、在线表格</h2>
+        <ul>
+          <li>点击左侧“在线表格”进入列表，管理员可新建表格。</li>
+          <li>编辑页支持自动保存，也可按 <code>Ctrl+S</code> 手动保存。</li>
+          <li>表格可发布、预览、导出 XLS，并保留版本历史。</li>
+          <li>可从 WPS/Excel 复制一个单元格区域，在表格中选中起始单元格后直接粘贴，系统会按行列写入。</li>
+          <li>表格插件已启用中文语言包，菜单和右键操作默认显示中文。</li>
+        </ul>
+      </section>
+
+      <section id="files">
+        <h2>四、文件与附件</h2>
+        <ul>
+          <li>支持文档、图片、压缩包、音视频等常见格式。</li>
+          <li>单文件限制为 50MB。</li>
+          <li>文件可关联任务、公示或备忘。</li>
+          <li>上传文件会保留原始文件名和后缀，下载时仍使用原文件名。</li>
+          <li>在线文档编辑和预览采用 A4 页面视图，支持从 WPS/Word 粘贴文字、表格和常见格式。</li>
+          <li>在线文档默认下载为 DOC 文件，并尽量让 Word/WPS 按页面/打印视图打开；在线表格默认下载为 XLS 文件。</li>
+          <li>文件预览页支持将 DOCX、XLSX、CSV、TXT 等文件导入为在线文档或在线表格；老式二进制 DOC/XLS 建议先用 WPS 另存为 DOCX/XLSX。</li>
+        </ul>
+      </section>
+
+      <section id="runtime">
+        <h2>五、启动、后台运行与开机自启</h2>
+        <table>
+          <tr><th>操作</th><th>脚本</th></tr>
+          <tr><td>前台启动</td><td><code>start.bat</code></td></tr>
+          <tr><td>后台启动</td><td><code>start_hidden.bat</code></td></tr>
+          <tr><td>查看状态</td><td><code>status.bat</code></td></tr>
+          <tr><td>停止服务</td><td><code>stop.bat</code></td></tr>
+          <tr><td>启用开机自启</td><td><code>enable_autostart.bat</code></td></tr>
+          <tr><td>取消开机自启</td><td><code>disable_autostart.bat</code></td></tr>
+        </table>
+        <p>后台运行日志位于 <code>logs/server.log</code> 和 <code>logs/server-error.log</code>。</p>
+      </section>
+
+      <section id="backup">
+        <h2>六、备份与恢复</h2>
+        <pre>python\python.exe backup.py backup
+python\python.exe backup.py list
+python\python.exe backup.py restore --file 备份文件名.db</pre>
+        <p>数据库位于 <code>data/database.db</code>，上传文件位于 <code>data/uploads/</code>。迁移或重装前务必备份。</p>
+      </section>
+
+      <section id="deploy">
+        <h2>七、Win7 离线部署</h2>
+        <ul>
+          <li>目标系统建议为 Windows 7 SP1 64 位。</li>
+          <li>如底层模块导入失败，右键管理员运行 <code>install_win7_runtime.bat</code>，必要时重启。</li>
+          <li>生成发布包使用 <code>python\python.exe make_release.py</code>。</li>
+          <li>生成全新数据包使用 <code>python\python.exe make_release.py --fresh-data</code>。</li>
+        </ul>
+      </section>
+
+      <section id="maintain">
+        <h2>八、目录维护约定</h2>
+        <table>
+          <tr><th>目录/文件</th><th>说明</th></tr>
+          <tr><td><code>app/</code></td><td>业务代码、模板和静态资源</td></tr>
+          <tr><td><code>python/</code></td><td>便携 Python 和依赖，不建议随意升级</td></tr>
+          <tr><td><code>data/</code></td><td>数据库和上传文件</td></tr>
+          <tr><td><code>runtime_install/</code></td><td>Win7 离线运行库安装器</td></tr>
+          <tr><td><code>Deprecated/</code></td><td>旧资料、临时文件、开发辅助内容，不进入发布包</td></tr>
+        </table>
+      </section>
+
+      <section id="faq">
+        <h2>九、故障排查</h2>
+        <ul>
+          <li>无法登录：确认账号密码正确，且账号未被禁用。</li>
+          <li>服务打不开：运行 <code>status.bat</code> 查看 5000 端口是否监听。</li>
+          <li>端口占用：运行 <code>stop.bat</code> 后再启动。</li>
+          <li>运行库错误：运行 <code>diagnose.bat</code>，并查看 FAIL 信息。</li>
+          <li>后台启动失败：查看 <code>logs/server-error.log</code>。</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+</div>
+</body>
+</html>
+

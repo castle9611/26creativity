@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>{% if is_edit %}编辑文档{% else %}新建文档{% endif %} - 在线文档</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { background:#e5e7eb; padding:24px; }
+.breadcrumb { display:flex; align-items:center; gap:8px; font-size:13px; color:#64748b; max-width:980px; margin:0 auto 16px; }
+.breadcrumb a { color:#64748b; text-decoration:none; }
+.breadcrumb a:hover { color:#2563eb; }
+.breadcrumb-sep { color:#cbd5e1; }
+.form-card { max-width:980px; margin:0 auto; background:white; border-radius:10px; border:1px solid #dbe3ef; padding:22px; }
+.form-card h3 { font-size:18px; font-weight:600; color:#0f172a; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #e2e8f0; }
+.editor-toolbar { display:flex; gap:6px; padding:8px 10px; background:#f8fafc; border:1px solid #dbe3ef; border-radius:8px; flex-wrap:wrap; margin-bottom:14px; }
+.editor-toolbar .btn { padding:4px 10px; font-size:13px; border-radius:4px; }
+.page-stage { background:#cbd5e1; padding:24px 0; border-radius:10px; border:1px solid #b8c4d4; overflow:auto; }
+.editor-content {
+  width:794px; min-height:1123px; margin:0 auto; padding:72px 72px;
+  background:#fff; box-shadow:0 10px 30px rgba(15,23,42,.22);
+  font-family:SimSun,"Microsoft YaHei",serif; font-size:15px; line-height:1.9;
+  color:#111827; outline:none; overflow:visible;
+}
+.editor-content:empty:before { content:attr(data-placeholder); color:#94a3b8; }
+.editor-content img { max-width:100%; height:auto; margin:10px 0; }
+.editor-content p { margin:0 0 10px; }
+.editor-content table { border-collapse:collapse; width:100%; margin:12px 0; }
+.editor-content table td,.editor-content table th { border:1px solid #666; padding:6px 8px; min-width:48px; }
+.editor-content ul,.editor-content ol { padding-left:28px; margin:8px 0; }
+.form-row { display:flex; gap:16px; flex-wrap:wrap; }
+.form-row .form-group { flex:1; min-width:140px; }
+@media (max-width:900px) {
+  .editor-content { width:100%; min-height:760px; padding:32px 24px; }
+  .page-stage { padding:12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="breadcrumb">
+  <a href="{{ url_for('docs.list_docs') }}">在线文档</a>
+  <span class="breadcrumb-sep">›</span>
+  <span>{% if is_edit %}编辑文档{% else %}新建文档{% endif %}</span>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}{% for c,m in messages %}
+<div class="alert alert-{{ c }}" style="max-width:980px;margin:0 auto 16px;">{{ m }}</div>
+{% endfor %}{% endif %}
+{% endwith %}
+
+<div class="form-card">
+  <h3>{% if is_edit %}{{ icon('edit') }} {{ doc.title }}{% else %}{{ icon('file') }} 新建文档{% endif %}</h3>
+
+  <form method="post" onsubmit="prepareDocContent();">
+    <div class="form-group">
+      <label class="form-label">文档标题 <span style="color:#dc2626;">*</span></label>
+      <input type="text" name="title" id="docTitle" class="form-input" placeholder="请输入文档标题" required style="height:44px;font-size:15px;" value="{{ doc.title if is_edit and doc else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">内容 <span style="color:#64748b;font-weight:400;">可从 WPS/Word 直接复制粘贴</span></label>
+      <div class="editor-toolbar">
+        <button type="button" class="btn" onclick="execCmd('bold')" title="加粗"><b>B</b></button>
+        <button type="button" class="btn" onclick="execCmd('italic')" title="斜体"><i>I</i></button>
+        <button type="button" class="btn" onclick="execCmd('underline')" title="下划线"><u>U</u></button>
+        <span style="border-left:1px solid #e2e8f0;margin:0 4px;"></span>
+        <button type="button" class="btn" onclick="execCmd('formatBlock', 'h2')" title="标题">H</button>
+        <button type="button" class="btn" onclick="execCmd('formatBlock', 'p')" title="正文">P</button>
+        <span style="border-left:1px solid #e2e8f0;margin:0 4px;"></span>
+        <button type="button" class="btn" onclick="execCmd('insertUnorderedList')" title="无序列表">•</button>
+        <button type="button" class="btn" onclick="execCmd('insertOrderedList')" title="有序列表">1.</button>
+        <span style="border-left:1px solid #e2e8f0;margin:0 4px;"></span>
+        <button type="button" class="btn" onclick="insertUrl()" title="插入链接">链接</button>
+        <button type="button" class="btn" onclick="document.getElementById('imgInput').click()" title="插入图片">图片</button>
+        <input type="file" id="imgInput" accept="image/*" style="display:none;" onchange="insertImage(this)">
+      </div>
+      <div class="page-stage">
+        <div id="editorBox" contenteditable="true" class="editor-content" data-placeholder="请输入文档内容...">{% if is_edit and doc %}{{ doc_content|safe }}{% endif %}</div>
+      </div>
+      <input type="hidden" name="content" id="contentField">
+    </div>
+
+    <div class="form-row" style="margin-top:16px;">
+      <div class="form-group">
+        <label class="form-label">状态</label>
+        <select name="status" class="form-select" style="height:44px;">
+          <option value="draft" {% if is_edit and doc.status=='draft' %}selected{% endif %}>草稿</option>
+          <option value="published" {% if is_edit and doc.status=='published' %}selected{% endif %}>发布</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">查看权限</label>
+        <select name="view_roles" class="form-select" style="height:44px;">
+          <option value="all" {% if is_edit and doc.view_roles=='all' %}selected{% endif %}>全部</option>
+          <option value='["super_admin","dept_admin"]' {% if is_edit and doc.view_roles=='["super_admin","dept_admin"]' %}selected{% endif %}>管理员和超管</option>
+          <option value='["super_admin"]' {% if is_edit and doc.view_roles=='["super_admin"]' %}selected{% endif %}>超管</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">编辑权限</label>
+        <select name="edit_roles" class="form-select" style="height:44px;">
+          <option value='["super_admin","dept_admin"]' {% if is_edit and doc.edit_roles=='["super_admin","dept_admin"]' %}selected{% endif %}>管理员和超管</option>
+          <option value='["super_admin"]' {% if is_edit and doc.edit_roles=='["super_admin"]' %}selected{% endif %}>超管</option>
+          <option value="all" {% if is_edit and doc.edit_roles=='all' %}selected{% endif %}>全部人员</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0;">
+      <button type="submit" class="btn btn-primary btn-lg">{{ icon('save') }} 保存</button>
+      <a href="{{ url_for('docs.list_docs') }}" class="btn btn-lg">取消</a>
+    </div>
+  </form>
+</div>
+
+<script>
+function execCmd(cmd, val) {
+  document.execCommand(cmd, false, val || null);
+  document.getElementById('editorBox').focus();
+}
+function insertUrl() {
+  var url = prompt('链接地址：');
+  if (url) execCmd('createLink', url);
+}
+function insertImage(input) {
+  if (input.files && input.files[0]) insertImageFile(input.files[0]);
+  input.value = '';
+}
+function insertImageFile(file) {
+  if (!file || !file.type || file.type.indexOf('image/') !== 0) { alert('请选择图片'); return; }
+  if (file.size > 5 * 1024 * 1024) { alert('图片不能超过5MB'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var maxWidth = 620;
+      var width = Math.min(img.width || maxWidth, maxWidth);
+      insertHtml('<img src="' + e.target.result + '" style="max-width:100%;width:' + width + 'px;height:auto;">');
+    };
+    img.onerror = function() {
+      insertHtml('<img src="' + e.target.result + '" style="max-width:100%;width:620px;height:auto;">');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function insertHtml(html) {
+  document.getElementById('editorBox').focus();
+  document.execCommand('insertHTML', false, html);
+}
+function textToHtml(text) {
+  return String(text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .split(/\r?\n/).map(function(line) { return line ? '<p>' + line + '</p>' : '<p><br></p>'; }).join('');
+}
+function sanitizeOfficeHtml(html) {
+  var div = document.createElement('div');
+  div.innerHTML = html || '';
+  var comments = div.innerHTML.replace(/<!--[\s\S]*?-->/g, '');
+  div.innerHTML = comments;
+
+  var allowed = {
+    P:1, BR:1, DIV:1, SPAN:1, B:1, STRONG:1, I:1, EM:1, U:1, S:1,
+    TABLE:1, THEAD:1, TBODY:1, TR:1, TD:1, TH:1, COLGROUP:1, COL:1,
+    UL:1, OL:1, LI:1, H1:1, H2:1, H3:1, H4:1, IMG:1, A:1, PRE:1
+  };
+  var keepStyle = /^(text-align|font-weight|font-style|text-decoration|color|background-color|font-size|font-family|border|border-collapse|width|height|vertical-align|padding|margin-left)$/i;
+
+  function clean(node) {
+    var children = Array.prototype.slice.call(node.childNodes);
+    for (var i = 0; i < children.length; i++) {
+      var child = children[i];
+      if (child.nodeType === 1) {
+        var tag = child.tagName;
+        if (tag.indexOf(':') >= 0 || !allowed[tag]) {
+          while (child.firstChild) node.insertBefore(child.firstChild, child);
+          node.removeChild(child);
+          continue;
+        }
+        var attrs = Array.prototype.slice.call(child.attributes);
+        for (var j = 0; j < attrs.length; j++) {
+          var name = attrs[j].name;
+          var value = attrs[j].value;
+          if (name === 'style') {
+            var parts = value.split(';');
+            var safe = [];
+            for (var k = 0; k < parts.length; k++) {
+              var p = parts[k].split(':');
+              if (p.length >= 2 && keepStyle.test(p[0].replace(/^\s+|\s+$/g, ''))) safe.push(parts[k]);
+            }
+            if (safe.length) child.setAttribute('style', safe.join(';'));
+            else child.removeAttribute('style');
+          } else if (tag === 'A' && name === 'href') {
+            if (!/^https?:|^mailto:|^#/.test(value)) child.removeAttribute(name);
+          } else if (tag === 'IMG' && name === 'src') {
+            if (!/^data:image\//.test(value) && !/^https?:/.test(value) && !/^\/static\//.test(value) && !/^static\//.test(value) && !/^app\/static\//.test(value)) child.removeAttribute(name);
+          } else if (name !== 'colspan' && name !== 'rowspan') {
+            child.removeAttribute(name);
+          }
+        }
+        clean(child);
+      }
+    }
+  }
+  clean(div);
+  normalizeEditorImages(div);
+  return div.innerHTML;
+}
+
+function normalizeEditorImages(root) {
+  var box = root || document.getElementById('editorBox');
+  var imgs = box.querySelectorAll ? box.querySelectorAll('img') : [];
+  for (var i = 0; i < imgs.length; i++) {
+    imgs[i].removeAttribute('width');
+    imgs[i].removeAttribute('height');
+    imgs[i].style.maxWidth = '100%';
+    if (!imgs[i].style.width) imgs[i].style.width = '620px';
+    var widthValue = parseInt(imgs[i].style.width, 10);
+    if (widthValue && widthValue > 620) imgs[i].style.width = '620px';
+    imgs[i].style.height = 'auto';
+  }
+}
+
+function prepareDocContent() {
+  normalizeEditorImages();
+  document.getElementById('contentField').value = document.getElementById('editorBox').innerHTML;
+}
+
+document.getElementById('editorBox').addEventListener('paste', function(e) {
+  var data = e.clipboardData || window.clipboardData;
+  if (!data) return;
+
+  var items = data.items || [];
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type && items[i].type.indexOf('image') !== -1) {
+      e.preventDefault();
+      insertImageFile(items[i].getAsFile());
+      return;
+    }
+  }
+
+  var html = data.getData ? data.getData('text/html') : '';
+  var text = data.getData ? data.getData('text/plain') : '';
+  if (html) {
+    e.preventDefault();
+    insertHtml(sanitizeOfficeHtml(html));
+  } else if (text) {
+    e.preventDefault();
+    insertHtml(textToHtml(text));
+  }
+});
+
+// Image resize: click image, then drag the four handles.
+(function() {
+  var ed = document.getElementById('editorBox');
+  var selected = null;
+  var handles = [];
+  function clearHandles() {
+    for (var i = 0; i < handles.length; i++) {
+      if (handles[i].parentNode) handles[i].parentNode.removeChild(handles[i]);
+    }
+    handles = [];
+    if (selected) selected.style.outline = '';
+    selected = null;
+  }
+  function makeHandle(dir) {
+    var h = document.createElement('div');
+    h.style.cssText = 'position:fixed;width:10px;height:10px;border:2px solid #2563eb;background:white;z-index:9999;cursor:se-resize;margin:-5px 0 0 -5px;';
+    var sx, sy, sw, sh;
+    h.onmousedown = function(ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      sx = ev.clientX; sy = ev.clientY; sw = selected.offsetWidth; sh = selected.offsetHeight;
+      document.onmousemove = function(e) {
+        var nw = Math.max(50, dir[0] > 0 ? sw + e.clientX - sx : sw - (e.clientX - sx));
+        var nh = Math.max(30, dir[1] > 0 ? sh + e.clientY - sy : sh - (e.clientY - sy));
+        selected.style.width = nw + 'px';
+        selected.style.height = nh + 'px';
+        positionHandles();
+      };
+      document.onmouseup = function() { document.onmousemove = null; document.onmouseup = null; };
+    };
+    return h;
+  }
+  function positionHandles() {
+    if (!selected) return;
+    var r = selected.getBoundingClientRect();
+    var dirs = [[-1,-1],[1,-1],[1,1],[-1,1]];
+    for (var i = 0; i < handles.length; i++) {
+      handles[i].style.left = (dirs[i][0] < 0 ? r.left : r.left + r.width) + 'px';
+      handles[i].style.top = (dirs[i][1] < 0 ? r.top : r.top + r.height) + 'px';
+    }
+  }
+  ed.onclick = function(e) {
+    if (e.target.tagName === 'IMG') {
+      e.stopPropagation();
+      clearHandles();
+      selected = e.target;
+      selected.style.outline = '2px dashed #2563eb';
+      selected.style.outlineOffset = '2px';
+      var dirs = [[-1,-1],[1,-1],[1,1],[-1,1]];
+      for (var i = 0; i < dirs.length; i++) {
+        var h = makeHandle(dirs[i]);
+        document.body.appendChild(h);
+        handles.push(h);
+      }
+      positionHandles();
+    } else {
+      clearHandles();
+    }
+  };
+  document.addEventListener('click', function(e) {
+    if (handles.indexOf(e.target) < 0 && e.target !== selected) clearHandles();
+  });
+  window.addEventListener('scroll', positionHandles);
+  window.addEventListener('resize', positionHandles);
+})();
+</script>
+</body>
+</html>
