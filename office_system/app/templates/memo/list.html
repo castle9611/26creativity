@@ -255,7 +255,8 @@ body { background: #f1f5f9; }
 @media (max-width: 768px) { .memo-card { float: none; width: 100%; margin-right: 0; } }
 </style>
 </head>
-<body style="padding:24px;background:#f1f5f9;">
+<body class="oa-list-page">
+<div class="oa-list-shell">
 
 <!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -266,32 +267,27 @@ body { background: #f1f5f9; }
 {% endif %}
 {% endwith %}
 
-<!-- Breadcrumb -->
-<div class="breadcrumb">
-  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
-  <span class="breadcrumb-sep">›</span>
-  <span>工作备忘</span>
-</div>
-
-<!-- Back Button -->
-<div style="margin-bottom:16px;">
-  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
-</div>
-
-<!-- Page Header -->
-<div class="page-header">
-  <div>
-    <h2 class="page-title">工作备忘</h2>
-    <p class="page-subtitle">记录重要事项，方便随时查看</p>
+<div class="oa-list-head">
+  <div class="oa-list-head-main">
+    <div class="oa-list-crumb">
+      <a href="{{ url_for('index_bp.workbench') }}">← 工作台</a>
+    </div>
+    <div class="oa-list-title">
+      <span class="oa-list-title-icon">{{ icon('memo') }}</span>
+      <div class="oa-list-title-text">
+        <h2>工作备忘</h2>
+        <p>记录重要事项，按类型和分组快速查看</p>
+      </div>
+    </div>
   </div>
-  <div class="page-actions">
+  <div class="oa-list-actions">
     <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary">{{ icon('add') }} 新建备忘</a>
   </div>
 </div>
 
 <!-- Filters -->
-<div class="toolbar">
-  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+<div class="oa-filter-panel">
+  <div class="oa-filter-row">
     <!-- Type Toggle Buttons -->
     <div class="type-toggle">
       <a href="{{ url_for('memo.list_memos', type='all', keyword=keyword, group_id=group_id) }}" class="btn {% if memo_type=='all' %}btn-primary{% endif %}">全部</a>
@@ -299,7 +295,8 @@ body { background: #f1f5f9; }
       <a href="{{ url_for('memo.list_memos', type='public', keyword=keyword, group_id=group_id) }}" class="btn {% if memo_type=='public' %}btn-primary{% endif %}">{{ icon('globe') }} 公共</a>
     </div>
     <!-- Search -->
-    <form method="get" style="display:flex;gap:8px;align-items:center;">
+    <form method="get" class="oa-filter-row">
+      <input type="hidden" name="per_page" value="{{ request.args.get('per_page', 10) }}">
       <input type="hidden" name="type" value="{{ memo_type }}">
       <input type="hidden" name="group_id" value="{{ group_id }}">
       <input type="text" name="keyword" placeholder="搜索标题或内容" value="{{ keyword }}" class="form-input" style="width:180px;">
@@ -311,14 +308,14 @@ body { background: #f1f5f9; }
   </div>
 </div>
 
-<div class="group-panel">
+<div class="group-panel oa-group-panel">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
     <div style="font-size:14px;font-weight:700;color:#0f172a;">备忘分组</div>
-    <a href="{{ url_for('memo.list_memos', type=memo_type, keyword=keyword) }}" class="group-chip {% if not group_id %}active{% endif %}">全部分组</a>
+    <a href="{{ url_for('memo.list_memos', type=memo_type, keyword=keyword) }}" class="group-chip oa-chip {% if not group_id %}active{% endif %}">全部分组</a>
   </div>
   <div style="margin-top:8px;">
     {% for g in groups %}
-    <a href="{{ url_for('memo.list_memos', type=memo_type, keyword=keyword, group_id=g.id) }}" class="group-chip {% if group_id == g.id %}active{% endif %}">
+    <a href="{{ url_for('memo.list_memos', type=memo_type, keyword=keyword, group_id=g.id) }}" class="group-chip oa-chip {% if group_id == g.id %}active{% endif %}">
       {% if g.memo_type == 'public' %}公共{% else %}个人{% endif %} · {{ g.name }}
     </a>
     {% endfor %}
@@ -326,7 +323,7 @@ body { background: #f1f5f9; }
     <span style="font-size:13px;color:#94a3b8;">暂无分组，可以先创建一个。</span>
     {% endif %}
   </div>
-  <form method="post" action="{{ url_for('memo.add_group') }}" class="group-form">
+  <form method="post" action="{{ url_for('memo.add_group') }}" class="group-form oa-filter-row">
     <input type="text" name="name" class="form-input" placeholder="新分组名称" required style="width:180px;">
     <select name="memo_type" class="form-select" style="width:130px;">
       <option value="private">个人分组</option>
@@ -339,7 +336,7 @@ body { background: #f1f5f9; }
 </div>
 
 <!-- Batch Actions Bar -->
-<div id="batchBar" style="display:none;background:#1e293b;color:white;padding:12px 16px;border-radius:10px;margin-bottom:16px;align-items:center;justify-content:space-between;">
+<div id="batchBar" class="oa-batch-bar">
   <div style="display:flex;align-items:center;gap:12px;">
     <span id="batchCount">已选择 0 项</span>
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
@@ -347,7 +344,7 @@ body { background: #f1f5f9; }
     </label>
   </div>
   <div style="display:flex;gap:8px;">
-    <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('archive')">📦 批量归档</button>
+    <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('archive')">{{ icon('archive') }} 批量归档</button>
     <button type="button" class="btn-sm" style="background:#dc2626;border:1px solid #dc2626;color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('delete')">{{ icon('trash') }} 批量删除</button>
     <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="clearSelection()">✕ 取消</button>
   </div>
@@ -355,6 +352,7 @@ body { background: #f1f5f9; }
 
 <div id="memo-list-container">
   {% include 'memo/_list_content.html' %}
+</div>
 </div>
 
 <!-- Memo Detail Modal -->
@@ -422,7 +420,7 @@ function filterMemos(link) {
             filterMemos(this);
         });
     }
-    var searchForm = document.querySelector('.toolbar form');
+    var searchForm = document.querySelector('.oa-filter-panel form');
     if (searchForm) {
         searchForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -574,4 +572,3 @@ function batchOp(action) {
 
 </body>
 </html>
-

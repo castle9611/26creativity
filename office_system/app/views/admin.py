@@ -5,6 +5,7 @@ User management / Tab management / Column management / Shared folders /
 Operation logs / System config.
 """
 import json
+from datetime import datetime
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, flash, session, jsonify)
 from werkzeug.security import generate_password_hash
@@ -607,26 +608,79 @@ def logs():
     page, per_page = get_pagination()
     action = request.args.get('action', '').strip()
     uid = request.args.get('user_id', '', type=int)
+    target_type = request.args.get('target_type', '').strip()
+    keyword = request.args.get('keyword', '').strip()
+    date_from = request.args.get('date_from', '').strip()
+    date_to = request.args.get('date_to', '').strip()
 
     query = OperationLog.query
     if action:
-        query = query.filter(OperationLog.action == action)
+        query = query.filter(OperationLog.action.like('%' + action + '%'))
     if uid:
         query = query.filter(OperationLog.user_id == uid)
+    if target_type:
+        query = query.filter(OperationLog.target_type == target_type)
+    if keyword:
+        like = '%' + keyword + '%'
+        query = query.filter(db.or_(
+            OperationLog.content.like(like),
+            OperationLog.ip_address.like(like),
+            OperationLog.action.like(like),
+            OperationLog.target_type.like(like)
+        ))
+    if date_from:
+        try:
+            query = query.filter(OperationLog.created_at >= datetime.strptime(date_from, '%Y-%m-%d'))
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            query = query.filter(OperationLog.created_at <= datetime.strptime(date_to + ' 23:59:59', '%Y-%m-%d %H:%M:%S'))
+        except ValueError:
+            pass
 
     query = query.order_by(OperationLog.created_at.desc())
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     logs_list = pagination.items
 
     # Build username lookup
-    users_map = {u.id: u.username for u in User.query.all()}
+    users = User.query.order_by(User.username.asc()).all()
+    users_map = {u.id: (u.real_name or u.username) for u in users}
+    actions = [r[0] for r in db.session.query(OperationLog.action).distinct().order_by(OperationLog.action.asc()).all()]
+    target_types = [r[0] for r in db.session.query(OperationLog.target_type).filter(OperationLog.target_type != '').distinct().order_by(OperationLog.target_type.asc()).all()]
 
     return render_template('admin/logs.html',
                            logs=logs_list,
                            pagination=pagination,
                            users_dict=users_map,
+                           users=users,
+                           actions=actions,
+                           target_types=target_types,
                            action=action,
-                           user_id=uid)
+                           user_id=uid,
+                           target_type=target_type,
+                           keyword=keyword,
+                           date_from=date_from,
+                           date_to=date_to)
+
+
+@admin_bp.route('/logs/batch-delete', methods=['POST'])
+@login_required
+@require_super_admin
+def batch_delete_logs():
+    """Batch delete operation logs."""
+    try:
+        ids = json.loads(request.form.get('ids', '[]'))
+    except:
+        return jsonify({'success': False, 'message': '参数错误'}), 400
+
+    ids = [int(i) for i in ids if str(i).isdigit()]
+    if not ids:
+        return jsonify({'success': False, 'message': '请选择日志'}), 400
+
+    count = OperationLog.query.filter(OperationLog.id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({'success': True, 'message': '已删除 {} 条日志'.format(count)})
 
 
 # ==================== System Config ====================

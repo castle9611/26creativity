@@ -196,8 +196,8 @@ def register_blueprints(app):
         ).all()
         selected_id = request.args.get('category_id', type=int)
         active_category = next((c for c in categories if c.id == selected_id), None) if selected_id else None
-        page = request.args.get('page', 1, type=int)
-        per_page = 12
+        from app.utils import get_pagination
+        page, per_page = get_pagination()
 
         titles = {
             'memos': ('公共备忘', 'memo'),

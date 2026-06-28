@@ -132,7 +132,9 @@ def register_context_processors(app):
     """Register Jinja2 context processors and custom filters."""
     icon_aliases = {
         '📋': 'task', '📝': 'memo', '📁': 'folder', '📢': 'bulletin',
-        '📊': 'chart', '📌': 'pin', '⚡': 'gen-light', '👥': 'users',
+        '📄': 'file', '📚': 'cat-education', '📊': 'chart', '📌': 'pin',
+        '🔍': 'cat-prison-admin', '🚨': 'cat-security',
+        '⚡': 'gen-light', '👥': 'users',
         '⚖': 'cat-discipline', '🔒': 'lock', '📂': 'archive',
         '👮': 'cat-police', '🚔': 'cat-patrol', '🛡': 'cat-security',
         '⛓': 'cat-handcuff', '🧾': 'gen-report', '✉': 'gen-mail',

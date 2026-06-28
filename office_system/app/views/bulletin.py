@@ -631,9 +631,25 @@ def archive(bulletin_id):
     db.session.commit()
     add_log('archive_bulletin', 'bulletin', bulletin.id, 'Archived: ' + bulletin.title)
     flash('内容已归档', 'success')
+    if request.args.get('next') == 'manage':
+        return redirect(url_for('bulletin.manage'))
     if bulletin.column_id:
         return redirect(url_for('bulletin.column_list', column_id=bulletin.column_id))
     return redirect(url_for('bulletin.index', category_id=bulletin.category_id))
+
+
+@bulletin_bp.route('/<int:bulletin_id>/restore', methods=['POST'])
+@login_required
+@require_role('dept_admin')
+def restore(bulletin_id):
+    """Restore an archived bulletin to published status."""
+    bulletin = Bulletin.query.get_or_404(bulletin_id)
+    bulletin.status = 'published'
+    bulletin.updated_at = datetime.utcnow()
+    db.session.commit()
+    add_log('restore_bulletin', 'bulletin', bulletin.id, 'Restored: ' + bulletin.title)
+    flash('内容已恢复发布', 'success')
+    return redirect(url_for('bulletin.manage', status='archived'))
 
 
 @bulletin_bp.route('/<int:bulletin_id>/delete', methods=['POST'])
@@ -690,6 +706,7 @@ def manage():
 
     published_count = stats_query.filter(Bulletin.status == 'published').count()
     archived_count = stats_query.filter(Bulletin.status == 'archived').count()
+    total_count = published_count + archived_count
 
     # Build category list for filter
     categories = BulletinCategory.query.filter_by(is_active=1).order_by(BulletinCategory.sort_order.asc()).all()
@@ -701,6 +718,7 @@ def manage():
                            categories=visible_categories,
                            status=status,
                            category_id=category_id,
+                           total_count=total_count,
                            published_count=published_count,
                            archived_count=archived_count)
 
@@ -733,6 +751,35 @@ def batch_archive():
     add_log('batch_archive_bulletins', 'bulletin', 0, 'Archived {} bulletins'.format(count))
 
     return jsonify({'success': True, 'message': '已归档 {} 个内容'.format(count)})
+
+
+@bulletin_bp.route('/batch-restore', methods=['POST'])
+@login_required
+@require_role('dept_admin')
+def batch_restore():
+    """Batch restore archived bulletins."""
+    from flask import jsonify
+
+    try:
+        ids = json.loads(request.form.get('ids', '[]'))
+    except:
+        return jsonify({'success': False, 'message': '参数错误'}), 400
+
+    if not ids:
+        return jsonify({'success': False, 'message': '请选择内容'}), 400
+
+    count = 0
+    for bulletin_id in ids:
+        bulletin = Bulletin.query.get(bulletin_id)
+        if bulletin and bulletin.status == 'archived':
+            bulletin.status = 'published'
+            bulletin.updated_at = datetime.utcnow()
+            count += 1
+
+    db.session.commit()
+    add_log('batch_restore_bulletins', 'bulletin', 0, 'Restored {} bulletins'.format(count))
+
+    return jsonify({'success': True, 'message': '已恢复 {} 个内容'.format(count)})
 
 
 @bulletin_bp.route('/batch-delete', methods=['POST'])

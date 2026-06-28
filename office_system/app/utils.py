@@ -80,16 +80,24 @@ def check_visible(visible_roles_str, user_role):
     return user_role in roles
 
 
-def get_pagination(page_param=None, per_page=15):
+def get_pagination(page_param=None, per_page=10):
     """Extract pagination params from request args."""
     if page_param is None:
         page_param = request.args.get('page', 1)
+    requested_per_page = request.args.get('per_page', per_page)
     try:
         page = int(page_param)
     except (ValueError, TypeError):
         page = 1
     if page < 1:
         page = 1
+    try:
+        requested_per_page = int(requested_per_page)
+    except (ValueError, TypeError):
+        requested_per_page = per_page
+    if requested_per_page not in (10, 20, 50, 100):
+        requested_per_page = 10
+    per_page = requested_per_page
     return page, per_page
 
 

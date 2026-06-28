@@ -7,14 +7,18 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <style>
 body { background: var(--bg-page); }
+.task-page {
+  padding: 12px 18px 18px;
+  background: #f1f5f9;
+}
 .task-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 64px;
-  margin-bottom: 14px;
-  padding: 14px 18px;
+  min-height: 0;
+  margin-bottom: 10px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background:
@@ -26,8 +30,8 @@ body { background: var(--bg-page); }
 .task-topbar-main {
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  gap: 18px;
 }
 .task-crumb {
   display: flex;
@@ -48,9 +52,9 @@ body { background: var(--bg-page); }
   gap: 10px;
 }
 .task-title-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -64,11 +68,11 @@ body { background: var(--bg-page); }
 .task-title-text h2 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.2;
 }
 .task-title-text p {
-  margin: 2px 0 0;
+  margin: 1px 0 0;
   color: var(--text-secondary);
   font-size: 12px;
 }
@@ -80,11 +84,13 @@ body { background: var(--bg-page); }
   flex: 0 0 auto;
 }
 @media (max-width: 760px) {
-  body { padding: 14px !important; }
+  .task-page { padding: 10px 12px 14px !important; }
   .task-topbar {
     align-items: stretch;
     flex-direction: column;
+    gap: 10px;
   }
+  .task-topbar-main { align-items: flex-start; flex-direction: column; gap: 8px; }
   .task-topbar-actions {
     justify-content: space-between;
   }
@@ -138,24 +144,23 @@ body { background: var(--bg-page); }
 }
 </style>
 </head>
-<body style="padding:24px;background:#f1f5f9;">
+<body class="oa-list-page">
 
-<div class="task-topbar">
-  <div class="task-topbar-main">
-    <div class="task-crumb">
-      <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
-      <span class="task-crumb-sep">›</span>
-      <span>任务列表</span>
+<div class="oa-list-shell">
+<div class="oa-list-head">
+  <div class="oa-list-head-main">
+    <div class="oa-list-crumb">
+      <a href="{{ url_for('index_bp.workbench') }}">← 工作台</a>
     </div>
-    <div class="task-title-row">
-      <span class="task-title-icon">{{ icon('task') }}</span>
-      <div class="task-title-text">
+    <div class="oa-list-title">
+      <span class="oa-list-title-icon">{{ icon('task') }}</span>
+      <div class="oa-list-title-text">
         <h2>任务管理</h2>
         <p>管理工作任务、进度状态和任务流转</p>
       </div>
     </div>
   </div>
-  <div class="task-topbar-actions">
+  <div class="oa-list-actions">
     {% if session.get('role')!='user' %}
     <a href="{{ url_for('tasks.create_task') }}" class="btn btn-primary">{{ icon('add') }} 创建任务</a>
     {% endif %}
@@ -163,7 +168,7 @@ body { background: var(--bg-page); }
 </div>
 
 <!-- Batch Actions Bar (hidden by default) -->
-<div id="batchActionsBar" style="display:none;background:#1e293b;color:white;padding:12px 16px;border-radius:10px;margin-bottom:16px;align-items:center;justify-content:space-between;">
+<div id="batchActionsBar" class="oa-batch-bar">
   <div style="display:flex;align-items:center;gap:12px;">
     <span id="selectedCount">已选择 0 项</span>
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
@@ -180,9 +185,10 @@ body { background: var(--bg-page); }
 </div>
 
 <!-- Quick Filters (priority, category, department) -->
-<div class="toolbar">
+<div class="oa-filter-panel oa-task-filter-panel">
   <form method="get" id="taskFilterForm" action="{{ url_for('tasks.list_tasks') }}">
-    <div class="toolbar-filters">
+    <input type="hidden" name="per_page" value="{{ request.args.get('per_page', 10) }}">
+    <div class="oa-filter-row">
       <select name="priority" class="form-select">
         <option value="">全部优先级</option>
         <option value="high" {% if priority=='high' %}selected{% endif %}>高优先级</option>
@@ -213,6 +219,7 @@ body { background: var(--bg-page); }
 
 <div id="task-list-container">
   {% include 'tasks/_list_content.html' %}
+</div>
 </div>
 
 <script>

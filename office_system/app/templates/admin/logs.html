@@ -1,94 +1,197 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
+{% from '_icon.html' import icon %}
 <head>
 <meta charset="utf-8"><title>操作日志</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <style>
 body { background: #f1f5f9; }
-.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
-.breadcrumb a { color: #64748b; text-decoration: none; }
-.breadcrumb a:hover { color: #2563eb; }
-.breadcrumb-sep { color: #cbd5e1; }
-.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
-.back-btn:hover { border-color: #2563eb; color: #2563eb; }
+.log-detail {
+  max-width: 520px;
+  color: #52647a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.log-filter-panel .form-input,
+.log-filter-panel .form-select,
+.log-filter-panel .btn { height: 38px; }
+.log-filter-panel .form-input,
+.log-filter-panel .form-select { min-width: 150px; }
+@media (max-width: 900px) {
+  .log-filter-panel .form-input,
+  .log-filter-panel .form-select { min-width: 100%; }
+}
 </style>
 </head>
-<body style="padding:24px;background:#f1f5f9;">
+<body class="oa-list-page">
+<div class="oa-list-shell">
 
-<!-- Breadcrumb -->
-<div class="breadcrumb">
-  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
-  <span class="breadcrumb-sep">›</span>
-  <span>操作日志</span>
-</div>
-
-<!-- Back Button -->
-<div style="margin-bottom:16px;">
-  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
-</div>
-
-<div class="page-header">
-  <div>
-    <h2 class="page-title">操作日志</h2>
-    <p class="page-subtitle">查看系统操作审计记录，时间按北京时间显示</p>
+<div class="oa-list-head">
+  <div class="oa-list-head-main">
+    <div class="oa-list-crumb">
+      <a href="{{ url_for('index_bp.workbench') }}">← 工作台</a>
+    </div>
+    <div class="oa-list-title">
+      <span class="oa-list-title-icon">{{ icon('log') }}</span>
+      <div class="oa-list-title-text">
+        <h2>操作日志</h2>
+        <p>查看、筛选和清理系统操作审计记录</p>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="toolbar">
+<div id="batchActionsBar" class="oa-batch-bar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="selectedCount">已选择 0 项</span>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+      <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="width:16px;height:16px;"> 全选
+    </label>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button type="button" class="btn" style="background:#dc2626;border:1px solid #dc2626;color:white;" onclick="batchDeleteLogs()">{{ icon('trash') }} 批量删除</button>
+    <button type="button" class="btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;" onclick="clearSelection()">取消</button>
+  </div>
+</div>
+
+<div class="oa-filter-panel log-filter-panel">
   <form method="get">
-    <div class="toolbar-filters">
-      <input type="text" name="action" placeholder="操作类型" value="{{ action }}" class="form-input" style="width:150px;">
-      <button type="submit" class="btn btn-primary">筛选</button>
+    <input type="hidden" name="per_page" value="{{ request.args.get('per_page', 10) }}">
+    <div class="oa-filter-row">
+      <input type="text" name="action" list="actionList" placeholder="操作类型" value="{{ action }}" class="form-input">
+      <datalist id="actionList">
+        {% for item in actions %}
+        <option value="{{ item }}"></option>
+        {% endfor %}
+      </datalist>
+      <select name="user_id" class="form-select">
+        <option value="">全部用户</option>
+        {% for u in users %}
+        <option value="{{ u.id }}" {% if user_id==u.id %}selected{% endif %}>{{ u.real_name or u.username }}</option>
+        {% endfor %}
+      </select>
+      <select name="target_type" class="form-select">
+        <option value="">全部对象</option>
+        {% for item in target_types %}
+        <option value="{{ item }}" {% if target_type==item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="keyword" placeholder="关键词 / IP" value="{{ keyword }}" class="form-input">
+      <input type="date" name="date_from" value="{{ date_from }}" class="form-input">
+      <input type="date" name="date_to" value="{{ date_to }}" class="form-input">
+      <button type="submit" class="btn btn-primary">{{ icon('filter') }} 筛选</button>
       <a href="{{ url_for('admin.logs') }}" class="btn">重置</a>
     </div>
   </form>
 </div>
 
-<div class="card card-nopad">
-  <table class="table">
+<div class="oa-data-panel">
+  <table class="oa-data-table">
     <thead>
       <tr>
-        <th style="width:60px;">ID</th>
-        <th style="width:100px;">用户</th>
-        <th style="width:120px;">操作</th>
+        <th style="width:42px;"><input type="checkbox" id="selectAllTop" onchange="toggleSelectAll(this)" style="width:16px;height:16px;cursor:pointer;"></th>
+        <th style="width:70px;">ID</th>
+        <th style="width:120px;">用户</th>
+        <th style="width:140px;">操作</th>
+        <th style="width:100px;">对象</th>
         <th>详情</th>
-        <th style="width:120px;">IP</th>
+        <th style="width:130px;">IP</th>
         <th style="width:160px;">时间</th>
       </tr>
     </thead>
     <tbody>
       {% for log in logs %}
       <tr>
-        <td style="color:#94a3b8;">#{{ log.id }}</td>
+        <td><input type="checkbox" class="log-checkbox" value="{{ log.id }}" onchange="updateSelectionCount()" style="width:16px;height:16px;cursor:pointer;"></td>
+        <td style="color:#94a3b8;font-weight:700;">#{{ log.id }}</td>
         <td>{{ users_dict.get(log.user_id, '-') }}</td>
         <td><span class="badge badge-gray">{{ log.action }}</span></td>
-        <td style="color:#64748b;font-size:13px;">{{ log.content[:80] if log.content else '-' }}{% if log.content and log.content|length>80 %}...{% endif %}</td>
-        <td style="color:#94a3b8;font-size:12px;">{{ log.ip_address }}</td>
+        <td style="color:#64748b;">{{ log.target_type or '-' }}{% if log.target_id %} #{{ log.target_id }}{% endif %}</td>
+        <td><div class="log-detail">{{ log.content[:120] if log.content else '-' }}{% if log.content and log.content|length>120 %}...{% endif %}</div></td>
+        <td style="color:#94a3b8;font-size:12px;">{{ log.ip_address or '-' }}</td>
         <td style="color:#64748b;font-size:12px;">{{ log.created_at|localtime('%Y-%m-%d %H:%M') }}</td>
       </tr>
       {% endfor %}
       {% if logs|length==0 %}
-      <tr><td colspan="6" class="empty-row"><div style="padding:48px;text-align:center;color:#94a3b8;">暂无日志记录</div></td></tr>
+      <tr><td colspan="8" class="empty-row"><div style="padding:48px;text-align:center;color:#94a3b8;">暂无日志记录</div></td></tr>
       {% endif %}
     </tbody>
   </table>
 </div>
 
-{% if pagination.pages>1 %}
-<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+{% if pagination %}
+<div class="oa-pagination">
+  {% include '_page_size.html' %}
   {% if pagination.has_prev %}
-  <a href="{{ url_for('admin.logs', page=pagination.prev_num, action=action) }}" class="btn">上一页</a>
+  <a href="{{ url_for('admin.logs', page=pagination.prev_num, per_page=request.args.get('per_page', 10), action=action, user_id=user_id, target_type=target_type, keyword=keyword, date_from=date_from, date_to=date_to) }}" class="btn">上一页</a>
   {% endif %}
   {% for p in range(1,pagination.pages+1) %}
-  <a href="{{ url_for('admin.logs', page=p, action=action) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
+  <a href="{{ url_for('admin.logs', page=p, per_page=request.args.get('per_page', 10), action=action, user_id=user_id, target_type=target_type, keyword=keyword, date_from=date_from, date_to=date_to) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
   {% endfor %}
   {% if pagination.has_next %}
-  <a href="{{ url_for('admin.logs', page=pagination.next_num, action=action) }}" class="btn">下一页</a>
+  <a href="{{ url_for('admin.logs', page=pagination.next_num, per_page=request.args.get('per_page', 10), action=action, user_id=user_id, target_type=target_type, keyword=keyword, date_from=date_from, date_to=date_to) }}" class="btn">下一页</a>
   {% endif %}
   <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 条</span>
 </div>
 {% endif %}
 
+</div>
+
+<script>
+function getSelectedIds() {
+  return Array.from(document.querySelectorAll('.log-checkbox:checked')).map(function(cb) { return parseInt(cb.value); });
+}
+
+function updateSelectionCount() {
+  var ids = getSelectedIds();
+  var bar = document.getElementById('batchActionsBar');
+  var countText = document.getElementById('selectedCount');
+  bar.style.display = ids.length > 0 ? 'flex' : 'none';
+  countText.textContent = '已选择 ' + ids.length + ' 项';
+
+  var all = document.querySelectorAll('.log-checkbox');
+  var top = document.getElementById('selectAllTop');
+  var batch = document.getElementById('selectAllCheckbox');
+  [top, batch].forEach(function(cb) {
+    if (!cb) return;
+    cb.checked = ids.length === all.length && ids.length > 0;
+    cb.indeterminate = ids.length > 0 && ids.length < all.length;
+  });
+}
+
+function toggleSelectAll(checkbox) {
+  document.querySelectorAll('.log-checkbox').forEach(function(cb) { cb.checked = checkbox.checked; });
+  updateSelectionCount();
+}
+
+function clearSelection() {
+  document.querySelectorAll('.log-checkbox').forEach(function(cb) { cb.checked = false; });
+  var top = document.getElementById('selectAllTop');
+  var batch = document.getElementById('selectAllCheckbox');
+  if (top) { top.checked = false; top.indeterminate = false; }
+  if (batch) { batch.checked = false; batch.indeterminate = false; }
+  updateSelectionCount();
+}
+
+function batchDeleteLogs() {
+  var ids = getSelectedIds();
+  if (ids.length === 0) { alert('请先选择日志'); return; }
+  if (!confirm('确定要删除选中的 ' + ids.length + ' 条操作日志吗？此操作不可恢复。')) return;
+
+  var formData = new FormData();
+  formData.append('ids', JSON.stringify(ids));
+  fetch('{{ url_for("admin.batch_delete_logs") }}', {
+    method: 'POST',
+    body: formData,
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(function(response) { return response.json(); })
+  .then(function(data) {
+    if (data.success) { location.reload(); } else { alert(data.message || '删除失败'); }
+  })
+  .catch(function() { alert('删除失败'); });
+}
+</script>
 </body>
 </html>

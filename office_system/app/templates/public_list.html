@@ -168,20 +168,21 @@ body {
     {% endfor %}
   </section>
 
-  {% if pagination.pages > 1 %}
+  {% if pagination %}
   <nav class="public-pagination">
+    {% include '_page_size.html' %}
     {% if pagination.has_prev %}
-    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=pagination.prev_num) if active_category else url_for('index_bp.public_list', list_type=list_type, page=pagination.prev_num) }}">上一页</a>
+    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=pagination.prev_num, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, page=pagination.prev_num, per_page=request.args.get('per_page', 10)) }}">上一页</a>
     {% endif %}
     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
       {% if p %}
-      <a class="btn {% if p == pagination.page %}btn-primary{% endif %}" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=p) if active_category else url_for('index_bp.public_list', list_type=list_type, page=p) }}">{{ p }}</a>
+      <a class="btn {% if p == pagination.page %}btn-primary{% endif %}" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=p, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, page=p, per_page=request.args.get('per_page', 10)) }}">{{ p }}</a>
       {% else %}
       <span class="btn">…</span>
       {% endif %}
     {% endfor %}
     {% if pagination.has_next %}
-    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=pagination.next_num) if active_category else url_for('index_bp.public_list', list_type=list_type, page=pagination.next_num) }}">下一页</a>
+    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=pagination.next_num, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, page=pagination.next_num, per_page=request.args.get('per_page', 10)) }}">下一页</a>
     {% endif %}
   </nav>
   {% endif %}

@@ -60,8 +60,11 @@ body { background: #f1f5f9; }
 .read-toggle.open:after { content: '-'; }
 .read-list { display: none; flex-wrap: wrap; gap: 8px; padding: 12px 0 2px; }
 .read-list.show { display: flex; }
-.read-chip { padding: 6px 10px; border-radius: 999px; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 600; }
-.read-chip.unread { background: #fee2e2; color: #b91c1c; }
+.read-list.show.clipped { max-height: 44px; overflow: hidden; }
+.read-list.show.expanded { max-height: none; overflow: visible; }
+.read-chip { padding: 6px 10px; border-radius: 999px; background: transparent; color: #071526; border: 1px solid #d9e5f4; font-size: 12px; font-weight: 600; }
+.read-chip.unread { background: transparent; color: #071526; border-color: #d9e5f4; }
+.read-more { display: none; margin: 6px 0 2px; border: 0; background: transparent; color: #1267ff; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; }
 .read-empty { color: #64748b; font-size: 13px; padding: 12px 0 2px; }
 </style>
 </head>
@@ -175,6 +178,9 @@ body { background: #f1f5f9; }
       <div class="read-empty">暂无未读人员。</div>
       {% endif %}
     </div>
+    {% if unread_users|length > 0 %}
+    <button type="button" id="bulletinUnreadListMore" class="read-more" onclick="toggleReadMore('bulletinUnreadList', this)">展开全部</button>
+    {% endif %}
     <button type="button" class="read-toggle" onclick="toggleReadList(this, 'bulletinReadList')">已读人员 {{ read_users|length }} 人</button>
     <div id="bulletinReadList" class="read-list">
       {% if read_users %}
@@ -185,6 +191,9 @@ body { background: #f1f5f9; }
       <div class="read-empty">暂无已读记录。</div>
       {% endif %}
     </div>
+    {% if read_users|length > 0 %}
+    <button type="button" id="bulletinReadListMore" class="read-more" onclick="toggleReadMore('bulletinReadList', this)">展开全部</button>
+    {% endif %}
   </div>
 </div>
 {% endif %}
@@ -239,8 +248,20 @@ function toggleReadList(btn, id) {
   var el = document.getElementById(id);
   if (!el) return;
   var open = el.className.indexOf('show') === -1;
-  el.className = open ? 'read-list show' : 'read-list';
+  el.className = open ? 'read-list show clipped' : 'read-list';
   btn.className = open ? 'read-toggle open' : 'read-toggle';
+  var more = document.getElementById(id + 'More');
+  if (more) {
+    more.style.display = open ? 'inline-block' : 'none';
+    more.textContent = '展开全部';
+  }
+}
+function toggleReadMore(id, btn) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var expanded = el.className.indexOf('expanded') !== -1;
+  el.className = expanded ? 'read-list show clipped' : 'read-list show expanded';
+  btn.textContent = expanded ? '展开全部' : '收起';
 }
 </script>
 

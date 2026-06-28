@@ -75,7 +75,11 @@ def list_memos():
 
     # Memo statistics
     private_count = Memo.query.filter(Memo.memo_type == 'private', Memo.created_by == user_id, Memo.is_archived == 0).count()
-    public_count = Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).count()
+    public_count = sum(
+        1 for memo in Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).all()
+        if check_visible(memo.visible_roles, user_role)
+    )
+    memo_total_count = private_count + public_count
     groups = MemoGroup.query.filter(
         MemoGroup.is_active == 1,
         db.or_(MemoGroup.created_by == user_id, MemoGroup.memo_type == 'public')
@@ -117,6 +121,7 @@ def list_memos():
                                keyword=keyword,
                                private_count=private_count,
                                public_count=public_count,
+                               memo_total_count=memo_total_count,
                                memo_links=memo_links)
         return html
 
@@ -133,6 +138,7 @@ def list_memos():
                            keyword=keyword,
                            private_count=private_count,
                            public_count=public_count,
+                           memo_total_count=memo_total_count,
                            memo_links=memo_links)
 
 
@@ -394,6 +400,7 @@ def archived():
     """View archived memos."""
     page, per_page = get_pagination()
     user_id = session['user_id']
+    user_role = session['role']
 
     query = Memo.query.filter(
         Memo.is_archived == 1,
@@ -414,7 +421,17 @@ def archived():
                            memo_type='archived',
                            keyword='',
                            private_count=Memo.query.filter(Memo.memo_type == 'private', Memo.created_by == user_id, Memo.is_archived == 0).count(),
-                           public_count=Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).count())
+                           public_count=sum(
+                               1 for memo in Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).all()
+                               if check_visible(memo.visible_roles, user_role)
+                           ),
+                           memo_total_count=(
+                               Memo.query.filter(Memo.memo_type == 'private', Memo.created_by == user_id, Memo.is_archived == 0).count()
+                               + sum(
+                                   1 for memo in Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).all()
+                                   if check_visible(memo.visible_roles, user_role)
+                               )
+                           ))
 
 
 @memo_bp.route('/batch-archive', methods=['POST'])

@@ -39,33 +39,33 @@ body { background: #f1f5f9; }
 .table .title-cell { padding-left: 8px !important; }
 </style>
 </head>
-<body style="padding:24px;background:#f1f5f9;">
+<body class="oa-list-page">
+<div class="oa-list-shell">
 
 <!-- Breadcrumb -->
-<div class="breadcrumb">
-  <a href="{{ url_for('bulletin.index') }}">信息公示</a>
-  <span class="breadcrumb-sep">›</span>
-  <span>内容管理</span>
-</div>
-
-<!-- Back Button -->
-<div style="margin-bottom:16px;">
-  <a href="{{ url_for('bulletin.index') }}" class="back-btn">← 返回公示首页</a>
-</div>
-
-<!-- Page Header -->
-<div class="page-header">
-  <div>
-    <h2 class="page-title">内容管理</h2>
-    <p class="page-subtitle">管理所有公示内容</p>
+<div class="oa-list-head">
+  <div class="oa-list-head-main">
+    <div class="oa-list-crumb">
+      <a href="{{ url_for('bulletin.index') }}">← 公示首页</a>
+      <span class="oa-list-crumb-sep">›</span>
+      <span>内容管理</span>
+    </div>
+    <div class="oa-list-title">
+      <span class="oa-list-title-icon">{{ icon('bulletin') }}</span>
+      <div class="oa-list-title-text">
+        <h2>内容管理</h2>
+        <p>管理所有公示内容、状态和分类</p>
+      </div>
+    </div>
   </div>
-  <div class="page-actions">
+  <div class="oa-list-actions">
+    <a href="{{ url_for('bulletin.manage', status='archived') }}" class="btn {% if status=='archived' %}btn-primary{% endif %}">{{ icon('archive') }} 查看归档</a>
     <a href="{{ url_for('bulletin.create') }}" class="btn btn-primary">{{ icon('edit') }} 发布内容</a>
   </div>
 </div>
 
 <!-- Batch Actions Bar (hidden by default) -->
-<div id="batchActionsBar" style="display:none;background:#1e293b;color:white;padding:12px 16px;border-radius:10px;margin-bottom:16px;align-items:center;justify-content:space-between;">
+<div id="batchActionsBar" class="oa-batch-bar">
   <div style="display:flex;align-items:center;gap:12px;">
     <span id="selectedCount">已选择 0 项</span>
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
@@ -73,30 +73,34 @@ body { background: #f1f5f9; }
     </label>
   </div>
   <div style="display:flex;gap:8px;">
-    <button type="button" class="btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;" onclick="batchArchive()">📦 批量归档</button>
+    {% if status == 'archived' %}
+    <button type="button" class="btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;" onclick="batchRestore()">{{ icon('progress') }} 批量恢复</button>
+    {% else %}
+    <button type="button" class="btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;" onclick="batchArchive()">{{ icon('archive') }} 批量归档</button>
+    {% endif %}
     <button type="button" class="btn" style="background:#dc2626;border:1px solid #dc2626;color:white;" onclick="batchDelete()">{{ icon('trash') }} 批量删除</button>
     <button type="button" class="btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;" onclick="clearSelection()">✕ 取消</button>
   </div>
 </div>
 
 <!-- Stats Bar -->
-<div class="stats-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-  <a href="{{ url_for('bulletin.manage') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if status=='all' or status=='' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if status=='all' or status=='' %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('bulletin') }}</span>
+<div class="oa-stat-grid">
+  <a href="{{ url_for('bulletin.manage') }}" class="oa-stat-card {% if status=='all' or status=='' %}active{% endif %}">
+    <span class="stats-icon">{{ icon('bulletin') }}</span>
     <div>
-      <div style="font-size:18px;font-weight:700;color:#1e293b;white-space:nowrap;">{{ pagination.total }}</div>
+      <div style="font-size:18px;font-weight:700;color:#1e293b;white-space:nowrap;">{{ total_count }}</div>
       <div style="font-size:11px;color:#64748b;white-space:nowrap;">内容总数</div>
     </div>
   </a>
-  <a href="{{ url_for('bulletin.manage', status='published') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if status=='published' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if status=='published' %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('progress') }}</span>
+  <a href="{{ url_for('bulletin.manage', status='published') }}" class="oa-stat-card {% if status=='published' %}active{% endif %}">
+    <span class="stats-icon">{{ icon('progress') }}</span>
     <div>
       <div style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ published_count }}</div>
       <div style="font-size:11px;color:#64748b;white-space:nowrap;">已发布</div>
     </div>
   </a>
-  <a href="{{ url_for('bulletin.manage', status='archived') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if status=='archived' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if status=='archived' %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('archive') }}</span>
+  <a href="{{ url_for('bulletin.manage', status='archived') }}" class="oa-stat-card {% if status=='archived' %}active{% endif %}">
+    <span class="stats-icon">{{ icon('archive') }}</span>
     <div>
       <div style="font-size:18px;font-weight:700;color:#64748b;white-space:nowrap;">{{ archived_count }}</div>
       <div style="font-size:11px;color:#64748b;white-space:nowrap;">已归档</div>
@@ -105,9 +109,10 @@ body { background: #f1f5f9; }
 </div>
 
 <!-- Filters -->
-<div class="toolbar">
+<div class="oa-filter-panel">
   <form method="get">
-    <div class="toolbar-filters">
+    <input type="hidden" name="per_page" value="{{ request.args.get('per_page', 10) }}">
+    <div class="oa-filter-row">
       <select name="status" class="form-select">
         <option value="all" {% if status=='all' %}selected{% endif %}>全部状态</option>
         <option value="published" {% if status=='published' %}selected{% endif %}>已发布</option>
@@ -126,8 +131,8 @@ body { background: #f1f5f9; }
 </div>
 
 <!-- Bulletin List -->
-<div class="card card-nopad">
-  <table class="table">
+<div class="oa-data-panel">
+  <table class="oa-data-table">
     <thead>
       <tr>
         <th class="cb-cell">
@@ -138,7 +143,7 @@ body { background: #f1f5f9; }
         <th style="width:120px;">业务类别</th>
         <th style="width:80px;">状态</th>
         <th style="width:150px;white-space:nowrap;">发布时间</th>
-        <th style="width:120px;">操作</th>
+        <th style="width:220px;">操作</th>
       </tr>
     </thead>
     <tbody>
@@ -149,7 +154,7 @@ body { background: #f1f5f9; }
         </td>
         <td style="color:#94a3b8;font-weight:500;">#{{ b.id }}</td>
         <td class="title-cell">
-          <a href="{{ url_for('bulletin.detail', bulletin_id=b.id) }}" style="font-weight:500;">{{ b.title[:60] }}{% if b.title|length>60 %}...{% endif %}</a>
+          <a href="{{ url_for('bulletin.detail', bulletin_id=b.id) }}" class="oa-title-link">{{ b.title[:60] }}{% if b.title|length>60 %}...{% endif %}</a>
           {% if b.is_pinned %} <span style="color:#dc2626;">{{ icon('pin') }}</span>{% endif %}
         </td>
         <td style="color:#64748b;">{% if b.category %}{{ icon(b.category.icon|icon_id) }} {{ b.category.name }}{% else %}-{% endif %}</td>
@@ -162,7 +167,17 @@ body { background: #f1f5f9; }
         </td>
         <td style="color:#64748b;">{{ b.created_at.strftime('%Y-%m-%d') if b.created_at else '' }}</td>
         <td>
+          <a href="{{ url_for('bulletin.detail', bulletin_id=b.id) }}" class="btn btn-sm">查看</a>
+          {% if b.status=='archived' %}
+          <form method="post" action="{{ url_for('bulletin.restore', bulletin_id=b.id) }}" style="display:inline;" onsubmit="return confirm('确认恢复发布？');">
+            <button type="submit" class="btn btn-sm">{{ icon('progress') }} 恢复</button>
+          </form>
+          {% else %}
           <a href="{{ url_for('bulletin.edit', bulletin_id=b.id) }}" class="btn btn-sm">编辑</a>
+          <form method="post" action="{{ url_for('bulletin.archive', bulletin_id=b.id, next='manage') }}" style="display:inline;" onsubmit="return confirm('确认归档？');">
+            <button type="submit" class="btn btn-sm">{{ icon('archive') }} 归档</button>
+          </form>
+          {% endif %}
           <form method="post" action="{{ url_for('bulletin.delete', bulletin_id=b.id) }}" style="display:inline;" onsubmit="return confirm('确认删除？');">
             <button type="submit" class="btn btn-sm btn-danger">删除</button>
           </form>
@@ -184,16 +199,17 @@ body { background: #f1f5f9; }
 </div>
 
 <!-- Pagination -->
-{% if pagination.pages>1 %}
-<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+{% if pagination %}
+<div class="oa-pagination">
+  {% include '_page_size.html' %}
   {% if pagination.has_prev %}
-  <a href="{{ url_for('bulletin.manage', page=pagination.prev_num, status=status, category_id=category_id) }}" class="btn">上一页</a>
+  <a href="{{ url_for('bulletin.manage', page=pagination.prev_num, per_page=request.args.get('per_page', 10), status=status, category_id=category_id) }}" class="btn">上一页</a>
   {% endif %}
   {% for p in range(1,pagination.pages+1) %}
-  <a href="{{ url_for('bulletin.manage', page=p, status=status, category_id=category_id) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
+  <a href="{{ url_for('bulletin.manage', page=p, per_page=request.args.get('per_page', 10), status=status, category_id=category_id) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
   {% endfor %}
   {% if pagination.has_next %}
-  <a href="{{ url_for('bulletin.manage', page=pagination.next_num, status=status, category_id=category_id) }}" class="btn">下一页</a>
+  <a href="{{ url_for('bulletin.manage', page=pagination.next_num, per_page=request.args.get('per_page', 10), status=status, category_id=category_id) }}" class="btn">下一页</a>
   {% endif %}
   <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 条</span>
 </div>
@@ -260,6 +276,26 @@ function batchArchive() {
     .catch(function() { alert('操作失败'); });
 }
 
+function batchRestore() {
+    var ids = getSelectedIds();
+    if (ids.length === 0) { alert('请先选择内容'); return; }
+    if (!confirm('确定要恢复选中的 ' + ids.length + ' 个归档内容吗？')) return;
+
+    var formData = new FormData();
+    formData.append('ids', JSON.stringify(ids));
+
+    fetch('{{ url_for("bulletin.batch_restore") }}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) { location.reload(); } else { alert(data.message || '操作失败'); }
+    })
+    .catch(function() { alert('操作失败'); });
+}
+
 function batchDelete() {
     var ids = getSelectedIds();
     if (ids.length === 0) { alert('请先选择内容'); return; }
@@ -281,5 +317,6 @@ function batchDelete() {
 }
 </script>
 
+</div>
 </body>
 </html>
