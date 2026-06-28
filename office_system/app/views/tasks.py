@@ -178,6 +178,31 @@ def list_tasks():
         Task.status.in_(['pending', 'processing'])
     ).count()
 
+    # AJAX partial rendering for no-flash filtering
+    if request.args.get('partial') == '1':
+        html = render_template('tasks/_list_content.html',
+                               tasks=tasks_list,
+                               pagination=pagination,
+                               read_ids=read_ids,
+                               status=status,
+                               priority=priority,
+                               department=department,
+                               assignee_id=assignee_id,
+                               category_filter=category_filter,
+                               keyword=keyword,
+                               search_scope=search_scope,
+                               date_from=date_from,
+                               date_to=date_to,
+                               total_count=total_count,
+                               pending_count=pending_count,
+                               processing_count=processing_count,
+                               transferring_count=transferring_count,
+                               completed_count=completed_count,
+                               archived_count=archived_count,
+                               rejected_count=rejected_count,
+                               overdue_count=overdue_count)
+        return html
+
     return render_template('tasks/list.html',
                            tasks=tasks_list,
                            pagination=pagination,

@@ -2,7 +2,7 @@
 """
 Create a copy-and-run offline release package for other Windows computers.
 
-Default:
+Default (copies working directory as-is, including uncommitted changes):
     python\python.exe make_release.py
 
 Clean first-run package without current database/uploads:
@@ -20,6 +20,7 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 RELEASE_ROOT = os.path.join(ROOT_DIR, "release")
 PACKAGE_NAME = "office_system_win7_offline"
 
+# Directories to always exclude (relative to BASE_DIR)
 EXCLUDED_DIRS = {
     "__pycache__",
     ".git",
@@ -30,51 +31,101 @@ EXCLUDED_DIRS = {
     "Deprecated",
     "logs",
     "diagnose_output",
+    ".claude",
+    "_deprecated",
+    "portable_dist",
 }
+
+# Files to always exclude
 EXCLUDED_FILES = {
     "get-pip.py",
 }
-EXCLUDED_APPLOCAL_RUNTIME_DLLS = {
+
+# Within python/, exclude these DLLs (target Win7 must use install_win7_runtime.bat)
+EXCLUDED_PYTHON_DLLS = {
     "ucrtbase.dll",
     "msvcp140.dll",
 }
+
+# File suffixes to exclude
 EXCLUDED_SUFFIXES = {
     ".pyc",
     ".pyo",
     ".log",
 }
 
+# Untracked files (not in git but exist on disk) to always include
+# (None means include all untracked, only add specific ones if needed)
+ALWAYS_INCLUDE_UNTRACKED = {}  # e.g. {"sample_upload.png": True}
+
 
 def should_skip(src_path, rel_path, fresh_data):
+    """Return True if this file/dir should be excluded from the package."""
     name = os.path.basename(src_path)
-    if name in EXCLUDED_DIRS or name in EXCLUDED_FILES:
+
+    # Always skip these directory names
+    if name in EXCLUDED_DIRS:
         return True
-    lower_name = name.lower()
-    if rel_path.replace("\\", "/").lower().startswith("python/"):
+
+    # Always skip these file names
+    if name in EXCLUDED_FILES:
+        return True
+
+    # Handle python/ directory specially
+    normalized = rel_path.replace("\\", "/").lower()
+    if normalized.startswith("python/"):
+        lower_name = name.lower()
+        # Skip API-MS-WIN-CRT-* DLLs (require target to have KB2999226)
         if lower_name.startswith("api-ms-win-crt-") and lower_name.endswith(".dll"):
             return True
-        if lower_name in EXCLUDED_APPLOCAL_RUNTIME_DLLS:
+        # Skip specific DLLs that need runtime installer
+        if lower_name in EXCLUDED_PYTHON_DLLS:
             return True
+
+    # Skip by suffix
     if os.path.isdir(src_path):
         return False
-    if os.path.splitext(name)[1].lower() in EXCLUDED_SUFFIXES:
+    ext = os.path.splitext(name)[1].lower()
+    if ext in EXCLUDED_SUFFIXES:
         return True
+
+    # Fresh-data mode: skip the database and user uploads
     if fresh_data:
-        normalized = rel_path.replace("\\", "/").lower()
         if normalized == "data/database.db":
             return True
-        if normalized.startswith("data/uploads/") and not normalized.endswith(".gitkeep"):
+        if normalized.startswith("data/uploads/") and name != ".gitkeep":
             return True
+
     return False
 
 
+def copy_file_raw(src_path, dst_path):
+    """Copy a single file preserving content exactly (binary-safe)."""
+    dst_dir = os.path.dirname(dst_path)
+    if not os.path.isdir(dst_dir):
+        os.makedirs(dst_dir)
+
+    with open(src_path, "rb") as f_in:
+        data = f_in.read()
+    with open(dst_path, "wb") as f_out:
+        f_out.write(data)
+
+
 def copy_tree(src_dir, dst_dir, fresh_data):
+    """
+    Walk src_dir and copy all files to dst_dir, respecting exclusions.
+    Reads file content directly to avoid any git/checkout interference.
+    """
     copied_files = 0
+    skipped_files = 0
+
     for root, dirs, files in os.walk(src_dir):
+        # Compute relative path of current directory
         rel_root = os.path.relpath(root, src_dir)
         if rel_root == ".":
             rel_root = ""
 
+        # Filter subdirectories in-place (prevent os.walk from descending)
         dirs[:] = [
             d for d in dirs
             if not should_skip(os.path.join(root, d), os.path.join(rel_root, d), fresh_data)
@@ -83,21 +134,22 @@ def copy_tree(src_dir, dst_dir, fresh_data):
         for filename in files:
             src_path = os.path.join(root, filename)
             rel_path = os.path.join(rel_root, filename)
+
             if should_skip(src_path, rel_path, fresh_data):
+                skipped_files += 1
                 continue
+
             dst_path = os.path.join(dst_dir, rel_path)
-            parent = os.path.dirname(dst_path)
-            if not os.path.isdir(parent):
-                os.makedirs(parent)
-            shutil.copy2(src_path, dst_path)
+            copy_file_raw(src_path, dst_path)
             copied_files += 1
 
+    # Always ensure data directories exist
     for folder in ["data", os.path.join("data", "uploads")]:
         path = os.path.join(dst_dir, folder)
         if not os.path.isdir(path):
             os.makedirs(path)
 
-    return copied_files
+    return copied_files, skipped_files
 
 
 def validate_package(package_dir):
@@ -153,12 +205,39 @@ def main():
     package_dir = os.path.join(RELEASE_ROOT, PACKAGE_NAME)
     zip_path = package_dir + ".zip"
 
+    # Check for uncommitted changes (informational only)
+    git_status_output = ""
+    has_uncommitted = False
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        git_status_output = result.stdout.strip()
+        if git_status_output:
+            has_uncommitted = True
+    except Exception:
+        pass
+
     print("============================================")
     print("  Build Win7 Offline Release Package")
     print("============================================")
     print("Source : " + BASE_DIR)
     print("Output : " + package_dir)
     print("Mode   : " + ("fresh first-run data" if args.fresh_data else "include current data"))
+
+    if has_uncommitted:
+        print("")
+        print("[NOTE] Working directory has uncommitted changes (included in package):")
+        changed_files = [line.strip() for line in git_status_output.splitlines() if line.strip()]
+        for f in changed_files:
+            print("  " + f)
+
     print("")
 
     if os.path.isdir(package_dir):
@@ -166,8 +245,8 @@ def main():
     if not os.path.isdir(RELEASE_ROOT):
         os.makedirs(RELEASE_ROOT)
 
-    copied = copy_tree(BASE_DIR, package_dir, args.fresh_data)
-    print("[OK] Copied %s files" % copied)
+    copied, skipped = copy_tree(BASE_DIR, package_dir, args.fresh_data)
+    print("[OK] Copied %s files (%s skipped)" % (copied, skipped))
     print("[OK] App-local UCRT DLLs excluded; target Win7 must use install_win7_runtime.bat")
 
     if not validate_package(package_dir):

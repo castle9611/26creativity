@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OA 图标审核稿</title>
+<style>
+:root {
+  --bg: #eef1f5;
+  --panel: #ffffff;
+  --ink: #152033;
+  --muted: #66758a;
+  --line: #d7dee8;
+  --blue: #1f5fbd;
+  --green: #17865b;
+  --orange: #b76218;
+  --red: #b42318;
+  --slate: #42526a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(31,95,189,.12), transparent 28rem),
+    linear-gradient(135deg, #f7f8fb, var(--bg));
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+.wrap { max-width: 1280px; margin: 0 auto; padding: 28px; }
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  background: rgba(255,255,255,.86);
+  border: 1px solid rgba(215,222,232,.9);
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(21,32,51,.08);
+}
+h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: .02em; }
+.sub { margin: 0; color: var(--muted); line-height: 1.7; font-size: 14px; }
+.badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #e8f0ff;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.section { margin-top: 26px; }
+.section h2 { margin: 0 0 14px; font-size: 16px; color: #2b3a4e; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  min-height: 148px;
+  box-shadow: 0 10px 25px rgba(21,32,51,.06);
+}
+.icon-box {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  margin-bottom: 12px;
+  background: #edf3ff;
+  color: var(--blue);
+}
+.card.green .icon-box { background: #eaf7f1; color: var(--green); }
+.card.orange .icon-box { background: #fff3e6; color: var(--orange); }
+.card.red .icon-box { background: #fff0ef; color: var(--red); }
+.card.slate .icon-box { background: #eef2f7; color: var(--slate); }
+.name { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+.id { font-size: 12px; color: var(--muted); font-family: Consolas, monospace; }
+svg.icon { width: 42px; height: 42px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+svg.icon .fill { fill: currentColor; stroke: none; opacity: .14; }
+svg.icon .solid { fill: currentColor; stroke: none; }
+.usage {
+  margin-top: 22px;
+  padding: 18px 20px;
+  background: #152033;
+  color: #dbe4f0;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.usage code { color: #c7ddff; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ico-home" viewBox="0 0 48 48"><path class="fill" d="M10 22 24 10l14 12v16H10z"/><path d="M8 23 24 9l16 14"/><path d="M13 21v18h22V21"/><path d="M20 39V28h8v11"/></symbol>
+    <symbol id="ico-dashboard" viewBox="0 0 48 48"><rect x="8" y="9" width="13" height="13" rx="3"/><rect x="27" y="9" width="13" height="9" rx="3"/><rect x="8" y="28" width="13" height="11" rx="3"/><rect x="27" y="24" width="13" height="15" rx="3"/></symbol>
+    <symbol id="ico-task" viewBox="0 0 48 48"><rect x="11" y="7" width="26" height="34" rx="4"/><path d="M18 17h13M18 25h13M18 33h8"/><path d="m14 16 2 2 4-5"/></symbol>
+    <symbol id="ico-task-wait" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><path d="M24 14v11l7 5"/><path d="M15 8h18"/></symbol>
+    <symbol id="ico-task-flow" viewBox="0 0 48 48"><rect x="7" y="9" width="12" height="10" rx="2"/><rect x="29" y="9" width="12" height="10" rx="2"/><rect x="18" y="30" width="12" height="10" rx="2"/><path d="M19 14h10M24 19v11M14 19l7 11M34 19l-7 11"/></symbol>
+    <symbol id="ico-bulletin" viewBox="0 0 48 48"><path class="fill" d="M9 20h13l17-8v24l-17-8H9z"/><path d="M9 20h13l17-8v24l-17-8H9z"/><path d="M14 28v8h6l2-8"/><path d="M39 19c3 2 3 10 0 12"/></symbol>
+    <symbol id="ico-pin" viewBox="0 0 48 48"><path d="m17 8 23 23"/><path d="m24 15 7-7 9 9-7 7"/><path d="m13 31 10-10 4 4-10 10"/><path d="m12 36 8-8"/></symbol>
+    <symbol id="ico-memo" viewBox="0 0 48 48"><path class="fill" d="M12 8h20l4 4v28H12z"/><path d="M12 8h20l4 4v28H12z"/><path d="M31 8v8h8"/><path d="M18 21h14M18 28h14M18 35h8"/></symbol>
+    <symbol id="ico-memo-group" viewBox="0 0 48 48"><rect x="8" y="11" width="14" height="12" rx="3"/><rect x="26" y="11" width="14" height="12" rx="3"/><rect x="8" y="28" width="32" height="9" rx="3"/><path d="M15 23v5M33 23v5"/></symbol>
+    <symbol id="ico-file" viewBox="0 0 48 48"><path d="M14 7h16l8 8v26H14z"/><path d="M30 7v10h8"/><path d="M20 26h12M20 33h8"/></symbol>
+    <symbol id="ico-folder" viewBox="0 0 48 48"><path class="fill" d="M7 17h34v21H7z"/><path d="M7 17h34v21H7z"/><path d="M7 17v-5h13l4 5"/></symbol>
+    <symbol id="ico-archive" viewBox="0 0 48 48"><rect x="8" y="9" width="32" height="8" rx="2"/><path d="M11 17h26v23H11z"/><path d="M20 24h8"/></symbol>
+    <symbol id="ico-attach" viewBox="0 0 48 48"><path d="M17 25 29 13a7 7 0 0 1 10 10L23 39a10 10 0 0 1-14-14l16-16"/><path d="M17 25 30 12"/></symbol>
+    <symbol id="ico-users" viewBox="0 0 48 48"><circle cx="19" cy="18" r="6"/><circle cx="32" cy="20" r="5"/><path d="M8 38c2-8 20-8 22 0"/><path d="M27 36c2-5 10-5 13 0"/></symbol>
+    <symbol id="ico-user-add" viewBox="0 0 48 48"><circle cx="19" cy="18" r="7"/><path d="M7 39c3-10 21-10 24 0"/><path d="M34 17v12M28 23h12"/></symbol>
+    <symbol id="ico-user-key" viewBox="0 0 48 48"><circle cx="18" cy="17" r="6"/><path d="M7 37c2-9 20-9 22 0"/><circle cx="35" cy="30" r="5"/><path d="M39 30h5M42 30v4"/></symbol>
+    <symbol id="ico-lock" viewBox="0 0 48 48"><rect x="12" y="21" width="24" height="18" rx="3"/><path d="M17 21v-6a7 7 0 0 1 14 0v6"/><path d="M24 28v5"/></symbol>
+    <symbol id="ico-globe" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><path d="M8 24h32M24 8c5 5 5 27 0 32M24 8c-5 5-5 27 0 32"/><path d="M13 15c6 3 16 3 22 0M13 33c6-3 16-3 22 0"/></symbol>
+    <symbol id="ico-search" viewBox="0 0 48 48"><circle cx="21" cy="21" r="11"/><path d="m30 30 10 10"/></symbol>
+    <symbol id="ico-filter" viewBox="0 0 48 48"><path d="M9 12h30L27 26v10l-6 3V26z"/></symbol>
+    <symbol id="ico-comment" viewBox="0 0 48 48"><path class="fill" d="M10 10h28v20H22l-9 8v-8h-3z"/><path d="M10 10h28v20H22l-9 8v-8h-3z"/><path d="M17 18h14M17 24h9"/></symbol>
+    <symbol id="ico-bell" viewBox="0 0 48 48"><path d="M14 31V20a10 10 0 0 1 20 0v11l4 5H10z"/><path d="M20 39a5 5 0 0 0 8 0"/></symbol>
+    <symbol id="ico-chart" viewBox="0 0 48 48"><path d="M8 39h32"/><rect x="12" y="24" width="6" height="12" rx="2"/><rect x="22" y="16" width="6" height="20" rx="2"/><rect x="32" y="10" width="6" height="26" rx="2"/></symbol>
+    <symbol id="ico-progress" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><path d="M24 8a16 16 0 0 1 16 16"/><path d="M16 25l5 5 11-13"/></symbol>
+    <symbol id="ico-calendar" viewBox="0 0 48 48"><rect x="9" y="11" width="30" height="28" rx="4"/><path d="M16 7v8M32 7v8M9 20h30"/><path d="M17 27h4M27 27h4M17 34h4"/></symbol>
+    <symbol id="ico-add" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><path d="M24 16v16M16 24h16"/></symbol>
+    <symbol id="ico-edit" viewBox="0 0 48 48"><path d="M13 34 34 13l5 5-21 21-8 2z"/><path d="m30 17 5 5"/><path d="M12 41h27"/></symbol>
+    <symbol id="ico-trash" viewBox="0 0 48 48"><path d="M12 15h24"/><path d="M20 15V9h8v6"/><path d="M15 15l2 25h14l2-25"/><path d="M22 22v11M28 22v11"/></symbol>
+    <symbol id="ico-save" viewBox="0 0 48 48"><path d="M11 9h23l5 5v25H11z"/><path d="M17 9v12h16"/><path d="M17 39V28h14v11"/></symbol>
+    <symbol id="ico-refresh" viewBox="0 0 48 48"><path d="M37 18a14 14 0 0 0-24-4l-4 4"/><path d="M9 10v8h8"/><path d="M11 30a14 14 0 0 0 24 4l4-4"/><path d="M39 38v-8h-8"/></symbol>
+    <symbol id="ico-warning" viewBox="0 0 48 48"><path d="M24 8 41 39H7z"/><path d="M24 18v9M24 34h.1"/></symbol>
+    <symbol id="ico-settings" viewBox="0 0 48 48"><circle cx="24" cy="24" r="5"/><path d="M24 8v5M24 35v5M8 24h5M35 24h5M12.7 12.7l3.6 3.6M31.7 31.7l3.6 3.6M35.3 12.7l-3.6 3.6M16.3 31.7l-3.6 3.6"/><path d="M18 10h12l2 5 5 2v14l-5 2-2 5H18l-2-5-5-2V17l5-2z"/></symbol>
+    <symbol id="ico-category" viewBox="0 0 48 48"><rect x="9" y="10" width="12" height="12" rx="3"/><rect x="27" y="10" width="12" height="12" rx="3"/><rect x="9" y="28" width="12" height="12" rx="3"/><rect x="27" y="28" width="12" height="12" rx="3"/></symbol>
+    <symbol id="ico-column" viewBox="0 0 48 48"><rect x="8" y="8" width="10" height="32" rx="2"/><rect x="21" y="8" width="19" height="13" rx="2"/><rect x="21" y="27" width="19" height="13" rx="2"/></symbol>
+    <symbol id="ico-share" viewBox="0 0 48 48"><circle cx="14" cy="24" r="5"/><circle cx="34" cy="14" r="5"/><circle cx="34" cy="34" r="5"/><path d="m18 22 12-6M18 26l12 6"/></symbol>
+    <symbol id="ico-import" viewBox="0 0 48 48"><path d="M24 8v20"/><path d="m16 20 8 8 8-8"/><path d="M10 34v6h28v-6"/></symbol>
+    <symbol id="ico-export" viewBox="0 0 48 48"><path d="M24 30V10"/><path d="m16 18 8-8 8 8"/><path d="M10 34v6h28v-6"/></symbol>
+    <symbol id="ico-phone" viewBox="0 0 48 48"><path d="M17 9h14a3 3 0 0 1 3 3v24a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3V12a3 3 0 0 1 3-3z"/><path d="M21 34h6"/></symbol>
+    <symbol id="ico-help" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><path d="M19 18a5 5 0 1 1 8 4c-3 2-4 3-4 6"/><path d="M24 34h.1"/></symbol>
+
+    <!-- Prison office business category icons -->
+    <symbol id="cat-production" viewBox="0 0 48 48"><path d="M8 37h32"/><path d="M11 37V19l9 6v-6l9 6v-6l8 5v13"/><path d="M15 30h5M25 30h5M34 30h3"/><path d="M13 19l2-8h7l2 13"/></symbol>
+    <symbol id="cat-education" viewBox="0 0 48 48"><path d="M8 14c8-4 14-4 16 0v25c-2-4-8-4-16 0z"/><path d="M40 14c-8-4-14-4-16 0v25c2-4 8-4 16 0z"/><path d="M16 18h4M16 25h4M28 18h4M28 25h4"/></symbol>
+    <symbol id="cat-politics" viewBox="0 0 48 48"><path d="M12 39V8"/><path class="fill" d="M12 10h25l-5 7 5 7H12z"/><path d="M12 10h25l-5 7 5 7H12"/><path d="M19 31h18"/></symbol>
+    <symbol id="cat-supervision" viewBox="0 0 48 48"><path class="fill" d="M24 7 38 13v10c0 9-6 15-14 18-8-3-14-9-14-18V13z"/><path d="M24 7 38 13v10c0 9-6 15-14 18-8-3-14-9-14-18V13z"/><path d="M18 24l4 4 8-9"/></symbol>
+    <symbol id="cat-prison-admin" viewBox="0 0 48 48"><rect x="10" y="10" width="28" height="30" rx="3"/><path d="M16 10V7h16v3"/><path d="M17 18h14M17 25h14M17 32h8"/><path d="M34 31l3 3 5-7"/></symbol>
+    <symbol id="cat-security" viewBox="0 0 48 48"><path d="M10 37h28"/><path d="M15 37V18l9-7 9 7v19"/><path d="M19 37V25h10v12"/><path d="M8 21h32"/><path d="M14 15h20"/></symbol>
+    <symbol id="cat-patrol" viewBox="0 0 48 48"><path d="M14 10h20v28H14z"/><path d="M18 15h12M18 21h12M18 27h8"/><circle cx="32" cy="32" r="5"/><path d="m36 36 5 5"/></symbol>
+    <symbol id="cat-medical" viewBox="0 0 48 48"><rect x="9" y="13" width="30" height="25" rx="4"/><path d="M18 13V9h12v4"/><path d="M24 20v11M18.5 25.5h11"/></symbol>
+    <symbol id="cat-psychology" viewBox="0 0 48 48"><path d="M24 40c-9-6-15-12-15-20a8 8 0 0 1 15-4 8 8 0 0 1 15 4c0 8-6 14-15 20z"/><path d="M15 25h5l3-6 4 11 3-5h4"/></symbol>
+    <symbol id="cat-logistics" viewBox="0 0 48 48"><path d="M8 19h23v17H8z"/><path d="M31 24h7l4 6v6H31z"/><circle cx="17" cy="38" r="3"/><circle cx="35" cy="38" r="3"/><path d="M13 14h12"/></symbol>
+    <symbol id="cat-equipment" viewBox="0 0 48 48"><circle cx="24" cy="24" r="5"/><path d="M24 8v6M24 34v6M8 24h6M34 24h6M13 13l4 4M31 31l4 4M35 13l-4 4M17 31l-4 4"/><path d="M19 10h10l2 5 5 2v14l-5 2-2 5H19l-2-5-5-2V17l5-2z"/></symbol>
+    <symbol id="cat-meeting" viewBox="0 0 48 48"><rect x="8" y="13" width="32" height="22" rx="3"/><path d="M14 35v5M34 35v5M16 20h16M16 27h11"/></symbol>
+    <symbol id="cat-notice" viewBox="0 0 48 48"><path d="M12 9h24v30H12z"/><path d="M18 17h12M18 24h12M18 31h7"/><path d="M32 9v7h7"/></symbol>
+    <symbol id="cat-training" viewBox="0 0 48 48"><path d="M10 34c6-4 22-4 28 0"/><path d="M15 20h18"/><path d="m24 10 16 8-16 8-16-8z"/><path d="M36 20v8"/></symbol>
+    <symbol id="cat-assessment" viewBox="0 0 48 48"><rect x="11" y="8" width="26" height="32" rx="4"/><path d="M17 18h12M17 26h8"/><path d="m27 33 4 4 8-10"/></symbol>
+    <symbol id="cat-discipline" viewBox="0 0 48 48"><path d="M24 8 38 14v10c0 9-6 14-14 17-8-3-14-8-14-17V14z"/><path d="M18 18h12M18 25h12M21 32h6"/></symbol>
+    <symbol id="cat-visitor" viewBox="0 0 48 48"><circle cx="18" cy="18" r="6"/><path d="M7 38c2-9 20-9 22 0"/><path d="M31 15h9v14h-9z"/><path d="M31 22h9"/></symbol>
+    <symbol id="cat-finance" viewBox="0 0 48 48"><rect x="9" y="12" width="30" height="24" rx="4"/><path d="M9 19h30"/><path d="M17 28h8"/><path d="M31 26c3 0 3 5 0 5h-4V23h4c3 0 3 3 0 3z"/></symbol>
+    <symbol id="cat-kitchen" viewBox="0 0 48 48"><path d="M14 8v32"/><path d="M10 8v12a4 4 0 0 0 8 0V8"/><path d="M29 8v32"/><path d="M29 8c6 4 8 11 2 17"/></symbol>
+    <symbol id="cat-maintenance" viewBox="0 0 48 48"><path d="M18 29 9 38l-3-3 9-9"/><path d="M29 8a9 9 0 0 0 11 11L24 35l-9-9z"/><path d="M31 31l8 8"/></symbol>
+
+    <!-- Generic backup symbols -->
+    <symbol id="gen-star" viewBox="0 0 48 48"><path d="m24 7 5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1z"/></symbol>
+    <symbol id="gen-flag" viewBox="0 0 48 48"><path d="M12 40V8"/><path d="M12 10h24l-4 8 4 8H12"/></symbol>
+    <symbol id="gen-target" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="9"/><circle cx="24" cy="24" r="2"/></symbol>
+    <symbol id="gen-bookmark" viewBox="0 0 48 48"><path d="M14 8h20v32L24 33 14 40z"/></symbol>
+    <symbol id="gen-tag" viewBox="0 0 48 48"><path d="M9 25 25 9h14v14L23 39z"/><circle cx="32" cy="16" r="2"/></symbol>
+    <symbol id="gen-map" viewBox="0 0 48 48"><path d="m9 13 10-4 10 4 10-4v26l-10 4-10-4-10 4z"/><path d="M19 9v26M29 13v26"/></symbol>
+    <symbol id="gen-light" viewBox="0 0 48 48"><path d="M16 22a8 8 0 1 1 16 0c0 4-3 6-5 9h-6c-2-3-5-5-5-9z"/><path d="M20 36h8M21 40h6M24 7v4M10 21h4M34 21h4"/></symbol>
+    <symbol id="gen-link" viewBox="0 0 48 48"><path d="M19 30 16 33a8 8 0 0 1-11-11l5-5a8 8 0 0 1 11 0"/><path d="M29 18 32 15a8 8 0 0 1 11 11l-5 5a8 8 0 0 1-11 0"/><path d="M18 30 30 18"/></symbol>
+    <symbol id="gen-eye" viewBox="0 0 48 48"><path d="M6 24s7-12 18-12 18 12 18 12-7 12-18 12S6 24 6 24z"/><circle cx="24" cy="24" r="5"/></symbol>
+    <symbol id="gen-compass" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><path d="m29 14-4 12-10 8 4-12z"/></symbol>
+    <symbol id="gen-layers" viewBox="0 0 48 48"><path d="m24 8 17 9-17 9-17-9z"/><path d="m8 25 16 8 16-8"/><path d="m8 33 16 8 16-8"/></symbol>
+    <symbol id="gen-grid" viewBox="0 0 48 48"><path d="M9 9h12v12H9zM27 9h12v12H27zM9 27h12v12H9zM27 27h12v12H27z"/></symbol>
+    <symbol id="gen-certificate" viewBox="0 0 48 48"><circle cx="24" cy="19" r="10"/><path d="m17 28-3 12 10-5 10 5-3-12"/><path d="m20 19 3 3 6-7"/></symbol>
+    <symbol id="gen-handshake" viewBox="0 0 48 48"><path d="M8 27 18 17l8 8"/><path d="M40 27 30 17l-8 8"/><path d="m18 29 5 5a4 4 0 0 0 6 0l5-5"/><path d="M12 31l6 6M36 31l-6 6"/></symbol>
+    <symbol id="gen-database" viewBox="0 0 48 48"><ellipse cx="24" cy="12" rx="14" ry="5"/><path d="M10 12v24c0 3 6 5 14 5s14-2 14-5V12"/><path d="M10 24c0 3 6 5 14 5s14-2 14-5"/></symbol>
+    <symbol id="gen-briefcase" viewBox="0 0 48 48"><rect x="8" y="16" width="32" height="22" rx="3"/><path d="M18 16v-5h12v5M8 25h32M21 25v4h6v-4"/></symbol>
+    <symbol id="gen-roadmap" viewBox="0 0 48 48"><path d="M13 39c13-8 9-22 22-30"/><circle cx="13" cy="39" r="4"/><circle cx="24" cy="24" r="4"/><circle cx="35" cy="9" r="4"/></symbol>
+    <symbol id="gen-shield-star" viewBox="0 0 48 48"><path d="M24 7 38 13v10c0 9-6 15-14 18-8-3-14-9-14-18V13z"/><path d="m24 16 2 5 5 .5-4 3.5 1 5-4-2.5-4 2.5 1-5-4-3.5 5-.5z"/></symbol>
+  </defs>
+</svg>
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <h1>OA 图标审核稿 V2</h1>
+      <p class="sub">这版采用“线性轮廓 + 轻量底色 + 局部填充”的 SVG 风格。每个图标保持统一笔触，但通过外形、构图和细节提高区分度。审核通过后再替换到模板。</p>
+    </div>
+    <div class="badge">77 个候选图标</div>
+  </div>
+
+  <div class="section">
+    <h2>导航与工作台</h2>
+    <div class="grid" data-icons="home:首页:blue,dashboard:工作台:blue,task:任务管理:blue,bulletin:信息公示:orange,memo:工作备忘:green,file:文件:slate,folder:文件夹:slate,chart:统计分析:blue,users:用户:green,settings:设置:slate"></div>
+  </div>
+
+  <div class="section">
+    <h2>任务、公示、备忘状态</h2>
+    <div class="grid" data-icons="task-wait:待处理:orange,task-flow:流转交接:blue,progress:进度:green,pin:置顶:red,comment:评论:blue,bell:提醒:orange,memo-group:备忘分组:green,calendar:日期:slate,warning:风险提示:red,archive:归档:slate"></div>
+  </div>
+
+  <div class="section">
+    <h2>常用操作</h2>
+    <div class="grid" data-icons="add:新增:blue,edit:编辑:orange,trash:删除:red,save:保存:green,search:搜索:blue,filter:筛选:slate,refresh:刷新:blue,attach:附件:slate,import:导入:green,export:导出:orange"></div>
+  </div>
+
+  <div class="section">
+    <h2>权限、分类与扩展</h2>
+    <div class="grid" data-icons="user-add:添加用户:green,user-key:强制分配:orange,lock:个人/权限:slate,globe:公共:blue,category:类别:blue,column:栏目:slate,share:共享:green,phone:通讯录:green,help:帮助:blue"></div>
+  </div>
+
+  <div class="section">
+    <h2>监狱内部办公业务类别</h2>
+    <div class="grid" data-icons="production:生产劳动:orange,education:教育改造:blue,politics:政工党建:red,supervision:监管安全:blue,prison-admin:狱政管理:slate,security:安防设施:slate,patrol:巡查督导:blue,medical:医疗卫生:green,psychology:心理矫治:green,logistics:后勤保障:orange,equipment:装备管理:slate,meeting:会议活动:blue,notice:通知公告:orange,training:培训学习:blue,assessment:考核评估:green,discipline:纪律规范:red,visitor:会见管理:green,finance:财务物资:orange,kitchen:生活伙食:orange,maintenance:维修维护:slate" data-prefix="cat"></div>
+  </div>
+
+  <div class="section">
+    <h2>通用备选标志</h2>
+    <div class="grid" data-icons="star:重点事项:orange,flag:标记事项:red,target:目标任务:blue,bookmark:收藏归类:slate,tag:标签分类:green,map:区域位置:blue,light:创新建议:orange,link:关联事项:blue,eye:查看监督:slate,compass:方向指引:blue,layers:层级模块:slate,grid:综合分类:blue,certificate:荣誉资质:orange,handshake:协作共建:green,database:数据资料:slate,briefcase:综合办公:blue,roadmap:计划路线:green,shield-star:重点安保:red" data-prefix="gen"></div>
+  </div>
+
+  <div class="usage">
+    审核建议：如果这个方向可以，我会把图标整理成一个统一的 SVG sprite 或 Jinja 宏，例如 <code>&lt;svg class="icon"&gt;&lt;use href="#ico-task"&gt;&lt;/use&gt;&lt;/svg&gt;</code>，然后分批替换所有模板中的 emoji。当前页面只是审核稿，不会影响现有系统界面。
+  </div>
+</div>
+<script>
+(function () {
+  var colorMap = { blue: 'blue', green: 'green', orange: 'orange', red: 'red', slate: 'slate' };
+  var grids = document.querySelectorAll('[data-icons]');
+  for (var g = 0; g < grids.length; g++) {
+    var items = grids[g].getAttribute('data-icons').split(',');
+    var prefix = grids[g].getAttribute('data-prefix') || 'ico';
+    for (var i = 0; i < items.length; i++) {
+      var parts = items[i].split(':');
+      var id = parts[0], name = parts[1], tone = colorMap[parts[2]] || 'blue';
+      var symbolId = prefix + '-' + id;
+      var card = document.createElement('div');
+      card.className = 'card ' + tone;
+      card.innerHTML = '<div class="icon-box"><svg class="icon"><use href="#' + symbolId + '"></use></svg></div><div class="name">' + name + '</div><div class="id">' + symbolId + '</div>';
+      grids[g].appendChild(card);
+    }
+  }
+})();
+</script>
+</body>
+</html>

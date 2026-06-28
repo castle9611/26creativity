@@ -1,0 +1,168 @@
+{% from '_icon.html' import icon %}
+<!-- Stats Bar (clickable to filter) -->
+<div class="stats-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+  <a href="{{ url_for('tasks.list_tasks') }}" class="stats-btn {% if not status %}active{% endif %}" onclick="return filterTasks(this)">
+    <span style="font-size:18px;">{{ icon('task') }}</span>
+    <div>
+      <div class="stats-num" style="font-size:18px;font-weight:700;color:#1e293b;white-space:nowrap;">{{ total_count }}</div>
+      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">全部任务</div>
+    </div>
+  </a>
+  <a href="{{ url_for('tasks.list_tasks', status='pending') }}" class="stats-btn {% if status=='pending' %}active{% endif %}" onclick="return filterTasks(this)">
+    <span style="font-size:18px;">{{ icon('task-wait') }}</span>
+    <div>
+      <div class="stats-num" style="font-size:18px;font-weight:700;color:#f59e0b;white-space:nowrap;">{{ pending_count }}</div>
+      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">待接受</div>
+    </div>
+  </a>
+  <a href="{{ url_for('tasks.list_tasks', status='processing') }}" class="stats-btn {% if status=='processing' %}active{% endif %}" onclick="return filterTasks(this)">
+    <span style="font-size:18px;">{{ icon('progress') }}</span>
+    <div>
+      <div class="stats-num" style="font-size:18px;font-weight:700;color:#3b82f6;white-space:nowrap;">{{ processing_count }}</div>
+      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">处理中</div>
+    </div>
+  </a>
+  <a href="{{ url_for('tasks.list_tasks', status='transferring') }}" class="stats-btn {% if status=='transferring' %}active{% endif %}" onclick="return filterTasks(this)">
+    <span style="font-size:18px;">{{ icon('task-flow') }}</span>
+    <div>
+      <div class="stats-num" style="font-size:18px;font-weight:700;color:#f59e0b;white-space:nowrap;">{{ transferring_count }}</div>
+      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">待交接</div>
+    </div>
+  </a>
+  <a href="{{ url_for('tasks.list_tasks', status='completed') }}" class="stats-btn {% if status=='completed' %}active{% endif %}" onclick="return filterTasks(this)">
+    <span style="font-size:18px;">{{ icon('progress') }}</span>
+    <div>
+      <div class="stats-num" style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ completed_count }}</div>
+      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">已完成</div>
+    </div>
+  </a>
+  <a href="{{ url_for('tasks.list_tasks', status='overdue') }}" class="stats-btn-sm {% if status=='overdue' %}active{% endif %}" style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;" onclick="return filterTasks(this)">
+    <span>{{ icon('warning') }}</span>
+    <span>{{ overdue_count }}</span>
+    <span style="margin-left:2px;font-size:11px;">已超时</span>
+  </a>
+  <a href="{{ url_for('tasks.list_tasks', status='rejected') }}" class="stats-btn-sm {% if status=='rejected' %}active{% endif %}" style="background:#fafafa;border:1px solid #e2e8f0;color:#94a3b8;" onclick="return filterTasks(this)">
+    <span>{{ icon('warning') }}</span>
+    <span>{{ rejected_count }}</span>
+    <span style="margin-left:2px;font-size:11px;">已驳回</span>
+  </a>
+  <a href="{{ url_for('tasks.list_tasks', status='archived') }}" class="stats-btn-sm {% if status=='archived' %}active{% endif %}" style="background:#fafafa;border:1px solid #e2e8f0;color:#94a3b8;" onclick="return filterTasks(this)">
+    <span>{{ icon('archive') }}</span>
+    <span>{{ archived_count }}</span>
+    <span style="margin-left:2px;font-size:11px;">已归档</span>
+  </a>
+</div>
+
+<!-- Tasks Table -->
+<div class="card card-nopad">
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="width:40px;">
+          <input type="checkbox" id="selectAllTop" onchange="toggleSelectAll(this)" style="width:16px;height:16px;cursor:pointer;">
+        </th>
+        <th style="width:50px;">ID</th>
+        <th>任务标题</th>
+        <th style="width:80px;">优先级</th>
+        <th style="width:130px;">类别</th>
+        <th style="width:120px;">部门</th>
+        <th style="width:100px;">负责人</th>
+        <th style="width:110px;">截止日期</th>
+        <th style="width:90px;">状态</th>
+        <th style="width:100px;">进度</th>
+        <th style="width:80px;">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tasks %}
+      <tr data-id="{{ t.id }}" class="task-row">
+        <td>
+          <input type="checkbox" class="task-checkbox" value="{{ t.id }}" onchange="updateSelectionCount()" style="width:16px;height:16px;cursor:pointer;">
+        </td>
+        <td style="color:#94a3b8;font-weight:500;">#{{ t.id }}</td>
+        <td>
+          <a href="{{ url_for('tasks.detail_task', task_id=t.id) }}" style="font-weight:500;color:#0f172a;">
+            {{ t.title[:50] }}{% if t.title|length>50 %}...{% endif %}
+          </a>
+          {% if t.id in read_ids %}
+          <span class="read-badge">已读</span>
+          {% else %}
+          <span class="read-badge unread">未读</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if t.priority=='high' %}
+          <span class="badge badge-danger">高</span>
+          {% elif t.priority=='medium' %}
+          <span class="badge badge-warning">中</span>
+          {% elif t.priority=='low' %}
+          <span class="badge badge-gray">低</span>
+          {% else %}
+          <span class="badge badge-gray">普通</span>
+          {% endif %}
+        </td>
+        <td>{% if t.category %}<span class="badge" style="background:#eef2ff;color:#4f46e5;">{{ icon(t.category.icon|icon_id) }} {{ t.category.name }}</span>{% else %}<span style="color:#94a3b8;">-</span>{% endif %}</td>
+        <td style="color:#64748b;">{{ t.department or '-' }}</td>
+        <td>{{ t.assignee_names }}</td>
+        <td style="color:#64748b;">{{ t.deadline.strftime('%Y-%m-%d') if t.deadline else '-' }}</td>
+        <td>
+          {% if t.status=='pending' %}
+          <span class="badge badge-info">待接收</span>
+          {% elif t.status=='processing' %}
+          <span class="badge badge-primary">处理中</span>
+          {% elif t.status=='transferring' %}
+          <span class="badge badge-warning">待交接</span>
+          {% elif t.status=='completed' %}
+          <span class="badge badge-success">已完成</span>
+          {% elif t.status=='rejected' %}
+          <span class="badge badge-danger">已驳回</span>
+          {% elif t.status=='archived' %}
+          <span class="badge badge-gray">已归档</span>
+          {% endif %}
+        </td>
+        <td style="text-align:center;">
+          {% if t.status == 'processing' and t.progress is not none %}
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;min-width:50px;">
+              <div style="height:100%;width:{{ t.progress }}%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:4px;"></div>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:#2563eb;white-space:nowrap;">{{ t.progress }}%</span>
+          </div>
+          {% else %}
+          <span style="color:#e2e8f0;">-</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{{ url_for('tasks.detail_task', task_id=t.id) }}" class="btn btn-sm">查看</a>
+        </td>
+      </tr>
+      {% endfor %}
+      {% if tasks|length==0 %}
+      <tr>
+        <td colspan="11" class="empty-row">
+          <div style="padding:48px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:12px;opacity:0.5;">{{ icon('task') }}</div>
+            <div style="color:#64748b;">暂无任务数据</div>
+          </div>
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if pagination.pages>1 %}
+<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('tasks.list_tasks', page=pagination.prev_num, status=status, priority=priority, department=department, assignee_id=assignee_id, category_id=category_filter, keyword=keyword, search_scope=search_scope, date_from=date_from, date_to=date_to) }}" class="btn" onclick="return filterTasks(this)">上一页</a>
+  {% endif %}
+  {% for p in range(1,pagination.pages+1) %}
+  <a href="{{ url_for('tasks.list_tasks', page=p, status=status, priority=priority, department=department, assignee_id=assignee_id, category_id=category_filter, keyword=keyword, search_scope=search_scope, date_from=date_from, date_to=date_to) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}" onclick="return filterTasks(this)">{{ p }}</a>
+  {% endfor %}
+  {% if pagination.has_next %}
+  <a href="{{ url_for('tasks.list_tasks', page=pagination.next_num, status=status, priority=priority, department=department, assignee_id=assignee_id, category_id=category_filter, keyword=keyword, search_scope=search_scope, date_from=date_from, date_to=date_to) }}" class="btn" onclick="return filterTasks(this)">下一页</a>
+  {% endif %}
+  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 条</span>
+</div>
+{% endif %}

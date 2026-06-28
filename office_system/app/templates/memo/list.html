@@ -201,6 +201,34 @@ body { background: #f1f5f9; }
 .type-toggle .btn.btn-primary:hover {
     background: #1d4ed8;
 }
+
+/* Stats bar filter buttons */
+.stats-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+.stats-btn:hover { border-color: #2563eb; }
+.stats-btn.active {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.25) !important;
+}
+.stats-btn.active .stats-num,
+.stats-btn.active .stats-icon {
+    color: #fff !important;
+}
+.stats-btn.active .stats-label {
+    color: rgba(255,255,255,0.85) !important;
+}
 .group-panel {
     background: white;
     border: 1px solid #e2e8f0;
@@ -259,31 +287,6 @@ body { background: #f1f5f9; }
   <div class="page-actions">
     <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary">{{ icon('add') }} 新建备忘</a>
   </div>
-</div>
-
-<!-- Stats Bar -->
-<div class="stats-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-  <a href="{{ url_for('memo.list_memos') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if memo_type == 'all' or memo_type == '' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if memo_type == 'all' or memo_type == '' %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('memo') }}</span>
-    <div>
-      <div style="font-size:18px;font-weight:700;color:#1e293b;white-space:nowrap;">{{ total }}</div>
-      <div style="font-size:11px;color:#64748b;white-space:nowrap;">备忘总数</div>
-    </div>
-  </a>
-  <a href="{{ url_for('memo.list_memos', type='private') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if memo_type == 'private' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if memo_type == 'private' %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('lock') }}</span>
-    <div>
-      <div style="font-size:18px;font-weight:700;color:#8b5cf6;white-space:nowrap;">{{ private_count }}</div>
-      <div style="font-size:11px;color:#64748b;white-space:nowrap;">私人备忘</div>
-    </div>
-  </a>
-  <a href="{{ url_for('memo.list_memos', type='public') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;{% if memo_type == 'public' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if memo_type == 'public' %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('globe') }}</span>
-    <div>
-      <div style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ public_count }}</div>
-      <div style="font-size:11px;color:#64748b;white-space:nowrap;">公共备忘</div>
-    </div>
-  </a>
 </div>
 
 <!-- Filters -->
@@ -350,45 +353,9 @@ body { background: #f1f5f9; }
   </div>
 </div>
 
-<!-- Memo Cards -->
-{% if memos %}
-<div class="memo-grid">
-  {% for m in memos %}
-  <div class="memo-card" data-id="{{ m.id }}" onclick="if(!event.target.closest('.card-cb'))openMemoModal({{ m.id }})" style="position:relative;">
-    <input type="checkbox" class="card-cb" value="{{ m.id }}" onchange="updateBatchBar()" style="position:absolute;top:12px;left:12px;width:18px;height:18px;cursor:pointer;z-index:2;">
-    <div class="memo-card-header" style="padding-left:36px;">
-      <div class="memo-card-title">{{ m.title }}</div>
-      <span class="badge {% if m.memo_type=='public' %}badge-info{% else %}badge-gray{% endif %} memo-card-badge">
-        {% if m.memo_type=='public' %}公共{% else %}个人{% endif %}
-      </span>
-    </div>
-    <div class="memo-card-preview">{{ (m.content or '无内容')|strip_html }}</div>
-    <div class="memo-card-footer">
-      <span>{% if m.group %}{{ m.group.name }} · {% endif %}{{ m.creator.real_name if m.creator else '' }} · {{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</span>
-      <div class="memo-card-actions" onclick="event.stopPropagation();">
-        <a href="{{ url_for('memo.edit_memo', memo_id=m.id) }}" class="btn">{{ icon('edit') }}</a>
-        <form method="post" action="{{ url_for('memo.archive_memo', memo_id=m.id) }}" style="display:inline;">
-          <button type="submit" class="btn">{{ icon('archive') }}</button>
-        </form>
-        <form method="post" action="{{ url_for('memo.delete_memo', memo_id=m.id) }}" style="display:inline;" onsubmit="return confirm('确认删除该备忘？');">
-          <button type="submit" class="btn btn-danger">{{ icon('trash') }}</button>
-        </form>
-      </div>
-    </div>
-  </div>
-  {% endfor %}
+<div id="memo-list-container">
+  {% include 'memo/_list_content.html' %}
 </div>
-{% else %}
-<div class="card">
-  <div class="empty-state" style="padding:60px;">
-    <div class="empty-icon">{{ icon('memo') }}</div>
-    <div class="empty-title">暂无备忘</div>
-    <div class="empty-desc">
-      <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary" style="margin-top:16px;">创建第一条备忘</a>
-    </div>
-  </div>
-</div>
-{% endif %}
 
 <!-- Memo Detail Modal -->
 <div id="memoModal" class="memo-modal">
@@ -416,27 +383,81 @@ body { background: #f1f5f9; }
   </div>
 </div>
 
-<!-- Memo Data (hidden) -->
-<script type="application/json" id="memoData">[{% for m in memos %}{"id":{{ m.id }},"title":{{ m.title|tojson }},"content":{{ (m.content or '')|tojson }},"memo_type":"{{ m.memo_type }}","group":{{ (m.group.name if m.group else '')|tojson }},"creator":"{{ m.creator.real_name if m.creator else '' }}","created_at":"{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}","edit_url":"{{ url_for('memo.edit_memo', memo_id=m.id) }}"}{% if not loop.last %},{% endif %}{% endfor %}]</script>
-<script type="application/json" id="memoLinksData">{{ memo_links|tojson }}</script>
-
 <script>
+/* AJAX filter — load partial content without page reload */
+function filterMemos(link) {
+    var url = link.href + (link.href.indexOf('?') > -1 ? '&' : '?') + 'partial=1';
+    var container = document.getElementById('memo-list-container');
+    if (!container) return true;
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">加载中...</div>';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            container.innerHTML = xhr.responseText;
+            // Re-parse memo data for modal
+            try {
+                var memoDataEl = document.getElementById('memoData');
+                if (memoDataEl) {
+                    window.__memoList = JSON.parse(memoDataEl.textContent);
+                }
+            } catch(e) {}
+        } else {
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">加载失败</div>';
+        }
+    };
+    xhr.onerror = function() {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">网络错误</div>';
+    };
+    xhr.send();
+    return false;
+}
+
+// Wire type-toggle links and search form for AJAX
+(function() {
+    var toggleLinks = document.querySelectorAll('.type-toggle a');
+    for (var i = 0; i < toggleLinks.length; i++) {
+        toggleLinks[i].addEventListener('click', function(e) {
+            e.preventDefault();
+            filterMemos(this);
+        });
+    }
+    var searchForm = document.querySelector('.toolbar form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var url = this.action + '?' + new URLSearchParams(new FormData(this)).toString() + '&partial=1';
+            var container = document.getElementById('memo-list-container');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">加载中...</div>';
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onload = function() {
+                if (xhr.status === 200) { container.innerHTML = xhr.responseText; }
+                else { container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">加载失败</div>'; }
+            };
+            xhr.onerror = function() { container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">网络错误</div>'; };
+            xhr.send();
+        });
+    }
+})();
+
 (function(){
     var memoModal = document.getElementById('memoModal');
-    var memoList = [];
+    window.__memoList = [];
 
     // Parse memo data
     try {
-        memoList = JSON.parse(document.getElementById('memoData').textContent);
+        window.__memoList = JSON.parse(document.getElementById('memoData').textContent);
     } catch(e) {
         console.error('Failed to parse memo data:', e);
     }
 
     window.openMemoModal = function(id) {
         var memo = null;
-        for (var i = 0; i < memoList.length; i++) {
-            if (memoList[i].id === id) {
-                memo = memoList[i];
+        for (var i = 0; i < window.__memoList.length; i++) {
+            if (window.__memoList[i].id === id) {
+                memo = window.__memoList[i];
                 break;
             }
         }
@@ -550,20 +571,6 @@ function batchOp(action) {
     xhr.send('ids=' + encodeURIComponent(JSON.stringify(ids)));
 }
 </script>
-
-<!-- Pagination -->
-{% if has_prev or has_next %}
-<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
-  {% if has_prev %}
-  <a href="{{ url_for('memo.list_memos', page=page-1, type=memo_type, keyword=keyword, group_id=group_id) }}" class="btn">上一页</a>
-  {% endif %}
-  <span class="badge badge-gray" style="padding:8px 16px;font-size:13px;">第 {{ page }} 页</span>
-  {% if has_next %}
-  <a href="{{ url_for('memo.list_memos', page=page+1, type=memo_type, keyword=keyword, group_id=group_id) }}" class="btn">下一页</a>
-  {% endif %}
-  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ total }} 条</span>
-</div>
-{% endif %}
 
 </body>
 </html>

@@ -89,7 +89,7 @@ def ensure_runtime_tables(app):
 
 
 def register_theme_injector(app):
-    """Inject theme switcher script into HTML pages that use the main CSS."""
+    """Inject the fixed default theme script into HTML pages that use the main CSS."""
 
     @app.after_request
     def inject_theme_script(response):
@@ -134,14 +134,25 @@ def register_context_processors(app):
         '📋': 'task', '📝': 'memo', '📁': 'folder', '📢': 'bulletin',
         '📊': 'chart', '📌': 'pin', '⚡': 'gen-light', '👥': 'users',
         '⚖': 'cat-discipline', '🔒': 'lock', '📂': 'archive',
+        '👮': 'cat-police', '🚔': 'cat-patrol', '🛡': 'cat-security',
+        '⛓': 'cat-handcuff', '🧾': 'gen-report', '✉': 'gen-mail',
+        '🖨': 'gen-printer', '🏢': 'gen-briefcase',
         '': 'category', None: 'category'
     }
 
     @app.context_processor
     def inject_global_vars():
         from flask import session
+        app_name = '内网OA办公系统'
+        try:
+            from app.models import SystemConfig
+            configured_name = SystemConfig.query.filter_by(config_key='system_name').first()
+            if configured_name and configured_name.config_value.strip():
+                app_name = configured_name.config_value.strip()
+        except Exception:
+            pass
         return {
-            'app_name': '内网OA办公系统',
+            'app_name': app_name,
             'app_version': '1.0.0',
             'current_year': '2026',
             'session': session

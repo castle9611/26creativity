@@ -12,13 +12,52 @@
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 18% 8%, rgba(16,185,129,.14), transparent 30%),
-    linear-gradient(180deg, #f7faf8 0%, #eef4f1 100%);
+    radial-gradient(circle at 82% 0%, rgba(52,132,255,.12), transparent 26%),
+    linear-gradient(180deg, #f4f7fc 0%, #edf3fb 100%);
 }
 .detail-shell {
-  max-width: 980px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 26px 20px 46px;
+}
+.public-detail-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.public-detail-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #60708a;
+  font-size: 15px;
+  font-weight: 800;
+}
+.public-home-link {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  border: 1px solid #d7e4f6;
+  border-radius: 999px;
+  color: #1266f3;
+  background: rgba(255,255,255,.94);
+  text-decoration: none;
+  box-shadow: 0 12px 26px rgba(22,48,82,.08);
+}
+.public-home-link:hover {
+  border-color: #1266f3;
+  background: #eef5ff;
+}
+.public-detail-sep {
+  color: #8fa0b8;
+  font-size: 18px;
+}
+.public-detail-current {
+  color: #071526;
 }
 .detail-top {
   display: flex;
@@ -39,18 +78,18 @@ body {
   font-size: 13px;
 }
 .detail-card {
-  border: 1px solid rgba(148,163,184,.26);
-  border-radius: 12px;
-  background: rgba(255,255,255,.9);
-  box-shadow: 0 18px 42px rgba(15,23,42,.08);
+  border: 1px solid #d9e5f4;
+  border-radius: 10px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 14px 32px rgba(22,48,82,.08);
   overflow: hidden;
 }
 .detail-head {
   padding: 24px 26px;
-  border-bottom: 1px solid rgba(148,163,184,.18);
+  border-bottom: 1px solid #edf2f8;
   background:
-    linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,255,255,.76)),
-    linear-gradient(135deg, rgba(4,120,87,.12), transparent 62%);
+    radial-gradient(circle at 92% 8%, rgba(54,132,255,.12), transparent 24%),
+    linear-gradient(135deg, #fff, #f8fbff);
 }
 .detail-type {
   color: #047857;
@@ -61,7 +100,7 @@ body {
   margin-top: 10px;
   font-size: 28px;
   font-weight: 900;
-  color: #10231d;
+  color: #071526;
   line-height: 1.3;
 }
 .detail-meta-public {
@@ -88,9 +127,12 @@ body {
   line-height: 1.9;
 }
 .detail-body-public img {
-  max-width: 100%;
-  height: auto;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
   border-radius: 8px;
+  display: block;
+  margin: 12px 0;
 }
 .detail-body-public table {
   max-width: 100%;
@@ -102,6 +144,8 @@ body {
   padding: 8px;
 }
 @media (max-width: 720px) {
+  .public-detail-nav { flex-direction: column; align-items: stretch; }
+  .public-detail-crumb { flex-wrap: wrap; }
   .detail-top { flex-direction: column; align-items: stretch; }
   .detail-title-public { font-size: 22px; }
 }
@@ -109,8 +153,20 @@ body {
 </head>
 <body>
 <div class="detail-shell">
+  <nav class="public-detail-nav" aria-label="公开详情导航">
+    <div class="public-detail-crumb">
+      <a href="{{ back_url }}" class="public-home-link">{{ icon('home') }} 返回公开首页</a>
+      <span class="public-detail-sep">›</span>
+      <span class="public-detail-current">
+        {% if detail_type == 'task' %}任务详情
+        {% elif detail_type == 'bulletin' %}公示详情
+        {% else %}公共备忘{% endif %}
+      </span>
+    </div>
+  </nav>
+
   <div class="detail-top">
-    <a href="{{ back_url }}" class="back-btn">返回公开首页</a>
+    <a href="{{ back_url }}" class="public-home-link">{{ icon('home') }} 公开首页</a>
     <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;">
       <span class="readonly-badge">{{ icon('lock') }} 公开只读</span>
       {% if session.get('user_id') %}

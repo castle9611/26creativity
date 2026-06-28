@@ -102,6 +102,24 @@ def list_memos():
                 'sheets': [{'id': s.id, 'name': s.name, 'url': url_for('sheets.edit_sheet', sheet_id=s.id)} for s in all_sheets if s.related_id == mid],
             }
 
+    # AJAX partial rendering for no-flash filtering
+    if request.args.get('partial') == '1':
+        html = render_template('memo/_list_content.html',
+                               memos=page_memos,
+                               groups=groups,
+                               group_id=group_id,
+                               page=page,
+                               per_page=per_page,
+                               total=total,
+                               has_prev=has_prev,
+                               has_next=has_next,
+                               memo_type=memo_type,
+                               keyword=keyword,
+                               private_count=private_count,
+                               public_count=public_count,
+                               memo_links=memo_links)
+        return html
+
     return render_template('memo/list.html',
                            memos=page_memos,
                            groups=groups,

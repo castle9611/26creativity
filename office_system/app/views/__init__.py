@@ -121,11 +121,22 @@ def register_blueprints(app):
             bulletin_query = bulletin_query.filter(Bulletin.category_id == active_category.id)
             file_query = file_query.filter(File.category_id == active_category.id)
 
+        from sqlalchemy import or_
+        pending_count = task_query.filter(Task.status.in_(active_statuses)).count()
+        tracking_count = task_query.count()
+        reminders_count = bulletin_query.filter(
+            or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
+        ).count()
+        files_count = file_query.count()
+        memos_count = Memo.query.filter(
+            Memo.memo_type == 'public',
+            Memo.is_archived == 0
+        ).count()
+
         pending_tasks = task_query.filter(Task.status.in_(active_statuses)).order_by(
             Task.deadline.asc().nullslast(), Task.created_at.desc()
         ).limit(8).all()
         tracking_tasks = task_query.order_by(Task.updated_at.desc()).limit(8).all()
-        from sqlalchemy import or_
         reminders = bulletin_query.filter(
             or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
         ).order_by(Bulletin.created_at.desc()).limit(8).all()
@@ -140,10 +151,11 @@ def register_blueprints(app):
         ).order_by(QuickLink.sort_order.asc(), QuickLink.id.asc()).limit(10).all()
 
         portal_stats = {
-            'pending': task_query.filter(Task.status.in_(active_statuses)).count(),
-            'tracking': task_query.count(),
-            'reminders': len(reminders),
-            'files': file_query.count(),
+            'pending': pending_count,
+            'tracking': tracking_count,
+            'reminders': reminders_count,
+            'files': files_count,
+            'memos': memos_count,
         }
 
         return render_template('public_home.html',
@@ -172,6 +184,63 @@ def register_blueprints(app):
         response = send_file(full_path, as_attachment=True)
         response.headers['Content-Disposition'] = content_disposition(file_record.original_name)
         return response
+
+    @index_bp.route('/public/list/<string:list_type>')
+    def public_list(list_type):
+        """Public list pages for portal columns."""
+        from datetime import date
+        from sqlalchemy import or_
+
+        categories = BulletinCategory.query.filter_by(is_active=1).order_by(
+            BulletinCategory.sort_order.asc(), BulletinCategory.id.asc()
+        ).all()
+        selected_id = request.args.get('category_id', type=int)
+        active_category = next((c for c in categories if c.id == selected_id), None) if selected_id else None
+        page = request.args.get('page', 1, type=int)
+        per_page = 12
+
+        titles = {
+            'memos': ('公共备忘', 'memo'),
+            'tasks': ('任务跟踪', 'task-flow'),
+            'reminders': ('近期公示提醒要求', 'bell'),
+            'files': ('文件资料', 'folder'),
+        }
+        if list_type not in titles:
+            return render_template('errors/404.html'), 404
+
+        if list_type == 'memos':
+            query = Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).order_by(Memo.updated_at.desc())
+        elif list_type == 'tasks':
+            query = Task.query
+            if active_category:
+                query = query.filter(Task.category_id == active_category.id)
+            query = query.order_by(Task.updated_at.desc())
+        elif list_type == 'reminders':
+            query = Bulletin.query.filter(
+                Bulletin.status == 'published',
+                Bulletin.is_active == 1,
+                or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
+            )
+            if active_category:
+                query = query.filter(Bulletin.category_id == active_category.id)
+            query = query.order_by(Bulletin.created_at.desc())
+        else:
+            query = File.query.filter(File.is_deleted == 0)
+            if active_category:
+                query = query.filter(File.category_id == active_category.id)
+            query = query.order_by(File.created_at.desc())
+
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        return render_template(
+            'public_list.html',
+            list_type=list_type,
+            list_title=titles[list_type][0],
+            list_icon=titles[list_type][1],
+            items=pagination.items,
+            pagination=pagination,
+            active_category=active_category,
+            back_url=url_for('index_bp.index', category_id=active_category.id) if active_category else url_for('index_bp.index')
+        )
 
     @index_bp.route('/workbench')
     @login_required

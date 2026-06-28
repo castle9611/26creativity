@@ -231,8 +231,8 @@ body { background: #f1f5f9; }
         <button type="button" class="btn" onclick="formatText('insertUnorderedList')" title="无序列表">• 列表</button>
         <button type="button" class="btn" onclick="formatText('insertOrderedList')" title="有序列表">1. 列表</button>
         <span style="border-left:1px solid #e2e8f0;margin:0 4px;"></span>
-        <button type="button" class="btn" onclick="insertLink()" title="插入链接">🔗 链接</button>
-        <button type="button" class="btn" onclick="document.getElementById('imageInput').click()" title="插入图片">🖼 图片</button>
+        <button type="button" class="btn" onclick="insertLink()" title="插入链接">{{ icon('gen-link') }} 链接</button>
+        <button type="button" class="btn" onclick="document.getElementById('imageInput').click()" title="插入图片">{{ icon('file') }} 图片</button>
         <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
       </div>
       <div class="editor-wrapper">

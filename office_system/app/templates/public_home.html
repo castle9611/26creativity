@@ -322,9 +322,12 @@ body {
 }
 .item-full[hidden] { display: none; }
 .item-full img {
-  max-width: 100%;
-  height: auto;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
   border-radius: 8px;
+  display: block;
+  margin: 8px 0;
 }
 .rich-text {
   color: #40564e;
@@ -406,28 +409,513 @@ html[data-theme="night"] .item-meta { color: var(--text-muted); }
 html[data-theme="night"] .item-full { color: var(--text-secondary); background: rgba(255,255,255,.04); }
 html[data-theme="night"] .empty { color: var(--text-muted); }
 html[data-theme="night"] .public-logo { box-shadow: 0 12px 26px rgba(0,0,0,.3); }
+
+/* Final visual direction: deep command-center shell with solid institutional icons. */
+body {
+  background:
+    linear-gradient(135deg, rgba(13,148,136,.16), transparent 34%),
+    linear-gradient(180deg, #071526 0 255px, #eef3f8 255px 100%) !important;
+}
+.public-shell {
+  max-width: 1500px;
+  padding: 24px 26px 30px;
+}
+.public-top {
+  padding: 2px 0 18px;
+  color: #eaf2ff;
+}
+.public-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0b5cc8, #10bfa7);
+  box-shadow: 0 18px 38px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.public-logo .svg-icon { width: 27px; height: 27px; stroke-width: 2.35; }
+.public-name { color: #fff; font-size: 24px; font-weight: 900; }
+.public-sub { color: #a9bdd4; font-size: 14px; }
+.login-entry {
+  border-radius: 12px !important;
+  border-color: rgba(255,255,255,.16) !important;
+  background: rgba(255,255,255,.12) !important;
+  color: #f8fbff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
+}
+.login-entry.btn-primary {
+  background: linear-gradient(135deg, #0b5cc8, #2563eb) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  color: #fff !important;
+}
+.category-tabs {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  margin-bottom: 14px;
+  border-color: rgba(255,255,255,.14);
+  background: rgba(12,31,55,.76);
+  box-shadow: 0 20px 60px rgba(0,0,0,.22);
+  backdrop-filter: blur(12px);
+}
+.category-tab {
+  min-height: 48px;
+  border-radius: 10px;
+  color: #dbe8f7;
+  background: rgba(255,255,255,.075);
+  border: 1px solid rgba(255,255,255,.08);
+  font-weight: 900;
+}
+.category-tab::before { opacity: .12; }
+.category-tab .svg-icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.35;
+}
+.category-tab.active {
+  background: linear-gradient(135deg, #0b5cc8, #0f766e);
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 16px 30px rgba(3,105,161,.34);
+}
+.portal-links-bar,
+.portal-title-card,
+.portal-stat,
+.portal-panel {
+  border-color: rgba(132,157,189,.22);
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 18px 46px rgba(15,31,52,.12);
+}
+.portal-links-bar {
+  padding: 12px;
+  border-radius: 14px;
+}
+.portal-link {
+  min-height: 36px;
+  border-radius: 10px;
+  color: #0a4b76;
+  border-color: #c9d9ec;
+  background: linear-gradient(135deg, #f7fbff, #eaf4ff);
+}
+.portal-link .svg-icon,
+.panel-title .svg-icon {
+  stroke-width: 2.35;
+}
+.portal-hero { gap: 14px; margin-bottom: 14px; }
+.portal-title-card {
+  min-height: 118px;
+  padding: 22px 24px;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.98), rgba(247,251,255,.92)),
+    linear-gradient(135deg, rgba(11,92,200,.18), transparent 58%);
+  position: relative;
+  overflow: hidden;
+}
+.portal-title-card::after {
+  content: "";
+  position: absolute;
+  right: 20px;
+  top: 18px;
+  width: 140px;
+  height: 74px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(11,92,200,.10), rgba(16,191,167,.13));
+  transform: skewX(-14deg);
+}
+.portal-kicker { color: #0b5cc8; }
+.portal-title { font-size: 30px; color: #071526; }
+.portal-desc { color: #607089; font-size: 15px; }
+.portal-stats { width: 470px; gap: 10px; }
+.portal-stat {
+  min-height: 118px;
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff, #f5f8fc);
+  border-top: 4px solid #0b5cc8;
+}
+.portal-stat strong { font-size: 31px; color: #071526; }
+.portal-stat span { margin-top: 8px; color: #66758b; }
+.portal-grid { gap: 14px; }
+.portal-panel {
+  border-radius: 16px;
+  min-height: 560px;
+  overflow: hidden;
+}
+.panel-head {
+  padding: 15px 16px;
+  background: linear-gradient(180deg, #ffffff, #f6f9fd);
+}
+.panel-title {
+  color: #071526;
+  font-size: 16px;
+}
+.panel-count {
+  background: #e7f7f5;
+  color: #047c72;
+}
+.panel-body { padding: 10px 14px 16px; }
+.item {
+  padding: 12px 2px;
+  gap: 11px;
+}
+.item-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 7px;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.08);
+}
+.item-title-link {
+  color: #172033;
+  font-size: 14px;
+  font-weight: 900;
+}
+.item-meta { color: #718198; }
+.item-toggle {
+  border-radius: 9px;
+  border-color: #caeee9;
+  background: #ecfbf8;
+  color: #047c72;
+}
+@media (max-width: 1100px) {
+  .category-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  body { background: linear-gradient(180deg, #071526 0 210px, #eef3f8 210px 100%) !important; }
+  .public-shell { padding: 18px 14px 28px; }
+  .portal-stats { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portal-panel { min-height: auto; }
+}
+
+/* Closer to the selected draft: crisp blue header, segmented category rail, lighter content deck. */
+body {
+  background:
+    radial-gradient(circle at 76% 0%, rgba(37,99,235,.34), transparent 26%),
+    linear-gradient(135deg, rgba(14,165,233,.08) 0 1px, transparent 1px),
+    linear-gradient(180deg, #061a46 0 250px, #f2f6fb 250px 100%) !important;
+  background-size: auto, 42px 42px, auto;
+}
+.public-shell {
+  max-width: none;
+  padding: 22px 24px 28px;
+}
+.public-top {
+  min-height: 74px;
+  margin: -22px -24px 0;
+  padding: 22px 24px 18px;
+  background:
+    radial-gradient(circle at 62% 16%, rgba(46,118,255,.28), transparent 24%),
+    linear-gradient(125deg, rgba(24,88,201,.18) 0 1px, transparent 1px),
+    linear-gradient(180deg, #061b4b, #071d52);
+  background-size: auto, 68px 68px, auto;
+}
+.public-brand { gap: 16px; }
+.public-logo {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2c78ff, #075cf4);
+  box-shadow: 0 14px 28px rgba(0,62,180,.36), inset 0 1px 0 rgba(255,255,255,.32);
+}
+.public-logo .svg-icon { width: 30px; height: 30px; }
+.public-name {
+  font-size: 28px;
+  letter-spacing: 0;
+  text-shadow: 0 8px 24px rgba(0,0,0,.28);
+}
+.public-sub {
+  margin-top: 4px;
+  color: rgba(239,246,255,.88);
+  font-size: 15px;
+}
+.login-entry {
+  min-width: 118px;
+  height: 48px;
+  justify-content: center;
+  border-radius: 12px !important;
+  font-size: 16px;
+  background: linear-gradient(180deg, #2d7cff, #075fe8) !important;
+  box-shadow: 0 14px 30px rgba(0,83,214,.34), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.category-tabs {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(132px, 1fr);
+  grid-template-columns: none;
+  gap: 0;
+  margin: 0 0 14px;
+  padding: 0;
+  min-height: 58px;
+  border-radius: 10px;
+  border: 1px solid rgba(148,183,255,.30);
+  background: rgba(21,43,86,.82);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 16px 36px rgba(0,32,88,.18);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+.category-tab {
+  min-height: 48px;
+  min-width: 0;
+  border-radius: 0;
+  border: 0;
+  border-right: 1px solid rgba(198,215,255,.18);
+  background: transparent;
+  color: rgba(255,255,255,.9);
+  font-size: 16px;
+  white-space: nowrap;
+}
+.category-tab span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.category-tab:first-child { border-radius: 9px 0 0 9px; }
+.category-tab:last-child { border-right: 0; border-radius: 0 9px 9px 0; }
+.category-tab::before { display: none; }
+.category-tab.active {
+  background: linear-gradient(180deg, #3485ff, #1266f3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.32), 0 12px 26px rgba(0,87,220,.32);
+}
+.portal-links-bar {
+  min-height: 44px;
+  margin: 0 0 12px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: transparent;
+  border-color: rgba(198,215,255,.18);
+  box-shadow: none;
+}
+.portal-link {
+  min-height: 44px;
+  padding: 0 22px 0 0;
+  border: 0;
+  border-right: 1px solid rgba(198,215,255,.22);
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 15px;
+  text-shadow: 0 1px 8px rgba(0,20,56,.35);
+}
+.portal-link:last-child { border-right: 0; }
+.portal-link:hover {
+  color: #fff;
+  background: rgba(255,255,255,.10);
+}
+.portal-link .svg-icon { color: #fff; }
+.portal-links-empty { color: rgba(255,255,255,.78); }
+.portal-hero {
+  align-items: stretch;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.portal-title-card {
+  min-height: 145px;
+  border-radius: 9px;
+  padding: 24px 28px;
+  border-color: #d9e5f4;
+  background:
+    radial-gradient(circle at 91% 8%, rgba(54,132,255,.14), transparent 22%),
+    linear-gradient(135deg, #ffffff, #f8fbff);
+  box-shadow: 0 14px 32px rgba(22,48,82,.08);
+}
+.portal-title-card::after {
+  right: -14px;
+  top: -34px;
+  width: 260px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(60,132,255,.12), rgba(60,132,255,.03) 56%, transparent 58%);
+  transform: none;
+}
+.portal-kicker { color: #0b56df; font-size: 15px; }
+.portal-title { font-size: 30px; margin-top: 8px; }
+.portal-desc { margin-top: 7px; font-size: 16px; color: #41506a; }
+.portal-stats {
+  width: 850px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.portal-stat {
+  min-height: 145px;
+  border-radius: 9px;
+  padding: 25px 26px;
+  border-top: 0;
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(22,48,82,.08);
+  position: relative;
+}
+.portal-stat::after {
+  display: none;
+}
+.portal-stat .stat-mini-icon {
+  position: absolute;
+  right: 25px;
+  bottom: 26px;
+  width: 50px;
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  color: #1266f3;
+  background: #eef4ff;
+  border: 1px solid #d7e5ff;
+}
+.portal-stat:nth-child(2) .stat-mini-icon {
+  color: #059669;
+  background: #effbf6;
+  border-color: #d6f3e7;
+}
+.portal-stat:nth-child(3) .stat-mini-icon {
+  color: #f97316;
+  background: #fff7ed;
+  border-color: #ffdfbc;
+}
+.portal-stat:nth-child(4) .stat-mini-icon {
+  color: #6d3be8;
+  background: #f6f0ff;
+  border-color: #e3d4ff;
+}
+.portal-stat .stat-mini-icon .svg-icon {
+  width: 26px;
+  height: 26px;
+}
+.portal-stat strong { font-size: 34px; }
+.portal-stat span { font-size: 15px; color: #43516a; }
+.portal-title-card {
+  min-height: 72px;
+  padding: 10px 22px;
+}
+.portal-title-card::after {
+  width: 170px;
+  height: 108px;
+}
+.portal-kicker { font-size: 13px; }
+.portal-title { font-size: 24px; margin-top: 3px; line-height: 1.15; }
+.portal-desc { margin-top: 3px; font-size: 14px; }
+.portal-stat {
+  min-height: 72px;
+  padding: 10px 18px;
+}
+.portal-stat .stat-mini-icon {
+  right: 16px;
+  bottom: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+.portal-stat .stat-mini-icon .svg-icon {
+  width: 19px;
+  height: 19px;
+}
+.portal-stat strong { font-size: 25px; line-height: 1; }
+.portal-stat span { margin-top: 4px; font-size: 13px; }
+.portal-grid {
+  grid-template-columns: 1.05fr 1.08fr 1.1fr 1.18fr;
+  gap: 14px;
+}
+.portal-panel {
+  min-height: 500px;
+  border-radius: 9px;
+  border-color: #d9e5f4;
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(22,48,82,.08);
+}
+.panel-head {
+  height: 58px;
+  padding: 0 20px;
+  background: #fff;
+}
+.panel-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-more {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid #d8e7ff;
+  border-radius: 999px;
+  color: #1266f3;
+  background: #f4f8ff;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.panel-more:hover {
+  border-color: #1266f3;
+  background: #eaf2ff;
+}
+.panel-title { font-size: 18px; }
+.panel-count {
+  min-width: 28px;
+  height: 28px;
+  color: #155cef;
+  background: #eef4ff;
+}
+.panel-body { padding: 5px 20px 18px; }
+.item { padding: 12px 0; }
+.item-title-link { font-size: 15px; }
+.item-toggle {
+  min-height: 32px;
+  border-radius: 8px;
+  color: #1266f3;
+  background: #f4f8ff;
+  border-color: #d8e7ff;
+}
+main.portal-grid section:nth-child(2) .item-toggle {
+  color: #00865f;
+  background: #f1fcf7;
+  border-color: #ccefe3;
+}
+main.portal-grid section:nth-child(3) .item-toggle {
+  color: #f97316;
+  background: #fff8ed;
+  border-color: #ffe1ba;
+}
+main.portal-grid section:nth-child(4) .item-toggle {
+  color: #6d3be8;
+  background: #f7f2ff;
+  border-color: #e5d8ff;
+}
+@media (max-width: 1200px) {
+  .portal-stats { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .portal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .public-top { margin: -18px -14px 0; padding: 18px 14px 14px; }
+  .category-tabs {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(126px, 1fr);
+    grid-template-columns: none;
+  }
+  .category-tab,
+  .category-tab:first-child,
+  .category-tab:last-child { border-radius: 0; }
+  .portal-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 </style>
 </head>
 <body>
 <div class="public-shell">
   <header class="public-top">
     <div class="public-brand">
-      <div class="public-logo">{{ icon('browser-window') }}</div>
+      <div class="public-logo">{{ icon('brand-oa') }}</div>
       <div>
         <div class="public-name">{{ app_name }}</div>
         <div class="public-sub">分类查看任务动态、公示信息与近期提醒</div>
       </div>
     </div>
     {% if session.get('user_id') %}
-    <span data-theme-slot></span>
     <a class="btn btn-primary login-entry" href="{{ url_for('index_bp.workbench') }}">{{ icon('dashboard') }} 进入工作台</a>
     {% else %}
-    <span data-theme-slot></span>
     <a class="btn btn-primary login-entry" href="{{ url_for('auth.login') }}">{{ icon('lock') }} 登录</a>
     {% endif %}
   </header>
 
   <nav class="category-tabs">
+    <a class="category-tab {% if not active_category %}active{% endif %}" href="{{ url_for('index_bp.index') }}" style="--tab-color:#1266f3;">
+      <span>{{ icon('category') }}</span>
+      <span>全部</span>
+    </a>
     {% if categories %}
       {% for cat in categories %}
       <a class="category-tab {% if active_category and cat.id == active_category.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id) }}" style="--tab-color:{{ cat.color or '#047857' }};">
@@ -466,10 +954,10 @@ html[data-theme="night"] .public-logo { box-shadow: 0 12px 26px rgba(0,0,0,.3); 
       <div class="portal-desc">无需登录即可查看公开任务概览、跟踪动态、近期提醒和文件资料。</div>
     </div>
     <div class="portal-stats">
-      <div class="portal-stat"><strong>{{ portal_stats.pending }}</strong><span>公共待处理</span></div>
-      <div class="portal-stat"><strong>{{ portal_stats.tracking }}</strong><span>跟踪任务</span></div>
-      <div class="portal-stat"><strong>{{ portal_stats.reminders }}</strong><span>近期提醒</span></div>
-      <div class="portal-stat"><strong>{{ portal_stats.files }}</strong><span>文件资料</span></div>
+      <div class="portal-stat"><strong>{{ portal_stats.pending }}</strong><span>公共待处理</span><i class="stat-mini-icon">{{ icon('task') }}</i></div>
+      <div class="portal-stat"><strong>{{ portal_stats.tracking }}</strong><span>跟踪任务</span><i class="stat-mini-icon">{{ icon('gen-target') }}</i></div>
+      <div class="portal-stat"><strong>{{ portal_stats.reminders }}</strong><span>近期提醒</span><i class="stat-mini-icon">{{ icon('bell') }}</i></div>
+      <div class="portal-stat"><strong>{{ portal_stats.files }}</strong><span>文件资料</span><i class="stat-mini-icon">{{ icon('folder') }}</i></div>
     </div>
   </section>
 
@@ -477,10 +965,13 @@ html[data-theme="night"] .public-logo { box-shadow: 0 12px 26px rgba(0,0,0,.3); 
     <section class="portal-panel">
       <div class="panel-head">
         <div class="panel-title">{{ icon('memo') }} 公共备忘</div>
-        <div class="panel-count">{{ public_memos|length }}</div>
+        <div class="panel-actions">
+          <div class="panel-count">{{ portal_stats.memos }}</div>
+          {% if portal_stats.memos > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='memos', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='memos') }}">查看更多</a>{% endif %}
+        </div>
       </div>
       <div class="panel-body">
-        {% for memo in public_memos %}
+        {% for memo in public_memos[:5] %}
         <div class="item">
           <span class="item-dot" style="background:#2563eb;"></span>
           <div class="item-main">
@@ -501,10 +992,13 @@ html[data-theme="night"] .public-logo { box-shadow: 0 12px 26px rgba(0,0,0,.3); 
     <section class="portal-panel">
       <div class="panel-head">
         <div class="panel-title">{{ icon('task-flow') }} 任务跟踪</div>
-        <div class="panel-count">{{ tracking_tasks|length }}</div>
+        <div class="panel-actions">
+          <div class="panel-count">{{ portal_stats.tracking }}</div>
+          {% if portal_stats.tracking > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='tasks', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='tasks') }}">查看更多</a>{% endif %}
+        </div>
       </div>
       <div class="panel-body">
-        {% for task in tracking_tasks %}
+        {% for task in tracking_tasks[:5] %}
         <div class="item">
           <span class="item-dot" style="background:#0ea5e9;"></span>
           <div class="item-main">
@@ -525,10 +1019,13 @@ html[data-theme="night"] .public-logo { box-shadow: 0 12px 26px rgba(0,0,0,.3); 
     <section class="portal-panel">
       <div class="panel-head">
         <div class="panel-title">{{ icon('bell') }} 近期公示提醒要求</div>
-        <div class="panel-count">{{ reminders|length }}</div>
+        <div class="panel-actions">
+          <div class="panel-count">{{ portal_stats.reminders }}</div>
+          {% if portal_stats.reminders > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='reminders', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='reminders') }}">查看更多</a>{% endif %}
+        </div>
       </div>
       <div class="panel-body">
-        {% for bulletin in reminders %}
+        {% for bulletin in reminders[:5] %}
         <div class="item">
           <span class="item-dot" style="background:#f59e0b;"></span>
           <div class="item-main">
@@ -549,10 +1046,13 @@ html[data-theme="night"] .public-logo { box-shadow: 0 12px 26px rgba(0,0,0,.3); 
     <section class="portal-panel">
       <div class="panel-head">
         <div class="panel-title">{{ icon('folder') }} 文件资料</div>
-        <div class="panel-count">{{ public_files|length }}</div>
+        <div class="panel-actions">
+          <div class="panel-count">{{ portal_stats.files }}</div>
+          {% if portal_stats.files > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='files', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='files') }}">查看更多</a>{% endif %}
+        </div>
       </div>
       <div class="panel-body">
-        {% for file in public_files %}
+        {% for file in public_files[:5] %}
         <div class="item">
           <span class="item-dot" style="background:#8b5cf6;"></span>
           <div class="item-main">

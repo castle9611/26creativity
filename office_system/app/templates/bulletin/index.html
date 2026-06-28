@@ -173,7 +173,7 @@ body { background: #f1f5f9; }
     </label>
   </div>
   <div style="display:flex;gap:8px;">
-    <button type="button" class="b-btn" onclick="batchOp('archive')">📦 批量归档</button>
+    <button type="button" class="b-btn" onclick="batchOp('archive')">{{ icon('archive') }} 批量归档</button>
     <button type="button" class="b-btn danger" onclick="batchOp('delete')">{{ icon('trash') }} 批量删除</button>
     <button type="button" class="b-btn" onclick="clearSelection()">✕ 取消</button>
   </div>
@@ -309,4 +309,3 @@ function batchOp(action) {
 
 </body>
 </html>
-

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+{% from '_icon.html' import icon %}
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>{{ list_title }} - {{ app_name }}</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 26px 20px 44px;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(54,132,255,.13), transparent 24%),
+    linear-gradient(180deg, #f3f7fc 0%, #edf3fb 100%);
+}
+.public-list-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.public-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.public-list-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.public-list-icon {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #3485ff, #1266f3);
+  box-shadow: 0 12px 26px rgba(18,102,243,.22);
+}
+.public-list-title h1 {
+  margin: 0;
+  color: #071526;
+  font-size: 24px;
+  line-height: 1.2;
+}
+.public-list-title p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+.public-list-card {
+  border: 1px solid #d9e5f4;
+  border-radius: 10px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 14px 32px rgba(22,48,82,.08);
+  overflow: hidden;
+}
+.public-list-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 15px 18px;
+  border-bottom: 1px solid #edf2f8;
+}
+.public-list-row:last-child { border-bottom: 0; }
+.public-list-row:hover { background: #f8fbff; }
+.public-list-name {
+  color: #071526;
+  font-size: 15px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.public-list-name:hover { color: #1266f3; }
+.public-list-meta {
+  margin-top: 7px;
+  color: #64748b;
+  font-size: 13px;
+}
+.public-list-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.public-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+@media (max-width: 720px) {
+  .public-list-head,
+  .public-list-row {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .public-list-actions { justify-content: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="public-list-shell">
+  <div class="breadcrumb">
+    <a href="{{ back_url }}">公开首页</a>
+    <span class="breadcrumb-sep">›</span>
+    <span>{{ list_title }}</span>
+  </div>
+
+  <header class="public-list-head">
+    <div class="public-list-title">
+      <span class="public-list-icon">{{ icon(list_icon) }}</span>
+      <div>
+        <h1>{{ list_title }}</h1>
+        <p>{% if active_category %}{{ active_category.name }} · {% endif %}共 {{ pagination.total }} 条</p>
+      </div>
+    </div>
+    <a href="{{ back_url }}" class="btn">{{ icon('home') }} 返回公开首页</a>
+  </header>
+
+  <section class="public-list-card">
+    {% for item in items %}
+    <div class="public-list-row">
+      <div>
+        {% if list_type == 'memos' %}
+        <a class="public-list-name" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">{{ item.title }}</a>
+        <div class="public-list-meta">公共备忘 · {{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</div>
+        {% elif list_type == 'tasks' %}
+        <a class="public-list-name" href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">{{ item.title }}</a>
+        <div class="public-list-meta">进度 {{ item.progress or 0 }}% · {{ item.status|status_label }} · {{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</div>
+        {% elif list_type == 'reminders' %}
+        <a class="public-list-name" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{{ item.title }}</a>
+        <div class="public-list-meta">{% if item.expire_date %}有效期至 {{ item.expire_date.strftime('%Y-%m-%d') }}{% else %}长期有效{% endif %} · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</div>
+        {% else %}
+        <a class="public-list-name" href="{{ url_for('index_bp.public_file_download', file_id=item.id) }}">{{ item.original_name }}</a>
+        <div class="public-list-meta">
+          {{ item.file_type|upper if item.file_type else 'FILE' }}
+          · {% if item.file_size < 1024 %}{{ item.file_size }}B{% elif item.file_size < 1048576 %}{{ (item.file_size/1024)|round(1) }}KB{% else %}{{ (item.file_size/1048576)|round(1) }}MB{% endif %}
+          {% if item.category %} · {{ item.category.name }}{% endif %}
+          · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="public-list-actions">
+        {% if list_type == 'files' %}
+        <a class="btn btn-primary" href="{{ url_for('index_bp.public_file_download', file_id=item.id) }}">下载</a>
+        {% elif list_type == 'memos' %}
+        <a class="btn btn-primary" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">查看详情</a>
+        {% elif list_type == 'tasks' %}
+        <a class="btn btn-primary" href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">查看详情</a>
+        {% else %}
+        <a class="btn btn-primary" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">查看详情</a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:56px 0;">
+      <div class="empty-icon">{{ icon(list_icon) }}</div>
+      <div class="empty-text">暂无{{ list_title }}</div>
+    </div>
+    {% endfor %}
+  </section>
+
+  {% if pagination.pages > 1 %}
+  <nav class="public-pagination">
+    {% if pagination.has_prev %}
+    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=pagination.prev_num) if active_category else url_for('index_bp.public_list', list_type=list_type, page=pagination.prev_num) }}">上一页</a>
+    {% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <a class="btn {% if p == pagination.page %}btn-primary{% endif %}" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=p) if active_category else url_for('index_bp.public_list', list_type=list_type, page=p) }}">{{ p }}</a>
+      {% else %}
+      <span class="btn">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=pagination.next_num) if active_category else url_for('index_bp.public_list', list_type=list_type, page=pagination.next_num) }}">下一页</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+</div>
+</body>
+</html>

@@ -1,0 +1,83 @@
+{% from '_icon.html' import icon %}
+<!-- Stats Bar -->
+<div class="stats-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+  <a href="{{ url_for('memo.list_memos') }}" class="stats-btn {% if memo_type == 'all' or memo_type == '' %}active{% endif %}" onclick="return filterMemos(this)">
+    <span style="font-size:18px;">{{ icon('memo') }}</span>
+    <div>
+      <div class="stats-num" style="font-size:18px;font-weight:700;color:#1e293b;white-space:nowrap;">{{ total }}</div>
+      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">备忘总数</div>
+    </div>
+  </a>
+  <a href="{{ url_for('memo.list_memos', type='private') }}" class="stats-btn {% if memo_type == 'private' %}active{% endif %}" onclick="return filterMemos(this)">
+    <span style="font-size:18px;">{{ icon('lock') }}</span>
+    <div>
+      <div class="stats-num" style="font-size:18px;font-weight:700;color:#8b5cf6;white-space:nowrap;">{{ private_count }}</div>
+      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">私人备忘</div>
+    </div>
+  </a>
+  <a href="{{ url_for('memo.list_memos', type='public') }}" class="stats-btn {% if memo_type == 'public' %}active{% endif %}" onclick="return filterMemos(this)">
+    <span style="font-size:18px;">{{ icon('globe') }}</span>
+    <div>
+      <div class="stats-num" style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ public_count }}</div>
+      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">公共备忘</div>
+    </div>
+  </a>
+</div>
+
+<!-- Memo Cards -->
+{% if memos %}
+<div class="memo-grid">
+  {% for m in memos %}
+  <div class="memo-card" data-id="{{ m.id }}" onclick="if(!event.target.closest('.card-cb'))openMemoModal({{ m.id }})" style="position:relative;">
+    <input type="checkbox" class="card-cb" value="{{ m.id }}" onchange="updateBatchBar()" style="position:absolute;top:12px;left:12px;width:18px;height:18px;cursor:pointer;z-index:2;">
+    <div class="memo-card-header" style="padding-left:36px;">
+      <div class="memo-card-title">{{ m.title }}</div>
+      <span class="badge {% if m.memo_type=='public' %}badge-info{% else %}badge-gray{% endif %} memo-card-badge">
+        {% if m.memo_type=='public' %}公共{% else %}个人{% endif %}
+      </span>
+    </div>
+    <div class="memo-card-preview">{{ (m.content or '无内容')|strip_html }}</div>
+    <div class="memo-card-footer">
+      <span>{% if m.group %}{{ m.group.name }} · {% endif %}{{ m.creator.real_name if m.creator else '' }} · {{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</span>
+      <div class="memo-card-actions" onclick="event.stopPropagation();">
+        <a href="{{ url_for('memo.edit_memo', memo_id=m.id) }}" class="btn">{{ icon('edit') }}</a>
+        <form method="post" action="{{ url_for('memo.archive_memo', memo_id=m.id) }}" style="display:inline;">
+          <button type="submit" class="btn">{{ icon('archive') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('memo.delete_memo', memo_id=m.id) }}" style="display:inline;" onsubmit="return confirm('确认删除该备忘？');">
+          <button type="submit" class="btn btn-danger">{{ icon('trash') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state" style="padding:60px;">
+    <div class="empty-icon">{{ icon('memo') }}</div>
+    <div class="empty-title">暂无备忘</div>
+    <div class="empty-desc">
+      <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary" style="margin-top:16px;">创建第一条备忘</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Memo Data (hidden) -->
+<script type="application/json" id="memoData">[{% for m in memos %}{"id":{{ m.id }},"title":{{ m.title|tojson }},"content":{{ (m.content or '')|tojson }},"memo_type":"{{ m.memo_type }}","group":{{ (m.group.name if m.group else '')|tojson }},"creator":"{{ m.creator.real_name if m.creator else '' }}","created_at":"{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}","edit_url":"{{ url_for('memo.edit_memo', memo_id=m.id) }}"}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+<script type="application/json" id="memoLinksData">{{ memo_links|tojson }}</script>
+
+<!-- Pagination -->
+{% if has_prev or has_next %}
+<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+  {% if has_prev %}
+  <a href="{{ url_for('memo.list_memos', page=page-1, type=memo_type, keyword=keyword, group_id=group_id) }}" class="btn" onclick="return filterMemos(this)">上一页</a>
+  {% endif %}
+  <span class="badge badge-gray" style="padding:8px 16px;font-size:13px;">第 {{ page }} 页</span>
+  {% if has_next %}
+  <a href="{{ url_for('memo.list_memos', page=page+1, type=memo_type, keyword=keyword, group_id=group_id) }}" class="btn" onclick="return filterMemos(this)">下一页</a>
+  {% endif %}
+  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ total }} 条</span>
+</div>
+{% endif %}

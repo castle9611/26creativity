@@ -5,6 +5,7 @@
 <meta charset="utf-8"><title>{{ sheet.name }} - 在线表格（只读）</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='x-spreadsheet/dist/xspreadsheet.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <style>
 body { margin:0; padding:0; background:#f8f9fa; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
 .header-bar {
@@ -31,7 +32,7 @@ body { margin:0; padding:0; background:#f8f9fa; font-family: -apple-system,Blink
     <a href="{{ url_for('sheets.edit_sheet', sheet_id=sheet.id) }}" class="btn btn-primary">{{ icon('edit') }} 编辑</a>
     {% endif %}
     <a href="{{ url_for('sheets.export_xls', sheet_id=sheet.id) }}" class="btn">{{ icon('export') }} 导出XLS</a>
-    <a href="{{ url_for('sheets.list_sheets') }}" class="btn">← 返回</a>
+    <a href="{{ url_for('sheets.list_sheets') }}" class="btn">{{ icon('home') }} 返回列表</a>
   </div>
 </div>
 
