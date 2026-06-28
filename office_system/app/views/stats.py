@@ -168,4 +168,5 @@ def story():
                           monthly_tasks=monthly_tasks,
                           max_weekly=max_weekly,
                           max_monthly=max_monthly,
-                          max_bulletin_cat=max_bulletin_cat)
+                          max_bulletin_cat=max_bulletin_cat,
+                          current_year=today.year)

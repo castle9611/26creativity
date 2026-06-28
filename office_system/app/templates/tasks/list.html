@@ -179,13 +179,9 @@ body { background: var(--bg-page); }
   </div>
 </div>
 
-<div id="task-list-container">
-  {% include 'tasks/_list_content.html' %}
-</div>
-
 <!-- Quick Filters (priority, category, department) -->
 <div class="toolbar">
-  <form method="get" id="taskFilterForm">
+  <form method="get" id="taskFilterForm" action="{{ url_for('tasks.list_tasks') }}">
     <div class="toolbar-filters">
       <select name="priority" class="form-select">
         <option value="">全部优先级</option>
@@ -197,7 +193,6 @@ body { background: var(--bg-page); }
         <option value="">全部类别</option>
         {% for c in categories %}<option value="{{ c.id }}" {% if category_filter==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
       </select>
-      <input type="hidden" name="category_id" value="">
       <select name="department" class="form-select">
         <option value="">全部部门</option>
         {% for d in departments %}
@@ -216,6 +211,10 @@ body { background: var(--bg-page); }
   </form>
 </div>
 
+<div id="task-list-container">
+  {% include 'tasks/_list_content.html' %}
+</div>
+
 <script>
 /* AJAX filter — load partial content without page reload */
 function filterTasks(link) {
@@ -228,6 +227,14 @@ function filterTasks(link) {
     xhr.onload = function() {
         if (xhr.status === 200) {
             container.innerHTML = xhr.responseText;
+            if (window.history && window.history.pushState) {
+                window.history.pushState(null, '', link.href);
+            }
+            var statusInput = document.querySelector('#taskFilterForm input[name="status"]');
+            if (statusInput) {
+                var statusValue = new URL(link.href, window.location.origin).searchParams.get('status') || '';
+                statusInput.value = statusValue;
+            }
             // re-bind batch checkbox events
             var sa = document.getElementById('selectAllTop');
             if (sa) sa.onchange = function(){ toggleSelectAll(this); };
@@ -248,14 +255,27 @@ function filterTasks(link) {
     if (form) {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            var url = this.action + '?' + new URLSearchParams(new FormData(this)).toString() + '&partial=1';
+            var params = new URLSearchParams(new FormData(this));
+            var cleanParams = new URLSearchParams();
+            params.forEach(function(value, key) {
+                if (value !== '') cleanParams.append(key, value);
+            });
+            var pageUrl = this.getAttribute('action') + (cleanParams.toString() ? '?' + cleanParams.toString() : '');
+            var url = pageUrl + (pageUrl.indexOf('?') > -1 ? '&' : '?') + 'partial=1';
             var container = document.getElementById('task-list-container');
             if (!container) return;
             container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">加载中...</div>';
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function() {
-                if (xhr.status === 200) { container.innerHTML = xhr.responseText; }
+                if (xhr.status === 200) {
+                    container.innerHTML = xhr.responseText;
+                    if (window.history && window.history.pushState) {
+                        window.history.pushState(null, '', pageUrl);
+                    }
+                    var sa = document.getElementById('selectAllTop');
+                    if (sa) sa.onchange = function(){ toggleSelectAll(this); };
+                }
                 else { container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">加载失败</div>'; }
             };
             xhr.onerror = function() { container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">网络错误</div>'; };

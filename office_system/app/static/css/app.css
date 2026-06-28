@@ -2766,6 +2766,22 @@ body.sidebar-collapsed .main-content {
     stroke-width: 2;
 }
 
+.brand-logo-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
+}
+
+.logo-image-wrap {
+    background: transparent !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    overflow: visible !important;
+    padding: 0 !important;
+}
+
 .logo-icon,
 .public-logo,
 .login-logo,

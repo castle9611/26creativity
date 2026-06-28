@@ -7,7 +7,7 @@
 <title>{{ app_name }}</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <style>
 body {
@@ -898,7 +898,7 @@ main.portal-grid section:nth-child(4) .item-toggle {
 <div class="public-shell">
   <header class="public-top">
     <div class="public-brand">
-      <div class="public-logo">{{ icon('brand-oa') }}</div>
+      <div class="public-logo logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon.png') }}" alt=""></div>
       <div>
         <div class="public-name">{{ app_name }}</div>
         <div class="public-sub">分类查看任务动态、公示信息与近期提醒</div>
