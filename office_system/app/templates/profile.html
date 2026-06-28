@@ -32,16 +32,34 @@ body { background: #f1f5f9; }
     transition: all 0.2s;
 }
 .back-btn:hover { border-color: #2563eb; color: #2563eb; }
-.form-card { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 32px; }
-.form-card h3 { font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
-.info-card { max-width: 600px; margin: 0 auto 24px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 24px; }
-.info-row { display: flex; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+.profile-shell { max-width: 1100px; margin: 0 auto; display: grid; gap: 12px; }
+.profile-top { display:flex; align-items:center; gap:14px; background:#fff; border:1px solid #d9e5f4; border-radius:10px; padding:14px 16px; box-shadow:0 10px 24px rgba(22,48,82,.045); }
+.profile-grid { display:grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); gap:12px; align-items:start; }
+.profile-stack { display:grid; gap:12px; }
+.form-card, .info-card { max-width:none; margin:0; background:white; border-radius:10px; border:1px solid #d9e5f4; padding:16px; box-shadow:0 10px 24px rgba(22,48,82,.045); }
+.form-card h3, .info-card h3 { font-size:16px; font-weight:800; color:#071526; margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid #edf3fa; }
+.info-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
 .info-row:last-child { border-bottom: none; }
-.info-label { width: 100px; color: #64748b; font-size: 14px; }
-.info-value { flex: 1; color: #0f172a; font-size: 14px; font-weight: 500; }
+.info-label { width: 86px; color: #64748b; font-size: 13px; }
+.info-value { flex: 1; color: #0f172a; font-size: 13px; font-weight: 650; }
+.profile-avatar, .profile-avatar img { width:56px; height:56px; border-radius:50%; }
+.profile-avatar { flex-shrink:0; background:#1267ff; color:white; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; }
+.profile-avatar img { object-fit:cover; border:2px solid #d9e5f4; }
+.profile-name { font-size:18px; font-weight:850; color:#071526; line-height:1.2; }
+.profile-meta { font-size:13px; color:#64748b; margin-top:3px; }
+.profile-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
+.profile-form .form-group { margin-bottom:10px; }
+.profile-form .form-label { margin-bottom:5px; font-size:13px; }
+.profile-form .form-input { height:38px !important; }
+.profile-form .btn-lg { height:38px; padding:0 16px; font-size:14px; }
+@media (max-width: 900px) {
+  .profile-grid { grid-template-columns: 1fr; }
+  .profile-top { align-items:flex-start; flex-wrap:wrap; }
+  .profile-actions { width:100%; margin-left:70px; }
+}
 </style>
 </head>
-<body style="padding:24px;background:#f1f5f9;">
+<body style="padding:14px 18px;background:#eef4fb;">
 
 <!-- Breadcrumb -->
 <div class="breadcrumb">
@@ -55,34 +73,38 @@ body { background: #f1f5f9; }
   <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
 </div>
 
-	<div class="info-card" style="display:flex;align-items:center;gap:20px;">
-	  <div style="flex-shrink:0;">
-	    {% if user.avatar %}
-	    <img src="{{ user.avatar }}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #e2e8f0;">
-	    {% else %}
-	    <div style="width:72px;height:72px;border-radius:50%;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:600;">{{ (user.real_name or user.username)[-1] }}</div>
-	    {% endif %}
-	  </div>
-	  <div style="flex:1;">
-	    <div style="font-size:18px;font-weight:600;">{{ user.real_name or user.username }}</div>
-	    <div style="font-size:13px;color:#64748b;margin-top:4px;">
-	      {% if user.role=='super_admin' %}超级管理员
-	      {% elif user.role=='dept_admin' %}监区管理员
-	      {% else %}干警{% endif %} · {{ user.department or '未分配' }}
-	    </div>
-	    <form method="post" enctype="multipart/form-data" style="margin-top:10px;">
-	      <input type="hidden" name="action" value="upload_avatar">
-	      <label class="btn btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-	        {{ icon('edit') }} 更换头像
-	        <input type="file" name="avatar" accept="image/*" style="display:none;" onchange="this.form.submit()">
-	      </label>
-	    </form>
-	  </div>
-	</div>
+<div class="profile-shell">
+  <div class="profile-top">
+    <div class="profile-avatar">
+      {% if user.avatar %}
+      <img src="{{ user.avatar }}">
+      {% else %}
+      {{ (user.real_name or user.username)[-1] }}
+      {% endif %}
+    </div>
+    <div>
+      <div class="profile-name">{{ user.real_name or user.username }}</div>
+      <div class="profile-meta">
+        {% if user.role=='super_admin' %}超级管理员
+        {% elif user.role=='dept_admin' %}监区管理员
+        {% else %}干警{% endif %} · {{ user.department or '未分配' }}
+      </div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="profile-actions">
+      <input type="hidden" name="action" value="upload_avatar">
+      <label class="btn btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+        {{ icon('edit') }} 更换头像
+        <input type="file" name="avatar" accept="image/*" style="display:none;" onchange="this.form.submit()">
+      </label>
+    </form>
+  </div>
+
+  <div class="profile-grid">
+    <div class="profile-stack">
 
 <!-- User Info -->
-<div class="info-card" style="margin-top:24px;">
-  <h3 style="font-size:16px;margin-bottom:16px;">👤 账号信息</h3>
+<div class="info-card">
+  <h3>{{ icon('user') }} 账号信息</h3>
   <div class="info-row">
     <div class="info-label">用户名</div>
     <div class="info-value">{{ user.username }}</div>
@@ -110,52 +132,54 @@ body { background: #f1f5f9; }
 </div>
 
 <!-- Update Profile -->
-<div class="form-card">
+<div class="form-card profile-form">
   <h3>{{ icon('edit') }} 修改个人信息</h3>
   <form method="post">
     <input type="hidden" name="action" value="update_info">
     <div class="form-group">
       <label class="form-label">姓名</label>
-      <input type="text" name="real_name" class="form-input" value="{{ user.real_name or '' }}" placeholder="请输入姓名" style="height:44px;">
+      <input type="text" name="real_name" class="form-input" value="{{ user.real_name or '' }}" placeholder="请输入姓名">
     </div>
-    <div style="display:flex;gap:12px;margin-top:24px;">
+    <div style="display:flex;gap:12px;margin-top:12px;">
       <button type="submit" class="btn btn-primary btn-lg">{{ icon('save') }} 保存修改</button>
     </div>
   </form>
 </div>
+    </div>
 
 <!-- Change Password -->
-<div class="form-card" style="margin-top:24px;">
-  <h3>🔐 修改密码</h3>
+<div class="form-card profile-form">
+  <h3>{{ icon('lock') }} 修改密码</h3>
   <form method="post">
     <input type="hidden" name="action" value="change_password">
     <div class="form-group">
       <label class="form-label">原密码 <span style="color:#dc2626;">*</span></label>
-      <input type="password" name="old_password" class="form-input" required placeholder="请输入原密码" style="height:44px;">
+      <input type="password" name="old_password" class="form-input" required placeholder="请输入原密码">
     </div>
     <div class="form-group">
       <label class="form-label">新密码 <span style="color:#dc2626;">*</span></label>
-      <input type="password" name="new_password" class="form-input" required placeholder="请输入新密码（至少6位）" style="height:44px;">
+      <input type="password" name="new_password" class="form-input" required placeholder="请输入新密码（至少6位）">
     </div>
     <div class="form-group">
       <label class="form-label">确认密码 <span style="color:#dc2626;">*</span></label>
-      <input type="password" name="confirm_password" class="form-input" required placeholder="请再次输入新密码" style="height:44px;">
+      <input type="password" name="confirm_password" class="form-input" required placeholder="请再次输入新密码">
     </div>
-    <div style="display:flex;gap:12px;margin-top:24px;">
-      <button type="submit" class="btn btn-warning btn-lg">🔐 修改密码</button>
+    <div style="display:flex;gap:12px;margin-top:12px;">
+      <button type="submit" class="btn btn-warning btn-lg">{{ icon('lock') }} 修改密码</button>
       <a href="{{ url_for('index_bp.workbench') }}" class="btn btn-lg">取消</a>
     </div>
   </form>
+</div>
+  </div>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for c,m in messages %}
-<div class="alert alert-{{ c }}" style="max-width:600px;margin:16px auto;">{{ m }}</div>
+<div class="alert alert-{{ c }}" style="max-width:1100px;margin:12px auto;">{{ m }}</div>
 {% endfor %}
 {% endif %}
 {% endwith %}
 
 </body>
 </html>
-

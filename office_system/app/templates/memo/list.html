@@ -281,10 +281,12 @@ body { background: #f1f5f9; }
     </div>
   </div>
   <div class="oa-list-actions">
+    <a href="{{ url_for('memo.archived') }}" class="btn {% if memo_type=='archived' %}btn-primary{% endif %}">{{ icon('archive') }} 已归档</a>
     <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary">{{ icon('add') }} 新建备忘</a>
   </div>
 </div>
 
+{% if memo_type != 'archived' %}
 <!-- Filters -->
 <div class="oa-filter-panel">
   <div class="oa-filter-row">
@@ -334,6 +336,7 @@ body { background: #f1f5f9; }
     <button type="submit" class="btn">新增分组</button>
   </form>
 </div>
+{% endif %}
 
 <!-- Batch Actions Bar -->
 <div id="batchBar" class="oa-batch-bar">
@@ -344,7 +347,11 @@ body { background: #f1f5f9; }
     </label>
   </div>
   <div style="display:flex;gap:8px;">
+    {% if memo_type == 'archived' %}
+    <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('restore')">{{ icon('progress') }} 批量恢复</button>
+    {% else %}
     <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('archive')">{{ icon('archive') }} 批量归档</button>
+    {% endif %}
     <button type="button" class="btn-sm" style="background:#dc2626;border:1px solid #dc2626;color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('delete')">{{ icon('trash') }} 批量删除</button>
     <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="clearSelection()">✕ 取消</button>
   </div>
@@ -552,9 +559,9 @@ function clearSelection() {
 function batchOp(action) {
     var ids = getSelectedIds();
     if (ids.length === 0) { alert('请先选择备忘'); return; }
-    var msg = action === 'archive' ? '确定要归档选中的 ' + ids.length + ' 个备忘吗？' : '确定要删除选中的 ' + ids.length + ' 个备忘吗？（不可恢复）';
+    var msg = action === 'archive' ? '确定要归档选中的 ' + ids.length + ' 个备忘吗？' : (action === 'restore' ? '确定要恢复选中的 ' + ids.length + ' 个备忘吗？' : '确定要删除选中的 ' + ids.length + ' 个备忘吗？（不可恢复）');
     if (!confirm(msg)) return;
-    var url = action === 'archive' ? '{{ url_for("memo.batch_archive") }}' : '{{ url_for("memo.batch_delete") }}';
+    var url = action === 'archive' ? '{{ url_for("memo.batch_archive") }}' : (action === 'restore' ? '{{ url_for("memo.batch_restore") }}' : '{{ url_for("memo.batch_delete") }}');
     var xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');

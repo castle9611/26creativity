@@ -373,6 +373,26 @@ def archive_memo(memo_id):
     return redirect(url_for('memo.list_memos'))
 
 
+@memo_bp.route('/<int:memo_id>/restore', methods=['POST'])
+@login_required
+def restore_memo(memo_id):
+    """Restore an archived memo."""
+    memo = Memo.query.get_or_404(memo_id)
+    user_id = session['user_id']
+    user_role = session['role']
+
+    if memo.created_by != user_id and user_role != 'super_admin':
+        flash('无权执行此操作', 'danger')
+        return redirect(url_for('memo.archived'))
+
+    memo.is_archived = 0
+    memo.updated_at = datetime.utcnow()
+    db.session.commit()
+    add_log('restore_memo', 'memo', memo.id, 'Restored memo: ' + memo.title)
+    flash('备忘已恢复', 'success')
+    return redirect(url_for('memo.archived'))
+
+
 @memo_bp.route('/<int:memo_id>/delete', methods=['POST'])
 @login_required
 def delete_memo(memo_id):
@@ -402,10 +422,10 @@ def archived():
     user_id = session['user_id']
     user_role = session['role']
 
-    query = Memo.query.filter(
-        Memo.is_archived == 1,
-        Memo.created_by == user_id
-    ).order_by(Memo.updated_at.desc())
+    query = Memo.query.filter(Memo.is_archived == 1)
+    if user_role != 'super_admin':
+        query = query.filter(Memo.created_by == user_id)
+    query = query.order_by(Memo.updated_at.desc())
 
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
@@ -420,6 +440,7 @@ def archived():
                            has_next=pagination.has_next,
                            memo_type='archived',
                            keyword='',
+                           memo_links={},
                            private_count=Memo.query.filter(Memo.memo_type == 'private', Memo.created_by == user_id, Memo.is_archived == 0).count(),
                            public_count=sum(
                                1 for memo in Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).all()
@@ -432,6 +453,36 @@ def archived():
                                    if check_visible(memo.visible_roles, user_role)
                                )
                            ))
+
+
+@memo_bp.route('/batch-restore', methods=['POST'])
+@login_required
+def batch_restore():
+    """Batch restore archived memos."""
+    from flask import jsonify
+    try:
+        if request.content_type and 'json' in request.content_type:
+            ids = request.get_json().get('ids', [])
+        else:
+            ids = json.loads(request.form.get('ids', '[]'))
+    except:
+        return jsonify({'success': False, 'message': '参数错误'}), 400
+
+    if not ids:
+        return jsonify({'success': False, 'message': '请选择备忘'}), 400
+
+    user_id = session['user_id']
+    user_role = session['role']
+    count = 0
+    for mid in ids:
+        memo = Memo.query.get(mid)
+        if memo and memo.is_archived == 1 and (memo.created_by == user_id or user_role == 'super_admin'):
+            memo.is_archived = 0
+            memo.updated_at = datetime.utcnow()
+            count += 1
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': '已恢复 {} 个备忘'.format(count)})
 
 
 @memo_bp.route('/batch-archive', methods=['POST'])

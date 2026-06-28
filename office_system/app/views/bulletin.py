@@ -631,6 +631,9 @@ def archive(bulletin_id):
     db.session.commit()
     add_log('archive_bulletin', 'bulletin', bulletin.id, 'Archived: ' + bulletin.title)
     flash('内容已归档', 'success')
+    next_url = request.form.get('next') or request.args.get('next')
+    if next_url and next_url.startswith('/'):
+        return redirect(next_url)
     if request.args.get('next') == 'manage':
         return redirect(url_for('bulletin.manage'))
     if bulletin.column_id:
