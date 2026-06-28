@@ -4,22 +4,22 @@
   <a href="{{ url_for('memo.list_memos') }}" class="oa-stat-card {% if memo_type == 'all' or memo_type == '' %}active{% endif %}" onclick="return filterMemos(this)">
     <span class="stats-icon">{{ icon('memo') }}</span>
     <div>
-      <div class="stats-num" class="stat-num">{{ memo_total_count|default(private_count + public_count) }}</div>
-      <div class="stats-label" class="stat-label">备忘总数</div>
+      <div class="stat-num">{{ memo_total_count|default(private_count + public_count) }}</div>
+      <div class="stat-label">备忘总数</div>
     </div>
   </a>
   <a href="{{ url_for('memo.list_memos', type='private') }}" class="oa-stat-card {% if memo_type == 'private' %}active{% endif %}" onclick="return filterMemos(this)">
     <span class="stats-icon">{{ icon('lock') }}</span>
     <div>
-      <div class="stats-num" style="font-size:18px;font-weight:700;color:#8b5cf6;white-space:nowrap;">{{ private_count }}</div>
-      <div class="stats-label" class="stat-label">私人备忘</div>
+      <div class="stat-num" style="font-weight:700;color:#8b5cf6;white-space:nowrap;">{{ private_count }}</div>
+      <div class="stat-label">私人备忘</div>
     </div>
   </a>
   <a href="{{ url_for('memo.list_memos', type='public') }}" class="oa-stat-card {% if memo_type == 'public' %}active{% endif %}" onclick="return filterMemos(this)">
     <span class="stats-icon">{{ icon('globe') }}</span>
     <div>
-      <div class="stats-num" style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ public_count }}</div>
-      <div class="stats-label" class="stat-label">公共备忘</div>
+      <div class="stat-num" style="font-weight:700;color:#10b981;white-space:nowrap;">{{ public_count }}</div>
+      <div class="stat-label">公共备忘</div>
     </div>
   </a>
 </div>
@@ -95,4 +95,6 @@
   <span class="record-count">共 {{ total }} 条</span>
 </div>
 {% endif %}
+
+
 

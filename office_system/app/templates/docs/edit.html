@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 {% from '_icon.html' import icon %}
 <head>
@@ -7,12 +7,12 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <style>
 body { background:#e5e7eb; padding:24px; }
-.breadcrumb { display:flex; align-items:center; gap:8px; font-size:13px; color:#64748b; max-width:980px; margin:0 auto 16px; }
+.breadcrumb { display:flex; align-items:center; gap:8px; font-size: var(--text-sm); color:#64748b; max-width:980px; margin:0 auto 16px; }
 .breadcrumb a { color:#64748b; text-decoration:none; }
 .breadcrumb a:hover { color:#2563eb; }
 .breadcrumb-sep { color:#cbd5e1; }
 .form-card { max-width:980px; margin:0 auto; background:white; border-radius:10px; border:1px solid #dbe3ef; padding:22px; }
-.form-card h3 { font-size:18px; font-weight:600; color:#0f172a; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #e2e8f0; }
+.form-card h3 { font-size: var(--text-h3); font-weight:600; color:#0f172a; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #e2e8f0; }
 .editor-toolbar { display:flex; gap:6px; padding:8px 10px; background:#f8fafc; border:1px solid #dbe3ef; border-radius:8px; flex-wrap:wrap; margin-bottom:14px; }
 .editor-toolbar .btn { padding:4px 10px; font-size:13px; border-radius:4px; }
 .page-stage { background:#cbd5e1; padding:24px 0; border-radius:10px; border:1px solid #b8c4d4; overflow:auto; }
@@ -318,3 +318,4 @@ document.getElementById('editorBox').addEventListener('paste', function(e) {
 </script>
 </body>
 </html>
+

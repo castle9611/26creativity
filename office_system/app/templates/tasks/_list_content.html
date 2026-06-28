@@ -4,56 +4,56 @@
   <a href="{{ url_for('tasks.list_tasks') }}" class="oa-stat-card {% if not status %}active{% endif %}" onclick="return filterTasks(this)">
     <span class="stats-icon">{{ icon('task') }}</span>
     <div>
-      <div class="stats-num" class="stat-num">{{ total_count }}</div>
-      <div class="stats-label" class="stat-label">全部任务</div>
+      <div class="stat-num">{{ total_count }}</div>
+      <div class="stat-label">全部任务</div>
     </div>
   </a>
   <a href="{{ url_for('tasks.list_tasks', status='pending') }}" class="oa-stat-card {% if status=='pending' %}active{% endif %}" onclick="return filterTasks(this)">
     <span class="stats-icon">{{ icon('task-wait') }}</span>
     <div>
-      <div class="stats-num" style="font-size:18px;font-weight:700;color:#f59e0b;white-space:nowrap;">{{ pending_count }}</div>
-      <div class="stats-label" class="stat-label">待接受</div>
+      <div class="stat-num" style="font-weight:700;color:#f59e0b;white-space:nowrap;">{{ pending_count }}</div>
+      <div class="stat-label">待接受</div>
     </div>
   </a>
   <a href="{{ url_for('tasks.list_tasks', status='processing') }}" class="oa-stat-card {% if status=='processing' %}active{% endif %}" onclick="return filterTasks(this)">
     <span class="stats-icon">{{ icon('progress') }}</span>
     <div>
-      <div class="stats-num" style="font-size:18px;font-weight:700;color:#3b82f6;white-space:nowrap;">{{ processing_count }}</div>
-      <div class="stats-label" class="stat-label">处理中</div>
+      <div class="stat-num" style="font-weight:700;color:#3b82f6;white-space:nowrap;">{{ processing_count }}</div>
+      <div class="stat-label">处理中</div>
     </div>
   </a>
   <a href="{{ url_for('tasks.list_tasks', status='transferring') }}" class="oa-stat-card {% if status=='transferring' %}active{% endif %}" onclick="return filterTasks(this)">
     <span class="stats-icon">{{ icon('task-flow') }}</span>
     <div>
-      <div class="stats-num" style="font-size:18px;font-weight:700;color:#f59e0b;white-space:nowrap;">{{ transferring_count }}</div>
-      <div class="stats-label" class="stat-label">待交接</div>
+      <div class="stat-num" style="font-weight:700;color:#f59e0b;white-space:nowrap;">{{ transferring_count }}</div>
+      <div class="stat-label">待交接</div>
     </div>
   </a>
   <a href="{{ url_for('tasks.list_tasks', status='completed') }}" class="oa-stat-card {% if status=='completed' %}active{% endif %}" onclick="return filterTasks(this)">
     <span class="stats-icon">{{ icon('progress') }}</span>
     <div>
-      <div class="stats-num" style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ completed_count }}</div>
-      <div class="stats-label" class="stat-label">已完成</div>
+      <div class="stat-num" style="font-weight:700;color:#10b981;white-space:nowrap;">{{ completed_count }}</div>
+      <div class="stat-label">已完成</div>
     </div>
   </a>
   <a href="{{ url_for('tasks.list_tasks', status='overdue') }}" class="oa-stat-card {% if status=='overdue' %}active{% endif %}" onclick="return filterTasks(this)">
     <span class="stats-icon">{{ icon('warning') }}</span>
     <div>
-      <div class="stats-num">{{ overdue_count }}</div>
+      <div class="stat-num">{{ overdue_count }}</div>
       <div class="stats-label">已超时</div>
     </div>
   </a>
   <a href="{{ url_for('tasks.list_tasks', status='rejected') }}" class="oa-stat-card {% if status=='rejected' %}active{% endif %}" onclick="return filterTasks(this)">
     <span class="stats-icon">{{ icon('warning') }}</span>
     <div>
-      <div class="stats-num">{{ rejected_count }}</div>
+      <div class="stat-num">{{ rejected_count }}</div>
       <div class="stats-label">已驳回</div>
     </div>
   </a>
   <a href="{{ url_for('tasks.list_tasks', status='archived') }}" class="oa-stat-card {% if status=='archived' %}active{% endif %}" onclick="return filterTasks(this)">
     <span class="stats-icon">{{ icon('archive') }}</span>
     <div>
-      <div class="stats-num">{{ archived_count }}</div>
+      <div class="stat-num">{{ archived_count }}</div>
       <div class="stats-label">已归档</div>
     </div>
   </a>
@@ -177,5 +177,7 @@
   <span class="record-count">共 {{ pagination.total }} 条</span>
 </div>
 {% endif %}
+
+
 
 
