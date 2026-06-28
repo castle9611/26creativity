@@ -216,7 +216,7 @@ body { background: #f1f5f9; }
         {% for f in memo_attachments %}
         <div class="existing-attachment" data-id="{{ f.id }}" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;">
           <a href="{{ f.file_path }}" target="_blank" style="color:#166534;text-decoration:none;">{{ icon('attach') }} {{ f.original_name }}</a>
-          <span style="color:#94a3b8;font-size:11px;">({{ (f.file_size/1024)|round|int }}KB)</span>
+          <span class="file-size">({{ (f.file_size/1024)|round|int }}KB)</span>
           <button type="button" onclick="deleteAttachment({{ f.id }})" style="width:18px;height:18px;border-radius:50%;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;">×</button>
         </div>
         {% endfor %}
@@ -409,7 +409,7 @@ function renderAttachmentList() {
             var size = f.size >= 1024 * 1024 ? (f.size / 1024 / 1024).toFixed(1) + 'MB' : (f.size / 1024).toFixed(0) + 'KB';
             var div = document.createElement('div');
             div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;';
-            div.innerHTML = '<span>附件</span><span style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span><span style="color:#94a3b8;font-size:11px;">' + size + '</span><button type="button" onclick="removeAttachment(' + idx + ')" style="width:18px;height:18px;border-radius:50%;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;">×</button>';
+            div.innerHTML = '<span>附件</span><span style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span><span class="file-size">' + size + '</span><button type="button" onclick="removeAttachment(' + idx + ')" style="width:18px;height:18px;border-radius:50%;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;">×</button>';
             list.appendChild(div);
         })(i);
     }
@@ -437,4 +437,5 @@ dropArea.addEventListener('drop', function(e) {
 
 </body>
 </html>
+
 

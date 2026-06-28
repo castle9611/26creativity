@@ -20,11 +20,11 @@ body { background: #f1f5f9; }
   position: relative;
 }
 .doc-card:hover { border-color: #2563eb; }
-.doc-card-title { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
-.doc-card-preview { font-size: 13px; color: #64748b; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.doc-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: 12px; color: #94a3b8; }
+.doc-card-title { font-size: var(--text-h4); font-weight: 600; color: #0f172a; margin-bottom: 8px; }
+.doc-card-preview { font-size: var(--text-sm); color: #64748b; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.doc-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; font-size: var(--text-xs); color: #94a3b8; }
 .doc-card-actions { display: flex; gap: 6px; }
-.doc-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+.doc-badge { font-size: var(--text-xxs); padding: 2px 8px; border-radius: 999px; }
 .doc-badge-draft { background: #fffbeb; color: #d97706; }
 .doc-badge-published { background: #ecfdf5; color: #059669; }
 @media (max-width: 1280px) { .doc-card { width: calc(50% - 12px); } }
@@ -65,16 +65,16 @@ body { background: #f1f5f9; }
 <!-- Stats Bar -->
 <div class="stats-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;">
-    <span style="font-size:18px;">{{ icon('file') }}</span>
+    <span style="font-size:var(--text-h3);">{{ icon('file') }}</span>
     <div><div class="stat-num">{{ total }}</div><div class="stat-label">文档总数</div></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;">
-    <span style="font-size:18px;">{{ icon('progress') }}</span>
-    <div><div style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ published }}</div><div class="stat-label">已发布</div></div>
+    <span style="font-size:var(--text-h3);">{{ icon('progress') }}</span>
+    <div><div class="stat-num" style="color:#10b981;white-space:nowrap;">{{ published }}</div><div class="stat-label">已发布</div></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;">
-    <span style="font-size:18px;">{{ icon('edit') }}</span>
-    <div><div style="font-size:18px;font-weight:700;color:#f59e0b;white-space:nowrap;">{{ draft }}</div><div class="stat-label">草稿</div></div>
+    <span style="font-size:var(--text-h3);">{{ icon('edit') }}</span>
+    <div><div class="stat-num" style="color:#f59e0b;white-space:nowrap;">{{ draft }}</div><div class="stat-label">草稿</div></div>
   </div>
 </div>
 
@@ -155,6 +155,8 @@ body { background: #f1f5f9; }
 
 </body>
 </html>
+
+
 
 
 

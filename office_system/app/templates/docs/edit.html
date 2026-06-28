@@ -19,7 +19,7 @@ body { background:#e5e7eb; padding:24px; }
 .editor-content {
   width:794px; min-height:1123px; margin:0 auto; padding:72px 72px;
   background:#fff; box-shadow:0 10px 30px rgba(15,23,42,.22);
-  font-family:SimSun,"Microsoft YaHei",serif; font-size:15px; line-height:1.9;
+  font-family:SimSun,"Microsoft YaHei",serif; font-size: var(--text-body); line-height:1.9;
   color:#111827; outline:none; overflow:visible;
 }
 .editor-content:empty:before { content:attr(data-placeholder); color:#94a3b8; }
@@ -318,4 +318,5 @@ document.getElementById('editorBox').addEventListener('paste', function(e) {
 </script>
 </body>
 </html>
+
 

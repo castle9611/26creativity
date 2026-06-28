@@ -2,28 +2,27 @@
 {% from '_icon.html' import icon %}
 <html>
 <head>
-<meta charset="utf-8"><title>帮助与维护</title>
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<meta charset=”utf-8”><title>帮助与维护</title>
+<meta http-equiv=”X-UA-Compatible” content=”IE=edge,chrome=1”>
+<meta name=”viewport” content=”width=device-width, initial-scale=1”>
+<link rel=”icon” href=”{{ url_for('static', filename='favicon.png') }}” type=”image/png”>
+<link rel=”stylesheet” href=”{{ url_for('static', filename='css/app.css') }}”>
 <style>
+/* ==== Base ==== */
 body {
-  margin: 0;
-  color: #102033;
-  background: linear-gradient(180deg, #061947 0 236px, #edf3fb 236px 100%);
+  margin: 0; color: #102033;
+  background: linear-gradient(160deg, #061947 0 260px, #eef3fb 260px 100%);
+  min-height: 100vh;
 }
-.help-shell { max-width: 1320px; margin: 0 auto; padding: 18px 18px 34px; }
+.help-shell { max-width: 1320px; margin: 0 auto; padding: 18px 18px 50px; }
+
+/* ==== Top bar ==== */
 .help-top {
-  min-height: 96px;
-  margin: -18px -18px 0;
-  padding: 22px 18px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  min-height: 72px; margin: -18px -18px 0; padding: 16px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
   color: #fff;
-  background: radial-gradient(circle at 86% 10%, rgba(38,112,255,.34), transparent 25%), linear-gradient(135deg, #061947, #07245f);
+  background: radial-gradient(circle at 86% 10%, rgba(38,112,255,.34), transparent 25%),
+              linear-gradient(135deg, #061947, #07245f);
 }
 .help-brand { display: flex; align-items: center; gap: 16px; }
 .help-logo {
@@ -32,7 +31,6 @@ body {
   color: #fff; background: linear-gradient(180deg, #1e73ff, #0a58ed);
   box-shadow: 0 14px 28px rgba(0,66,190,.36), inset 0 1px 0 rgba(255,255,255,.26);
 }
-.help-logo .svg-icon { width: 28px; height: 28px; }
 .help-name { font-size: 25px; font-weight: 900; line-height: 1.12; }
 .help-sub { margin-top: 4px; color: #a9bdd4; font-size: 14px; }
 .help-actions { display: flex; align-items: center; gap: 10px; }
@@ -41,6 +39,8 @@ body {
   color: #fff; background: rgba(255,255,255,.10);
 }
 .help-actions .btn-primary { border-color: transparent !important; background: linear-gradient(180deg, #1d73ff, #0b5ff0) !important; }
+
+/* ==== Breadcrumb ribbon ==== */
 .breadcrumb {
   min-height: 48px; margin: 0 0 14px; padding: 0 18px;
   display: flex; align-items: center; gap: 9px;
@@ -49,115 +49,258 @@ body {
   box-shadow: 0 14px 30px rgba(6,25,71,.24);
 }
 .breadcrumb a { color: #fff; font-weight: 800; text-decoration: none; }
-.hero {
-  min-height: 118px; margin-bottom: 14px; padding: 20px 24px;
-  border: 1px solid #d9e5f4; border-radius: 9px;
-  background: radial-gradient(circle at 88% 0%, rgba(54,132,255,.15), transparent 26%), #fff;
-  box-shadow: 0 14px 32px rgba(22,48,82,.08);
+
+/* ==== Hero ===== */
+.hero-wrap {
+  border-radius: 14px; overflow: hidden; margin-bottom: 16px;
+  background: #fff;
+  box-shadow: 0 20px 48px rgba(6,25,71,.10);
 }
-.hero-kicker { display: inline-flex; align-items: center; gap: 8px; color: #1266f3; font-size: 14px; font-weight: 900; }
-.hero h1 { margin: 10px 0 8px; color: #071526; font-size: 28px; line-height: 1.12; font-weight: 900; }
-.hero p { max-width: 860px; margin: 0; color: #41506a; line-height: 1.75; }
-.grid { display: grid; grid-template-columns: 268px 1fr; gap: 14px; align-items: start; }
+.hero {
+  position: relative; padding: 32px 32px 28px;
+  background:
+    radial-gradient(circle at 88% 2%, rgba(54,132,255,.18), transparent 30%),
+    radial-gradient(circle at 10% 90%, rgba(99,102,241,.10), transparent 24%),
+    linear-gradient(135deg, #f8fbff, #fff);
+  overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; right: -60px; top: -80px;
+  width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(54,132,255,.06), transparent 62%);
+  pointer-events: none;
+}
+.hero::after {
+  content: ''; position: absolute; left: 60%; bottom: -40px;
+  width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(99,102,241,.05), transparent 60%);
+  pointer-events: none;
+}
+.hero-kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 999px;
+  color: #1266f3; font-size: 13px; font-weight: 900;
+  background: rgba(18,102,243,.08);
+}
+.hero h1 { margin: 14px 0 10px; color: #071526; font-size: 30px; line-height: 1.1; font-weight: 900; }
+.hero p { max-width: 720px; margin: 0; color: #41506a; font-size: 15px; line-height: 1.8; }
+
+/* ==== Quick-access cards ==== */
+.quick-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  margin: 0 0 16px;
+}
+.quick-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border: 1px solid #d9e5f4; border-radius: 10px;
+  background: #fff; box-shadow: 0 10px 24px rgba(22,48,82,.06);
+  text-decoration: none; transition: all .22s ease;
+}
+.quick-card:hover {
+  transform: translateY(-3px); border-color: #1266f3;
+  box-shadow: 0 16px 32px rgba(22,48,82,.10);
+}
+.quick-card-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 20px; color: #fff;
+}
+.quick-card-text { min-width: 0; }
+.quick-card-label { color: #071526; font-size: 15px; font-weight: 800; }
+.quick-card-desc { color: #60708a; font-size: 12px; margin-top: 2px; }
+.qc-blue .quick-card-icon { background: linear-gradient(180deg, #3485ff, #1266f3); }
+.qc-green .quick-card-icon { background: linear-gradient(180deg, #34d399, #059669); }
+.qc-amber .quick-card-icon { background: linear-gradient(180deg, #fbbf24, #d97706); }
+.qc-purple .quick-card-icon { background: linear-gradient(180deg, #a78bfa, #7c3aed); }
+
+/* ==== Layout: TOC + Content ==== */
+.grid { display: grid; grid-template-columns: 248px 1fr; gap: 14px; align-items: start; }
+
+/* ==== TOC ==== */
 .toc {
-  position: sticky; top: 14px; padding: 10px;
-  border: 1px solid #d9e5f4; border-radius: 9px; background: #fff;
+  position: sticky; top: 14px; padding: 12px 10px;
+  border: 1px solid #d9e5f4; border-radius: 10px; background: #fff;
   box-shadow: 0 14px 32px rgba(22,48,82,.08);
 }
 .toc-title { padding: 8px 10px 10px; color: #071526; font-size: 15px; font-weight: 900; }
 .toc a {
   min-height: 38px; display: flex; align-items: center; gap: 8px;
   padding: 0 11px; color: #40516a; text-decoration: none;
-  border-radius: 8px; font-size: 14px; font-weight: 800;
+  border-radius: 8px; font-size: 14px; font-weight: 800; transition: all .16s;
 }
 .toc a:hover { color: #1266f3; background: #eef5ff; }
-.toc .svg-icon { width: 17px; height: 17px; }
-.doc { border: 1px solid #d9e5f4; border-radius: 9px; background: #fff; box-shadow: 0 14px 32px rgba(22,48,82,.08); overflow: hidden; }
-.doc section { padding: 22px 26px 24px; border-bottom: 1px solid #edf2f8; }
+.toc a.active { color: #fff; background: linear-gradient(180deg, #3485ff, #1266f3); }
+.toc .svg-icon, .toc .ico { width: 17px; height: 17px; }
+
+/* ==== Document body ==== */
+.doc {
+  border: 1px solid #d9e5f4; border-radius: 10px; background: #fff;
+  box-shadow: 0 14px 32px rgba(22,48,82,.08); overflow: hidden;
+}
+.doc section { padding: 24px 28px; border-bottom: 1px solid #edf2f8; transition: background .2s; }
 .doc section:last-child { border-bottom: 0; }
-.doc h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; color: #071526; font-size: 20px; font-weight: 900; }
-.doc h2::before { content: ''; width: 4px; height: 22px; border-radius: 999px; background: #1267ff; }
-.doc h3 { margin: 16px 0 8px; color: #1266f3; font-size: 15px; font-weight: 900; }
-.doc p, .doc li { color: #40516a; font-size: 14px; line-height: 1.85; }
+.doc section:target { background: #fafcff; }
+.doc h2 {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 14px;
+  color: #071526; font-size: 20px; font-weight: 900;
+}
+.doc h2 .h2-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  color: #fff; font-size: 15px;
+}
+.doc h3 { margin: 18px 0 8px; color: #1266f3; font-size: var(--text-body); font-weight: 900; }
+.doc p, .doc li { color: #40516a; line-height: 1.9; }
 .doc ul { padding-left: 22px; }
-.doc table { width: 100%; margin: 12px 0; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 1px solid #d9e5f4; border-radius: 9px; font-size: 14px; }
+.doc li { margin-bottom: 4px; }
+.doc table {
+  width: 100%; margin: 12px 0;
+  border-collapse: separate; border-spacing: 0; overflow: hidden;
+  border: 1px solid #d9e5f4; border-radius: 9px;
+}
 .doc th, .doc td { padding: 10px 12px; text-align: left; border-right: 1px solid #edf2f8; border-bottom: 1px solid #edf2f8; }
 .doc th:last-child, .doc td:last-child { border-right: 0; }
 .doc tr:last-child td { border-bottom: 0; }
 .doc th { color: #071526; background: #f5f8fd; font-weight: 900; }
-code { padding: 2px 6px; border-radius: 5px; color: #0b5ff0; background: #eef5ff; font-weight: 800; }
-pre { padding: 14px 16px; overflow: auto; border-radius: 9px; color: #e7f0ff; background: #061947; box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
-.tip { margin: 12px 0; padding: 12px 14px; border: 1px solid #ccefe3; border-radius: 9px; color: #047857; background: #f1fcf7; font-weight: 800; }
-@media (max-width: 900px) {
+
+/* ==== Code / Pre / Tip ==== */
+code {
+  padding: 3px 9px; border-radius: 6px; color: #0b5ff0;
+  background: #eef5ff; font-weight: 800; border: 1px solid #d9e5f4;
+}
+pre {
+  padding: 16px 18px; overflow: auto; border-radius: 9px;
+  color: #e7f0ff; background: #061947;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 8px 20px rgba(6,25,71,.12);
+}
+.tip {
+  margin: 14px 0; padding: 14px 16px; display: flex; align-items: flex-start; gap: 10px;
+  border: 1px solid #ccefe3; border-radius: 10px; color: #047857;
+  background: #f1fcf7; font-weight: 800;
+}
+.tip::before { content: '💡'; flex-shrink: 0; }
+
+/* ==== Version / Footer ==== */
+.help-footer {
+  margin-top: 16px; padding: 14px 20px; border-radius: 10px;
+  background: rgba(255,255,255,.94);
+  border: 1px solid #d9e5f4; box-shadow: 0 14px 32px rgba(22,48,82,.08);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  color: #60708a; font-size: 13px;
+}
+
+/* ==== Responsive ==== */
+@media (max-width: 1000px) {
+  .quick-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 760px) {
   .help-top { flex-direction: column; align-items: flex-start; }
   .help-actions { width: 100%; flex-wrap: wrap; }
   .grid { grid-template-columns: 1fr; }
   .toc { position: static; }
-}
-@media (max-width: 640px) {
-  .help-shell { padding: 14px; }
-  .help-top { margin: -14px -14px 0; padding: 18px 14px 14px; }
+  .quick-grid { grid-template-columns: 1fr; }
+  .hero { padding: 24px 20px; }
+  .hero h1 { font-size: 24px; }
   .doc section { padding: 18px 16px; }
   .doc table { display: block; overflow-x: auto; }
 }
 </style>
 </head>
-<body class="public-page">
-<div class="help-shell">
-  <header class="help-top">
-    <div class="help-brand">
-      <div class="help-logo logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon.png') }}" alt=""></div>
+<body class=”public-page”>
+<div class=”help-shell”>
+
+  <!-- Top bar -->
+  <header class=”help-top”>
+    <div class=”help-brand”>
+      <div class=”help-logo logo-image-wrap”><img class=”brand-logo-img” src=”{{ url_for('static', filename='brand-icon.png') }}” alt=””></div>
       <div>
-        <div class="help-name">{{ app_name }}</div>
-        <div class="help-sub">帮助与维护手册</div>
+        <div class=”help-name”>{{ app_name }}</div>
+        <div class=”help-sub”>帮助与维护手册</div>
       </div>
     </div>
-    <div class="help-actions">
-      <a class="btn" href="{{ url_for('index_bp.index') }}" target="_top">{{ icon('globe') }} 公开首页</a>
+    <div class=”help-actions”>
+      <a class=”btn” href=”{{ url_for('index_bp.index') }}” target=”_top”>{{ icon('globe') }} 公开首页</a>
       {% if session.get('user_id') %}
-      <a class="btn btn-primary" href="{{ url_for('index_bp.workbench') }}" target="_top">{{ icon('dashboard') }} 进入工作台</a>
+      <a class=”btn btn-primary” href=”{{ url_for('index_bp.workbench') }}” target=”_top”>{{ icon('dashboard') }} 进入工作台</a>
       {% else %}
-      <a class="btn btn-primary" href="{{ url_for('auth.login') }}" target="_top">{{ icon('lock') }} 登录</a>
+      <a class=”btn btn-primary” href=”{{ url_for('auth.login') }}” target=”_top”>{{ icon('lock') }} 登录</a>
       {% endif %}
     </div>
   </header>
 
-  <div class="hero">
-    <div class="breadcrumb">
-      <a href="{{ url_for('index_bp.index') }}" target="_top">{{ icon('home') }} 公开首页</a><span>›</span><span>帮助与维护</span>
+  <!-- Hero -->
+  <div class=”hero-wrap”>
+    <div class=”breadcrumb”>
+      <a href=”{{ url_for('index_bp.index') }}” target=”_top”>{{ icon('home') }} 公开首页</a><span>›</span><span>帮助与维护</span>
     </div>
-    <div class="hero-kicker">{{ icon('help') }} 使用说明</div>
-    <h1>系统帮助与维护手册</h1>
-    <p>这里集中说明日常使用、权限规则、在线表格、后台启动、开机自启、备份恢复和 Win7 离线部署维护方法。</p>
+    <div class=”hero”>
+      <div class=”hero-kicker”>{{ icon('help') }} 使用说明</div>
+      <h1>系统帮助与维护手册</h1>
+      <p>日常使用、权限规则、在线表格、后台启动、开机自启、备份恢复和 Win7 离线部署维护方法 — 全在这里。</p>
+    </div>
   </div>
-  <div class="grid">
-    <nav class="toc">
-      <div class="toc-title">目录</div>
-      <a href="#login">{{ icon('user-key') }} 登录与角色</a>
-      <a href="#daily">{{ icon('dashboard') }} 日常功能</a>
-      <a href="#sheets">{{ icon('memo') }} 在线表格</a>
-      <a href="#files">{{ icon('folder') }} 文件与附件</a>
-      <a href="#runtime">{{ icon('refresh') }} 启动与自启</a>
-      <a href="#backup">{{ icon('archive') }} 备份与恢复</a>
-      <a href="#deploy">{{ icon('gen-briefcase') }} 离线部署</a>
-      <a href="#maintain">{{ icon('settings') }} 目录维护</a>
-      <a href="#faq">{{ icon('warning') }} 故障排查</a>
+
+  <!-- Quick-access cards -->
+  <div class=”quick-grid”>
+    <a href=”#login” class=”quick-card qc-blue”>
+      <div class=”quick-card-icon”>{{ icon('user-key') }}</div>
+      <div class=”quick-card-text”>
+        <div class=”quick-card-label”>登录与角色</div>
+        <div class=”quick-card-desc”>账号、权限、角色说明</div>
+      </div>
+    </a>
+    <a href=”#daily” class=”quick-card qc-green”>
+      <div class=”quick-card-icon”>{{ icon('dashboard') }}</div>
+      <div class=”quick-card-text”>
+        <div class=”quick-card-label”>日常功能</div>
+        <div class=”quick-card-desc”>任务、公示、备忘操作</div>
+      </div>
+    </a>
+    <a href=”#runtime” class=”quick-card qc-amber”>
+      <div class=”quick-card-icon”>{{ icon('refresh') }}</div>
+      <div class=”quick-card-text”>
+        <div class=”quick-card-label”>启动与自启</div>
+        <div class=”quick-card-desc”>后台运行、开机启动</div>
+      </div>
+    </a>
+    <a href=”#faq” class=”quick-card qc-purple”>
+      <div class=”quick-card-icon”>{{ icon('warning') }}</div>
+      <div class=”quick-card-text”>
+        <div class=”quick-card-label”>故障排查</div>
+        <div class=”quick-card-desc”>常见问题与处理</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- TOC + Content -->
+  <div class=”grid”>
+    <nav class=”toc” id=”toc”>
+      <div class=”toc-title”>📖 目录</div>
+      <a href=”#login”>{{ icon('user-key') }} 登录与角色</a>
+      <a href=”#daily”>{{ icon('dashboard') }} 日常功能</a>
+      <a href=”#sheets”>{{ icon('memo') }} 在线表格</a>
+      <a href=”#files”>{{ icon('folder') }} 文件与附件</a>
+      <a href=”#runtime”>{{ icon('refresh') }} 启动与自启</a>
+      <a href=”#backup”>{{ icon('archive') }} 备份与恢复</a>
+      <a href=”#deploy”>{{ icon('gen-briefcase') }} 离线部署</a>
+      <a href=”#maintain”>{{ icon('settings') }} 目录维护</a>
+      <a href=”#faq”>{{ icon('warning') }} 故障排查</a>
     </nav>
 
-    <main class="doc">
-      <section id="login">
-        <h2>一、登录与角色</h2>
+    <main class=”doc”>
+      <section id=”login”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#3485ff,#1266f3)”>{{ icon('user-key') }}</span> 一、登录与角色</h2>
         <p>浏览器访问 <code>http://127.0.0.1:5000</code>。局域网访问时，使用启动窗口显示的 LAN 地址。</p>
         <table>
           <tr><th>角色</th><th>默认账号</th><th>权限说明</th></tr>
           <tr><td>超级管理员</td><td><code>admin / admin123</code></td><td>用户、系统配置、栏目、日志和全部数据管理</td></tr>
           <tr><td>普通用户</td><td><code>警号 / 123456</code></td><td>查看公示、处理任务、维护备忘、上传下载文件</td></tr>
         </table>
-        <div class="tip">首次部署后建议立即修改默认密码。</div>
+        <div class=”tip”>首次部署后建议立即修改默认密码。</div>
       </section>
 
-      <section id="daily">
-        <h2>二、日常功能</h2>
+      <section id=”daily”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#34d399,#059669)”>{{ icon('dashboard') }}</span> 二、日常功能</h2>
         <h3>工作台</h3>
         <ul>
           <li>查看待处理任务、最新公示、备忘和快捷入口。</li>
@@ -171,15 +314,15 @@ pre { padding: 14px 16px; overflow: auto; border-radius: 9px; color: #e7f0ff; ba
         </ul>
         <h3>信息公示与备忘</h3>
         <ul>
-          <li>公示采用“分类/栏目/内容”结构，支持置顶、有效期和富文本。</li>
+          <li>公示采用”分类/栏目/内容”结构，支持置顶、有效期和富文本。</li>
           <li>个人备忘仅本人可见，公共备忘可按角色设置可见范围。</li>
         </ul>
       </section>
 
-      <section id="sheets">
-        <h2>三、在线表格</h2>
+      <section id=”sheets”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#fbbf24,#d97706)”>{{ icon('memo') }}</span> 三、在线表格</h2>
         <ul>
-          <li>点击左侧“在线表格”进入列表，管理员可新建表格。</li>
+          <li>点击左侧”在线表格”进入列表，管理员可新建表格。</li>
           <li>编辑页支持自动保存，也可按 <code>Ctrl+S</code> 手动保存。</li>
           <li>表格可发布、预览、导出 XLS，并保留版本历史。</li>
           <li>可从 WPS/Excel 复制一个单元格区域，在表格中选中起始单元格后直接粘贴，系统会按行列写入。</li>
@@ -187,8 +330,8 @@ pre { padding: 14px 16px; overflow: auto; border-radius: 9px; color: #e7f0ff; ba
         </ul>
       </section>
 
-      <section id="files">
-        <h2>四、文件与附件</h2>
+      <section id=”files”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#a78bfa,#7c3aed)”>{{ icon('folder') }}</span> 四、文件与附件</h2>
         <ul>
           <li>支持文档、图片、压缩包、音视频等常见格式。</li>
           <li>单文件限制为 50MB。</li>
@@ -200,8 +343,8 @@ pre { padding: 14px 16px; overflow: auto; border-radius: 9px; color: #e7f0ff; ba
         </ul>
       </section>
 
-      <section id="runtime">
-        <h2>五、启动、后台运行与开机自启</h2>
+      <section id=”runtime”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#f97316,#ea580c)”>{{ icon('refresh') }}</span> 五、启动、后台运行与开机自启</h2>
         <table>
           <tr><th>操作</th><th>脚本</th></tr>
           <tr><td>前台启动</td><td><code>start.bat</code></td></tr>
@@ -214,16 +357,16 @@ pre { padding: 14px 16px; overflow: auto; border-radius: 9px; color: #e7f0ff; ba
         <p>后台运行日志位于 <code>logs/server.log</code> 和 <code>logs/server-error.log</code>。</p>
       </section>
 
-      <section id="backup">
-        <h2>六、备份与恢复</h2>
+      <section id=”backup”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#14b8a6,#0d9488)”>{{ icon('archive') }}</span> 六、备份与恢复</h2>
         <pre>python\python.exe backup.py backup
 python\python.exe backup.py list
 python\python.exe backup.py restore --file 备份文件名.db</pre>
         <p>数据库位于 <code>data/database.db</code>，上传文件位于 <code>data/uploads/</code>。迁移或重装前务必备份。</p>
       </section>
 
-      <section id="deploy">
-        <h2>七、Win7 离线部署</h2>
+      <section id=”deploy”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#6366f1,#4f46e5)”>{{ icon('gen-briefcase') }}</span> 七、Win7 离线部署</h2>
         <ul>
           <li>目标系统建议为 Windows 7 SP1 64 位。</li>
           <li>如底层模块导入失败，右键管理员运行 <code>install_win7_runtime.bat</code>，必要时重启。</li>
@@ -232,8 +375,8 @@ python\python.exe backup.py restore --file 备份文件名.db</pre>
         </ul>
       </section>
 
-      <section id="maintain">
-        <h2>八、目录维护约定</h2>
+      <section id=”maintain”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#8b5cf6,#6d28d9)”>{{ icon('settings') }}</span> 八、目录维护约定</h2>
         <table>
           <tr><th>目录/文件</th><th>说明</th></tr>
           <tr><td><code>app/</code></td><td>业务代码、模板和静态资源</td></tr>
@@ -244,8 +387,8 @@ python\python.exe backup.py restore --file 备份文件名.db</pre>
         </table>
       </section>
 
-      <section id="faq">
-        <h2>九、故障排查</h2>
+      <section id=”faq”>
+        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#ef4444,#dc2626)”>{{ icon('warning') }}</span> 九、故障排查</h2>
         <ul>
           <li>无法登录：确认账号密码正确，且账号未被禁用。</li>
           <li>服务打不开：运行 <code>status.bat</code> 查看 5000 端口是否监听。</li>
@@ -256,6 +399,36 @@ python\python.exe backup.py restore --file 备份文件名.db</pre>
       </section>
     </main>
   </div>
+
+  <!-- Footer -->
+  <div class=”help-footer”>
+    <span>{{ app_name }} · 帮助与维护手册</span>
+    <span style=”display:flex;align-items:center;gap:6px;”>v1.0.0 {{ icon('check') }} 离线可用</span>
+  </div>
 </div>
+
+<script>
+// Highlight active TOC link on scroll
+(function() {
+  var tocLinks = document.querySelectorAll('#toc a');
+  var sections = [];
+  tocLinks.forEach(function(a) {
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({el: el, link: a});
+  });
+  function onScroll() {
+    var scrollY = window.scrollY + 100;
+    var active = null;
+    sections.forEach(function(s) {
+      if (s.el.offsetTop <= scrollY) active = s.link;
+    });
+    tocLinks.forEach(function(a) { a.classList.remove('active'); });
+    if (active) active.classList.add('active');
+  }
+  window.addEventListener('scroll', onScroll, {passive: true});
+  onScroll();
+})();
+</script>
 </body>
 </html>

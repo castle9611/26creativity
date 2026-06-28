@@ -128,7 +128,7 @@ body { background: #f1f5f9; }
     {% for d in related_docs %}
     <a href="{{ url_for('docs.view_doc', doc_id=d.id) }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin:3px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;text-decoration:none;color:#1a56db;font-size:13px;">
       {{ icon('file') }} {{ d.title }}
-      <span style="color:#64748b;font-size:11px;">{% if d.status=='published' %}已发布{% else %}草稿{% endif %}</span>
+      <span class="file-size">{% if d.status=='published' %}已发布{% else %}草稿{% endif %}</span>
     </a>
     {% endfor %}
     {% endif %}
@@ -155,7 +155,7 @@ body { background: #f1f5f9; }
     {% for f in attachment_list %}
     <a href="{{ f.file_path }}" class="btn" style="margin:4px;" target="_blank">
       {{ icon('attach') }} {{ f.original_name }}
-      <span style="color:#94a3b8;font-size:11px;margin-left:4px;">({{ (f.file_size/1024)|round|int }}KB)</span>
+      <span style="color:#94a3b8;margin-left:4px;">({{ (f.file_size/1024)|round|int }}KB)</span>
     </a>
     {% endfor %}
   </div>
@@ -308,4 +308,5 @@ function voteComment(commentId, voteType) {
 </script>
 </body>
 </html>
+
 

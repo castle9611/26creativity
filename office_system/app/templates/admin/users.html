@@ -79,7 +79,7 @@ body { background: #f1f5f9; }
 <!-- Batch Role Modal -->
 <div id="batchRoleModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:12px;padding:32px;width:400px;">
-    <h3 style="font-size:18px;font-weight:600;margin-bottom:20px;">批量修改角色</h3>
+    <h3 style="font-size:var(--text-h3);font-weight:600;margin-bottom:20px;">批量修改角色</h3>
     <div class="form-group">
       <label class="form-label">选择角色</label>
       <select id="batchRoleSelect" class="form-select" style="height:44px;">
@@ -98,30 +98,30 @@ body { background: #f1f5f9; }
 <!-- Stats Bar (clickable to filter by role) -->
 <div class="stats-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
   <a href="{{ url_for('admin.users') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition:all 0.2s;{% if not role_filter %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if not role_filter %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('users') }}</span>
+    <span style="font-size:var(--text-h3);">{{ icon('users') }}</span>
     <div>
       <div class="stat-num">{{ total_users }}</div>
       <div class="stat-label">用户总数</div>
     </div>
   </a>
   <a href="{{ url_for('admin.users', role='super_admin') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition:all 0.2s;{% if role_filter=='super_admin' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='super_admin' %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('user-key') }}</span>
+    <span style="font-size:var(--text-h3);">{{ icon('user-key') }}</span>
     <div>
-      <div style="font-size:18px;font-weight:700;color:#dc2626;white-space:nowrap;">{{ super_admin_count }}</div>
+      <div style="class="stat-num" style="color:#dc2626;white-space:nowrap;">{{ super_admin_count }}</div>
       <div class="stat-label">超级管理员</div>
     </div>
   </a>
   <a href="{{ url_for('admin.users', role='dept_admin') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition:all 0.2s;{% if role_filter=='dept_admin' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='dept_admin' %}#2563eb{% else %}#e2e8f0{% endif %}'">
-    <span style="font-size:18px;">{{ icon('settings') }}</span>
+    <span style="font-size:var(--text-h3);">{{ icon('settings') }}</span>
     <div>
-      <div style="font-size:18px;font-weight:700;color:#f59e0b;white-space:nowrap;">{{ dept_admin_count }}</div>
+      <div style="class="stat-num" style="color:#f59e0b;white-space:nowrap;">{{ dept_admin_count }}</div>
       <div class="stat-label">监区管理员</div>
     </div>
   </a>
   <a href="{{ url_for('admin.users', role='user') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition:all 0.2s;{% if role_filter=='user' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='user' %}#2563eb{% else %}#e2e8f0{% endif %}'">
     <span style="font-size:18px;">👮</span>
     <div>
-      <div style="font-size:18px;font-weight:700;color:#3b82f6;white-space:nowrap;">{{ normal_user_count }}</div>
+      <div style="class="stat-num" style="color:#3b82f6;white-space:nowrap;">{{ normal_user_count }}</div>
       <div class="stat-label">干警</div>
     </div>
   </a>
@@ -237,7 +237,7 @@ body { background: #f1f5f9; }
 <!-- Edit Modal -->
 <div id="editModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:12px;padding:32px;width:480px;max-width:90%;">
-    <h3 id="modalTitle" style="font-size:18px;font-weight:600;margin-bottom:24px;">添加用户</h3>
+    <h3 id="modalTitle" style="font-size:var(--text-h3);font-weight:600;margin-bottom:24px;">添加用户</h3>
     <form id="editForm" method="post" autocomplete="off">
       <div class="form-group">
         <label class="form-label" for="eUname">用户名 <span style="color:#dc2626;">*</span></label>
@@ -274,7 +274,7 @@ body { background: #f1f5f9; }
 <!-- Import Modal -->
 <div id="importModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:12px;padding:32px;width:700px;max-width:90%;max-height:90vh;overflow:auto;">
-    <h3 style="font-size:18px;font-weight:600;margin-bottom:16px;">📥 批量导入用户</h3>
+    <h3 style="font-size:var(--text-h3);font-weight:600;margin-bottom:16px;">📥 批量导入用户</h3>
     <p style="color:#64748b;font-size:13px;margin-bottom:16px;">
       支持 CSV 格式文件，每行一个用户，格式：<code>用户名,姓名,密码,角色,部门,状态</code>
     </p>
@@ -544,6 +544,7 @@ body { background: #f1f5f9; }
 
 </body>
 </html>
+
 
 
 

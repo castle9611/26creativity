@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 {% from '_icon.html' import icon %}
 <html>
 <head>
@@ -11,12 +11,12 @@ body { padding:24px; background:#f1f5f9; }
 .link-form { display:grid; gap:12px; }
 .link-row { display:grid; grid-template-columns: 140px 1fr 90px 92px 80px 132px; gap:8px; align-items:center; padding:12px; border-bottom:1px solid #e2e8f0; }
 .link-row:last-child { border-bottom:none; }
-.link-cell-title { font-size:12px; color:#64748b; font-weight:700; }
+.link-cell-title { font-size: var(--text-sm); color:#64748b; font-weight:700; }
 .link-preview { display:flex; align-items:center; gap:8px; min-width:0; }
 .link-preview .svg-icon { width:18px; height:18px; color:#047857; }
 .link-preview span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:800; color:#10231d; }
-.form-input.small { height:34px; padding:6px 8px; font-size:13px; }
-.hint { color:#64748b; font-size:12px; line-height:1.7; }
+.form-input.small { height:34px; padding:6px 8px; font-size: var(--text-sm); }
+.hint { color:#64748b; font-size: var(--text-xs); line-height:1.7; }
 .actions { display:flex; gap:6px; justify-content:flex-end; }
 @media (max-width: 1100px) { .link-layout { grid-template-columns:1fr; } .link-row { grid-template-columns:1fr; } }
 </style>
@@ -97,3 +97,4 @@ body { padding:24px; background:#f1f5f9; }
 </div>
 </body>
 </html>
+

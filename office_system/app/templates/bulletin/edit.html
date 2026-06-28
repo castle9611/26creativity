@@ -251,7 +251,7 @@ body { background: #f1f5f9; }
         <div class="existing-attachment" data-id="{{ f.id }}">
           <span>{{ icon('attach') }}</span>
           <span style="flex:1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ f.original_name }}</span>
-          <span style="color:#94a3b8;font-size:11px;">({{ (f.file_size/1024)|round|int }}KB)</span>
+          <span class="file-size">({{ (f.file_size/1024)|round|int }}KB)</span>
           <button type="button" class="delete-btn" onclick="deleteAttachment({{ f.id }})">✕</button>
         </div>
         {% endfor %}
@@ -530,7 +530,7 @@ function renderAttachmentList() {
             var sizeStr = size >= 1024 * 1024 ? (size / 1024 / 1024).toFixed(1) + 'MB' : (size / 1024).toFixed(0) + 'KB';
             var item = document.createElement('div');
             item.className = 'attachment-item';
-            item.innerHTML = '<span>附件</span><span style="flex:1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + file.name + '</span><span style="color:#94a3b8;font-size:11px;">' + sizeStr + '</span><button type="button" class="remove-btn" onclick="removeAttachment(' + idx + ')">×</button>';
+            item.innerHTML = '<span>附件</span><span style="flex:1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + file.name + '</span><span class="file-size">' + sizeStr + '</span><button type="button" class="remove-btn" onclick="removeAttachment(' + idx + ')">×</button>';
             list.appendChild(item);
         })(i);
     }
@@ -654,4 +654,5 @@ updateBulletinColumnSelect(true);
 
 </body>
 </html>
+
 

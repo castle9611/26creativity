@@ -37,7 +37,7 @@ body { background: #f1f5f9; }
 .profile-grid { display:grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); gap:12px; align-items:start; }
 .profile-stack { display:grid; gap:12px; }
 .form-card, .info-card { max-width:none; margin:0; background:white; border-radius:10px; border:1px solid #d9e5f4; padding:16px; box-shadow:0 10px 24px rgba(22,48,82,.045); }
-.form-card h3, .info-card h3 { font-size:16px; font-weight:800; color:#071526; margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid #edf3fa; }
+.form-card h3, .info-card h3 { font-size: var(--text-h4); font-weight:800; color:#071526; margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid #edf3fa; }
 .info-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
 .info-row:last-child { border-bottom: none; }
 .info-label { width: 86px; color: #64748b; font-size: 13px; }
@@ -45,8 +45,8 @@ body { background: #f1f5f9; }
 .profile-avatar, .profile-avatar img { width:56px; height:56px; border-radius:50%; }
 .profile-avatar { flex-shrink:0; background:#1267ff; color:white; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; }
 .profile-avatar img { object-fit:cover; border:2px solid #d9e5f4; }
-.profile-name { font-size:18px; font-weight:850; color:#071526; line-height:1.2; }
-.profile-meta { font-size:13px; color:#64748b; margin-top:3px; }
+.profile-name { font-size: var(--text-h3); font-weight:850; color:#071526; line-height:1.2; }
+.profile-meta { font-size: var(--text-sm); color:#64748b; margin-top:3px; }
 .profile-actions { margin-left:auto; display:flex; align-items:center; gap:8px; }
 .profile-form .form-group { margin-bottom:10px; }
 .profile-form .form-label { margin-bottom:5px; font-size:13px; }
@@ -183,4 +183,5 @@ body { background: #f1f5f9; }
 
 </body>
 </html>
+
 

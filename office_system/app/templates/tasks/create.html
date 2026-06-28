@@ -261,7 +261,7 @@ function renderFileList() {
             var size = f.size >= 1024 * 1024 ? (f.size / 1024 / 1024).toFixed(1) + 'MB' : (f.size / 1024).toFixed(0) + 'KB';
             var div = document.createElement('div');
             div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;';
-            div.innerHTML = '<span>附件</span><span style="flex:1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span><span style="color:#94a3b8;font-size:11px;">' + size + '</span><button type="button" style="width:18px;height:18px;border-radius:50%;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;font-size:12px;" onclick="removeFile(' + idx + ')">×</button>';
+            div.innerHTML = '<span>附件</span><span style="flex:1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span><span class="file-size">' + size + '</span><button type="button" style="width:18px;height:18px;border-radius:50%;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;font-size:12px;" onclick="removeFile(' + idx + ')">×</button>';
             list.appendChild(div);
         })(i);
     }
@@ -293,5 +293,6 @@ function toggleLinkSection() {
 
 </body>
 </html>
+
 
 

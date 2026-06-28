@@ -1,0 +1,7 @@
+[INFO] Database exists - running migration if needed...
+[INFO] Starting database migration...
+[OK] Migration complete - no data lost
+[INFO] Restart the server for changes to take effect
+[INFO] Starting server on http://0.0.0.0:5000
+ * Serving Flask app 'app'
+ * Debug mode: off
