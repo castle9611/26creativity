@@ -7,11 +7,11 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <style>
 body { background: #f1f5f9; }
-.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; margin-bottom: 16px; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: #64748b; margin-bottom: 16px; }
 .breadcrumb a { color: #64748b; text-decoration: none; }
 .breadcrumb a:hover { color: #2563eb; }
 .breadcrumb-sep { color: #cbd5e1; }
-.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: var(--text-sm); color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
 .back-btn:hover { border-color: #2563eb; color: #2563eb; }
 </style>
 </head>
@@ -193,4 +193,5 @@ function batchDelete() {
 </script>
 </body>
 </html>
+
 

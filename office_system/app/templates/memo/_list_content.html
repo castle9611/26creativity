@@ -1,25 +1,25 @@
-{% from '_icon.html' import icon %}
+﻿{% from '_icon.html' import icon %}
 <!-- Stats Bar -->
 <div class="oa-stat-grid oa-memo-stat-grid">
   <a href="{{ url_for('memo.list_memos') }}" class="oa-stat-card {% if memo_type == 'all' or memo_type == '' %}active{% endif %}" onclick="return filterMemos(this)">
     <span class="stats-icon">{{ icon('memo') }}</span>
     <div>
-      <div class="stats-num" style="font-size:18px;font-weight:700;color:#1e293b;white-space:nowrap;">{{ memo_total_count|default(private_count + public_count) }}</div>
-      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">备忘总数</div>
+      <div class="stats-num" class="stat-num">{{ memo_total_count|default(private_count + public_count) }}</div>
+      <div class="stats-label" class="stat-label">备忘总数</div>
     </div>
   </a>
   <a href="{{ url_for('memo.list_memos', type='private') }}" class="oa-stat-card {% if memo_type == 'private' %}active{% endif %}" onclick="return filterMemos(this)">
     <span class="stats-icon">{{ icon('lock') }}</span>
     <div>
       <div class="stats-num" style="font-size:18px;font-weight:700;color:#8b5cf6;white-space:nowrap;">{{ private_count }}</div>
-      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">私人备忘</div>
+      <div class="stats-label" class="stat-label">私人备忘</div>
     </div>
   </a>
   <a href="{{ url_for('memo.list_memos', type='public') }}" class="oa-stat-card {% if memo_type == 'public' %}active{% endif %}" onclick="return filterMemos(this)">
     <span class="stats-icon">{{ icon('globe') }}</span>
     <div>
       <div class="stats-num" style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ public_count }}</div>
-      <div class="stats-label" style="font-size:11px;color:#64748b;white-space:nowrap;">公共备忘</div>
+      <div class="stats-label" class="stat-label">公共备忘</div>
     </div>
   </a>
 </div>
@@ -92,6 +92,7 @@
   {% if has_next %}
   <a href="{% if memo_type == 'archived' %}{{ url_for('memo.archived', page=page+1, per_page=request.args.get('per_page', 10)) }}{% else %}{{ url_for('memo.list_memos', page=page+1, per_page=request.args.get('per_page', 10), type=memo_type, keyword=keyword, group_id=group_id) }}{% endif %}" class="btn" {% if memo_type != 'archived' %}onclick="return filterMemos(this)"{% endif %}>下一页</a>
   {% endif %}
-  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ total }} 条</span>
+  <span class="record-count">共 {{ total }} 条</span>
 </div>
 {% endif %}
+

@@ -46,29 +46,29 @@ body { background: #f1f5f9; }
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;">
     <span style="font-size:18px;">{{ icon('folder') }}</span>
     <div>
-      <div style="font-size:18px;font-weight:700;color:#1e293b;white-space:nowrap;">{{ total_files }}</div>
-      <div style="font-size:11px;color:#64748b;white-space:nowrap;">文件总数</div>
+      <div class="stat-num">{{ total_files }}</div>
+      <div class="stat-label">文件总数</div>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;">
     <span style="font-size:18px;">{{ icon('save') }}</span>
     <div>
       <div style="font-size:18px;font-weight:700;color:#3b82f6;white-space:nowrap;">{% if total_size > 1024*1024 %}{{ (total_size/1024/1024)|round(1) }}MB{% elif total_size > 1024 %}{{ (total_size/1024)|round(0)|int }}KB{% else %}{{ total_size }}B{% endif %}</div>
-      <div style="font-size:11px;color:#64748b;white-space:nowrap;">总大小</div>
+      <div class="stat-label">总大小</div>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;">
     <span style="font-size:18px;">{{ icon('task') }}</span>
     <div>
       <div style="font-size:18px;font-weight:700;color:#f59e0b;white-space:nowrap;">{{ task_files }}</div>
-      <div style="font-size:11px;color:#64748b;white-space:nowrap;">任务附件</div>
+      <div class="stat-label">任务附件</div>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;">
     <span style="font-size:18px;">{{ icon('bulletin') }}</span>
     <div>
       <div style="font-size:18px;font-weight:700;color:#10b981;white-space:nowrap;">{{ bulletin_files }}</div>
-      <div style="font-size:11px;color:#64748b;white-space:nowrap;">公示附件</div>
+      <div class="stat-label">公示附件</div>
     </div>
   </div>
 </div>
@@ -211,13 +211,17 @@ body { background: #f1f5f9; }
   {% if pagination.has_prev %}
   <a href="{{ url_for('files.list_files', page=pagination.prev_num, per_page=request.args.get('per_page', 10), related_type=related_type, category_id=category_id, keyword=keyword) }}" class="btn">上一页</a>
   {% endif %}
-  {% for p in range(1,pagination.pages+1) %}
+  {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+  {% if p %}
   <a href="{{ url_for('files.list_files', page=p, per_page=request.args.get('per_page', 10), related_type=related_type, category_id=category_id, keyword=keyword) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
+  {% else %}
+  <span class="btn">…</span>
+  {% endif %}
   {% endfor %}
   {% if pagination.has_next %}
   <a href="{{ url_for('files.list_files', page=pagination.next_num, per_page=request.args.get('per_page', 10), related_type=related_type, category_id=category_id, keyword=keyword) }}" class="btn">下一页</a>
   {% endif %}
-  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 条</span>
+  <span class="record-count">共 {{ pagination.total }} 条</span>
 </div>
 {% endif %}
 
@@ -255,3 +259,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 {% from '_icon.html' import icon %}
 <head>
@@ -126,13 +126,17 @@ body { background: #f1f5f9; }
   {% if pagination.has_prev %}
   <a href="{{ url_for('admin.logs', page=pagination.prev_num, per_page=request.args.get('per_page', 10), action=action, user_id=user_id, target_type=target_type, keyword=keyword, date_from=date_from, date_to=date_to) }}" class="btn">上一页</a>
   {% endif %}
-  {% for p in range(1,pagination.pages+1) %}
+  {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+  {% if p %}
   <a href="{{ url_for('admin.logs', page=p, per_page=request.args.get('per_page', 10), action=action, user_id=user_id, target_type=target_type, keyword=keyword, date_from=date_from, date_to=date_to) }}" class="btn {% if p==pagination.page %}btn-primary{% endif %}">{{ p }}</a>
+  {% else %}
+  <span class="btn">…</span>
+  {% endif %}
   {% endfor %}
   {% if pagination.has_next %}
   <a href="{{ url_for('admin.logs', page=pagination.next_num, per_page=request.args.get('per_page', 10), action=action, user_id=user_id, target_type=target_type, keyword=keyword, date_from=date_from, date_to=date_to) }}" class="btn">下一页</a>
   {% endif %}
-  <span style="color:#64748b;font-size:13px;margin-left:8px;">共 {{ pagination.total }} 条</span>
+  <span class="record-count">共 {{ pagination.total }} 条</span>
 </div>
 {% endif %}
 
@@ -195,3 +199,5 @@ function batchDeleteLogs() {
 </script>
 </body>
 </html>
+
+
