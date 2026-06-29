@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 {% from '_icon.html' import icon %}
-<html>
+<html lang="zh-CN">
 <head>
-<meta charset=”utf-8”><title>帮助与维护</title>
-<meta http-equiv=”X-UA-Compatible” content=”IE=edge,chrome=1”>
-<meta name=”viewport” content=”width=device-width, initial-scale=1”>
-<link rel=”icon” href=”{{ url_for('static', filename='favicon.png') }}” type=”image/png”>
-<link rel=”stylesheet” href=”{{ url_for('static', filename='css/app.css') }}”>
+<meta charset="utf-8"><title>帮助与维护</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <style>
 /* ==== Base ==== */
 body {
@@ -14,6 +14,7 @@ body {
   background: linear-gradient(160deg, #061947 0 260px, #eef3fb 260px 100%);
   min-height: 100vh;
 }
+.svg-icon { width: 1em; height: 1em; flex: 0 0 auto; }
 .help-shell { max-width: 1320px; margin: 0 auto; padding: 18px 18px 50px; }
 
 /* ==== Top bar ==== */
@@ -30,7 +31,9 @@ body {
   display: inline-flex; align-items: center; justify-content: center;
   color: #fff; background: linear-gradient(180deg, #1e73ff, #0a58ed);
   box-shadow: 0 14px 28px rgba(0,66,190,.36), inset 0 1px 0 rgba(255,255,255,.26);
+  overflow: hidden; flex: 0 0 46px;
 }
+.help-logo img { width: 32px; height: 32px; object-fit: contain; display: block; }
 .help-name { font-size: 25px; font-weight: 900; line-height: 1.12; }
 .help-sub { margin-top: 4px; color: #a9bdd4; font-size: 14px; }
 .help-actions { display: flex; align-items: center; gap: 10px; }
@@ -47,6 +50,7 @@ body {
   border: 1px solid rgba(255,255,255,.18); border-radius: 9px;
   color: rgba(255,255,255,.82); background: rgba(255,255,255,.08);
   box-shadow: 0 14px 30px rgba(6,25,71,.24);
+  flex-wrap: wrap;
 }
 .breadcrumb a { color: #fff; font-weight: 800; text-decoration: none; }
 
@@ -95,6 +99,7 @@ body {
   padding: 14px 16px; border: 1px solid #d9e5f4; border-radius: 10px;
   background: #fff; box-shadow: 0 10px 24px rgba(22,48,82,.06);
   text-decoration: none; transition: all .22s ease;
+  min-width: 0;
 }
 .quick-card:hover {
   transform: translateY(-3px); border-color: #1266f3;
@@ -122,7 +127,10 @@ body {
   border: 1px solid #d9e5f4; border-radius: 10px; background: #fff;
   box-shadow: 0 14px 32px rgba(22,48,82,.08);
 }
-.toc-title { padding: 8px 10px 10px; color: #071526; font-size: 15px; font-weight: 900; }
+.toc-title {
+  padding: 8px 10px 10px; color: #071526; font-size: 15px; font-weight: 900;
+  display: flex; align-items: center; gap: 8px;
+}
 .toc a {
   min-height: 38px; display: flex; align-items: center; gap: 8px;
   padding: 0 11px; color: #40516a; text-decoration: none;
@@ -135,6 +143,7 @@ body {
 .doc {
   border: 1px solid #d9e5f4; border-radius: 10px; background: #fff;
   box-shadow: 0 14px 32px rgba(22,48,82,.08); overflow: hidden;
+  min-width: 0;
 }
 .doc section { padding: 24px 28px; border-bottom: 1px solid #edf2f8; transition: background .2s; }
 .doc section:last-child { border-bottom: 0; }
@@ -150,6 +159,7 @@ body {
 }
 .doc h3 { margin: 18px 0 8px; color: #1266f3; font-size: var(--text-body); font-weight: 900; }
 .doc p, .doc li { color: #40516a; line-height: 1.9; }
+.doc p, .doc li, .doc td { word-break: break-word; }
 .doc ul { padding-left: 22px; }
 .doc li { margin-bottom: 4px; }
 .doc table {
@@ -166,6 +176,7 @@ body {
 code {
   padding: 3px 9px; border-radius: 6px; color: #0b5ff0;
   background: #eef5ff; font-weight: 800; border: 1px solid #d9e5f4;
+  white-space: nowrap;
 }
 pre {
   padding: 16px 18px; overflow: auto; border-radius: 9px;
@@ -177,7 +188,7 @@ pre {
   border: 1px solid #ccefe3; border-radius: 10px; color: #047857;
   background: #f1fcf7; font-weight: 800;
 }
-.tip::before { content: '💡'; flex-shrink: 0; }
+.tip .svg-icon { margin-top: 2px; color: #059669; }
 
 /* ==== Version / Footer ==== */
 .help-footer {
@@ -195,111 +206,113 @@ pre {
 @media (max-width: 760px) {
   .help-top { flex-direction: column; align-items: flex-start; }
   .help-actions { width: 100%; flex-wrap: wrap; }
+  .help-actions .btn { flex: 1 1 150px; }
   .grid { grid-template-columns: 1fr; }
   .toc { position: static; }
   .quick-grid { grid-template-columns: 1fr; }
   .hero { padding: 24px 20px; }
   .hero h1 { font-size: 24px; }
   .doc section { padding: 18px 16px; }
-  .doc table { display: block; overflow-x: auto; }
+  .doc table { display: block; overflow-x: auto; white-space: nowrap; }
+  .help-footer { flex-direction: column; align-items: flex-start; }
 }
 </style>
 </head>
-<body class=”public-page”>
-<div class=”help-shell”>
+<body class="public-page">
+<div class="help-shell">
 
   <!-- Top bar -->
-  <header class=”help-top”>
-    <div class=”help-brand”>
-      <div class=”help-logo logo-image-wrap”><img class=”brand-logo-img” src=”{{ url_for('static', filename='brand-icon.png') }}” alt=””></div>
+  <header class="help-top">
+    <div class="help-brand">
+      <div class="help-logo logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon.png') }}" alt=""></div>
       <div>
-        <div class=”help-name”>{{ app_name }}</div>
-        <div class=”help-sub”>帮助与维护手册</div>
+        <div class="help-name">{{ app_name }}</div>
+        <div class="help-sub">帮助与维护手册</div>
       </div>
     </div>
-    <div class=”help-actions”>
-      <a class=”btn” href=”{{ url_for('index_bp.index') }}” target=”_top”>{{ icon('globe') }} 公开首页</a>
+    <div class="help-actions">
+      <a class="btn" href="{{ url_for('index_bp.index') }}" target="_top">{{ icon('globe') }} 公开首页</a>
       {% if session.get('user_id') %}
-      <a class=”btn btn-primary” href=”{{ url_for('index_bp.workbench') }}” target=”_top”>{{ icon('dashboard') }} 进入工作台</a>
+      <a class="btn btn-primary" href="{{ url_for('index_bp.workbench') }}" target="_top">{{ icon('dashboard') }} 进入工作台</a>
       {% else %}
-      <a class=”btn btn-primary” href=”{{ url_for('auth.login') }}” target=”_top”>{{ icon('lock') }} 登录</a>
+      <a class="btn btn-primary" href="{{ url_for('auth.login') }}" target="_top">{{ icon('lock') }} 登录</a>
       {% endif %}
     </div>
   </header>
 
   <!-- Hero -->
-  <div class=”hero-wrap”>
-    <div class=”breadcrumb”>
-      <a href=”{{ url_for('index_bp.index') }}” target=”_top”>{{ icon('home') }} 公开首页</a><span>›</span><span>帮助与维护</span>
+  <div class="hero-wrap">
+    <div class="breadcrumb">
+      <a href="{{ url_for('index_bp.index') }}" target="_top">{{ icon('home') }} 公开首页</a><span>›</span><span>帮助与维护</span>
     </div>
-    <div class=”hero”>
-      <div class=”hero-kicker”>{{ icon('help') }} 使用说明</div>
+    <div class="hero">
+      <div class="hero-kicker">{{ icon('help') }} 使用说明</div>
       <h1>系统帮助与维护手册</h1>
-      <p>日常使用、权限规则、在线表格、后台启动、开机自启、备份恢复和 Win7 离线部署维护方法 — 全在这里。</p>
+      <p>日常使用、权限规则、在线表格、后台启动、开机自启、备份恢复和 Win7 离线部署维护方法，都在这里。</p>
     </div>
   </div>
 
   <!-- Quick-access cards -->
-  <div class=”quick-grid”>
-    <a href=”#login” class=”quick-card qc-blue”>
-      <div class=”quick-card-icon”>{{ icon('user-key') }}</div>
-      <div class=”quick-card-text”>
-        <div class=”quick-card-label”>登录与角色</div>
-        <div class=”quick-card-desc”>账号、权限、角色说明</div>
+  <div class="quick-grid">
+    <a href="#login" class="quick-card qc-blue">
+      <div class="quick-card-icon">{{ icon('user-key') }}</div>
+      <div class="quick-card-text">
+        <div class="quick-card-label">登录与角色</div>
+        <div class="quick-card-desc">账号、权限、角色说明</div>
       </div>
     </a>
-    <a href=”#daily” class=”quick-card qc-green”>
-      <div class=”quick-card-icon”>{{ icon('dashboard') }}</div>
-      <div class=”quick-card-text”>
-        <div class=”quick-card-label”>日常功能</div>
-        <div class=”quick-card-desc”>任务、公示、备忘操作</div>
+    <a href="#daily" class="quick-card qc-green">
+      <div class="quick-card-icon">{{ icon('dashboard') }}</div>
+      <div class="quick-card-text">
+        <div class="quick-card-label">日常功能</div>
+        <div class="quick-card-desc">任务、公示、备忘操作</div>
       </div>
     </a>
-    <a href=”#runtime” class=”quick-card qc-amber”>
-      <div class=”quick-card-icon”>{{ icon('refresh') }}</div>
-      <div class=”quick-card-text”>
-        <div class=”quick-card-label”>启动与自启</div>
-        <div class=”quick-card-desc”>后台运行、开机启动</div>
+    <a href="#runtime" class="quick-card qc-amber">
+      <div class="quick-card-icon">{{ icon('refresh') }}</div>
+      <div class="quick-card-text">
+        <div class="quick-card-label">启动与自启</div>
+        <div class="quick-card-desc">后台运行、开机启动</div>
       </div>
     </a>
-    <a href=”#faq” class=”quick-card qc-purple”>
-      <div class=”quick-card-icon”>{{ icon('warning') }}</div>
-      <div class=”quick-card-text”>
-        <div class=”quick-card-label”>故障排查</div>
-        <div class=”quick-card-desc”>常见问题与处理</div>
+    <a href="#faq" class="quick-card qc-purple">
+      <div class="quick-card-icon">{{ icon('warning') }}</div>
+      <div class="quick-card-text">
+        <div class="quick-card-label">故障排查</div>
+        <div class="quick-card-desc">常见问题与处理</div>
       </div>
     </a>
   </div>
 
   <!-- TOC + Content -->
-  <div class=”grid”>
-    <nav class=”toc” id=”toc”>
-      <div class=”toc-title”>📖 目录</div>
-      <a href=”#login”>{{ icon('user-key') }} 登录与角色</a>
-      <a href=”#daily”>{{ icon('dashboard') }} 日常功能</a>
-      <a href=”#sheets”>{{ icon('memo') }} 在线表格</a>
-      <a href=”#files”>{{ icon('folder') }} 文件与附件</a>
-      <a href=”#runtime”>{{ icon('refresh') }} 启动与自启</a>
-      <a href=”#backup”>{{ icon('archive') }} 备份与恢复</a>
-      <a href=”#deploy”>{{ icon('gen-briefcase') }} 离线部署</a>
-      <a href=”#maintain”>{{ icon('settings') }} 目录维护</a>
-      <a href=”#faq”>{{ icon('warning') }} 故障排查</a>
+  <div class="grid">
+    <nav class="toc" id="toc">
+      <div class="toc-title">{{ icon('column') }} 目录</div>
+      <a href="#login">{{ icon('user-key') }} 登录与角色</a>
+      <a href="#daily">{{ icon('dashboard') }} 日常功能</a>
+      <a href="#sheets">{{ icon('memo') }} 在线表格</a>
+      <a href="#files">{{ icon('folder') }} 文件与附件</a>
+      <a href="#runtime">{{ icon('refresh') }} 启动与自启</a>
+      <a href="#backup">{{ icon('archive') }} 备份与恢复</a>
+      <a href="#deploy">{{ icon('gen-briefcase') }} 离线部署</a>
+      <a href="#maintain">{{ icon('settings') }} 目录维护</a>
+      <a href="#faq">{{ icon('warning') }} 故障排查</a>
     </nav>
 
-    <main class=”doc”>
-      <section id=”login”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#3485ff,#1266f3)”>{{ icon('user-key') }}</span> 一、登录与角色</h2>
+    <main class="doc">
+      <section id="login">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#3485ff,#1266f3)">{{ icon('user-key') }}</span> 一、登录与角色</h2>
         <p>浏览器访问 <code>http://127.0.0.1:5000</code>。局域网访问时，使用启动窗口显示的 LAN 地址。</p>
         <table>
           <tr><th>角色</th><th>默认账号</th><th>权限说明</th></tr>
           <tr><td>超级管理员</td><td><code>admin / admin123</code></td><td>用户、系统配置、栏目、日志和全部数据管理</td></tr>
           <tr><td>普通用户</td><td><code>警号 / 123456</code></td><td>查看公示、处理任务、维护备忘、上传下载文件</td></tr>
         </table>
-        <div class=”tip”>首次部署后建议立即修改默认密码。</div>
+        <div class="tip">{{ icon('warning') }} <span>首次部署后建议立即修改默认密码。</span></div>
       </section>
 
-      <section id=”daily”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#34d399,#059669)”>{{ icon('dashboard') }}</span> 二、日常功能</h2>
+      <section id="daily">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#34d399,#059669)">{{ icon('dashboard') }}</span> 二、日常功能</h2>
         <h3>工作台</h3>
         <ul>
           <li>查看待处理任务、最新公示、备忘和快捷入口。</li>
@@ -313,15 +326,15 @@ pre {
         </ul>
         <h3>信息公示与备忘</h3>
         <ul>
-          <li>公示采用”分类/栏目/内容”结构，支持置顶、有效期和富文本。</li>
+          <li>公示采用"分类/栏目/内容"结构，支持置顶、有效期和富文本。</li>
           <li>个人备忘仅本人可见，公共备忘可按角色设置可见范围。</li>
         </ul>
       </section>
 
-      <section id=”sheets”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#fbbf24,#d97706)”>{{ icon('memo') }}</span> 三、在线表格</h2>
+      <section id="sheets">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#fbbf24,#d97706)">{{ icon('memo') }}</span> 三、在线表格</h2>
         <ul>
-          <li>点击左侧”在线表格”进入列表，管理员可新建表格。</li>
+          <li>点击左侧"在线表格"进入列表，管理员可新建表格。</li>
           <li>编辑页支持自动保存，也可按 <code>Ctrl+S</code> 手动保存。</li>
           <li>表格可发布、预览、导出 XLS，并保留版本历史。</li>
           <li>可从 WPS/Excel 复制一个单元格区域，在表格中选中起始单元格后直接粘贴，系统会按行列写入。</li>
@@ -329,8 +342,8 @@ pre {
         </ul>
       </section>
 
-      <section id=”files”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#a78bfa,#7c3aed)”>{{ icon('folder') }}</span> 四、文件与附件</h2>
+      <section id="files">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#a78bfa,#7c3aed)">{{ icon('folder') }}</span> 四、文件与附件</h2>
         <ul>
           <li>支持文档、图片、压缩包、音视频等常见格式。</li>
           <li>单文件限制为 50MB。</li>
@@ -342,8 +355,8 @@ pre {
         </ul>
       </section>
 
-      <section id=”runtime”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#f97316,#ea580c)”>{{ icon('refresh') }}</span> 五、启动、后台运行与开机自启</h2>
+      <section id="runtime">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#f97316,#ea580c)">{{ icon('refresh') }}</span> 五、启动、后台运行与开机自启</h2>
         <table>
           <tr><th>操作</th><th>脚本</th></tr>
           <tr><td>前台启动</td><td><code>start.bat</code></td></tr>
@@ -356,16 +369,16 @@ pre {
         <p>后台运行日志位于 <code>logs/server.log</code> 和 <code>logs/server-error.log</code>。</p>
       </section>
 
-      <section id=”backup”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#14b8a6,#0d9488)”>{{ icon('archive') }}</span> 六、备份与恢复</h2>
+      <section id="backup">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#14b8a6,#0d9488)">{{ icon('archive') }}</span> 六、备份与恢复</h2>
         <pre>python\python.exe backup.py backup
 python\python.exe backup.py list
 python\python.exe backup.py restore --file 备份文件名.db</pre>
         <p>数据库位于 <code>data/database.db</code>，上传文件位于 <code>data/uploads/</code>。迁移或重装前务必备份。</p>
       </section>
 
-      <section id=”deploy”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#6366f1,#4f46e5)”>{{ icon('gen-briefcase') }}</span> 七、Win7 离线部署</h2>
+      <section id="deploy">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#6366f1,#4f46e5)">{{ icon('gen-briefcase') }}</span> 七、Win7 离线部署</h2>
         <ul>
           <li>目标系统建议为 Windows 7 SP1 64 位。</li>
           <li>如底层模块导入失败，右键管理员运行 <code>install_win7_runtime.bat</code>，必要时重启。</li>
@@ -374,8 +387,8 @@ python\python.exe backup.py restore --file 备份文件名.db</pre>
         </ul>
       </section>
 
-      <section id=”maintain”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#8b5cf6,#6d28d9)”>{{ icon('settings') }}</span> 八、目录维护约定</h2>
+      <section id="maintain">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#8b5cf6,#6d28d9)">{{ icon('settings') }}</span> 八、目录维护约定</h2>
         <table>
           <tr><th>目录/文件</th><th>说明</th></tr>
           <tr><td><code>app/</code></td><td>业务代码、模板和静态资源</td></tr>
@@ -386,8 +399,8 @@ python\python.exe backup.py restore --file 备份文件名.db</pre>
         </table>
       </section>
 
-      <section id=”faq”>
-        <h2><span class=”h2-icon” style=”background:linear-gradient(180deg,#ef4444,#dc2626)”>{{ icon('warning') }}</span> 九、故障排查</h2>
+      <section id="faq">
+        <h2><span class="h2-icon" style="background:linear-gradient(180deg,#ef4444,#dc2626)">{{ icon('warning') }}</span> 九、故障排查</h2>
         <ul>
           <li>无法登录：确认账号密码正确，且账号未被禁用。</li>
           <li>服务打不开：运行 <code>status.bat</code> 查看 5000 端口是否监听。</li>
@@ -400,9 +413,9 @@ python\python.exe backup.py restore --file 备份文件名.db</pre>
   </div>
 
   <!-- Footer -->
-  <div class=”help-footer”>
+  <div class="help-footer">
     <span>{{ app_name }} · 帮助与维护手册</span>
-    <span style=”display:flex;align-items:center;gap:6px;”>v1.0.0 {{ icon('check') }} 离线可用</span>
+    <span style="display:flex;align-items:center;gap:6px;">V{{ app_version }} {{ icon('check') }} 离线可用</span>
   </div>
 </div>
 

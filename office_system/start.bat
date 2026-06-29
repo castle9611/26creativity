@@ -4,7 +4,7 @@ chcp 65001 >nul
 title Prison OA System - Win7 Offline
 
 echo ============================================
-echo     Prison OA System v1.0.0
+echo     Prison OA System v1.2.0
 echo     Win7 64-bit Offline Portable Edition
 echo ============================================
 echo.

@@ -155,7 +155,7 @@ def register_context_processors(app):
             pass
         return {
             'app_name': app_name,
-            'app_version': '1.0.0',
+            'app_version': '1.2.0',
             'current_year': '2026',
             'session': session
         }
