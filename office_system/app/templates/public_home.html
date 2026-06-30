@@ -677,9 +677,10 @@ body {
   margin: 0 0 12px;
   padding: 0 16px;
   border-radius: 10px;
-  background: transparent;
+  background: rgba(8, 28, 72, .42);
   border-color: rgba(198,215,255,.18);
-  box-shadow: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 12px 28px rgba(0,23,64,.14);
+  backdrop-filter: blur(8px);
 }
 .portal-link {
   min-height: 44px;
@@ -898,10 +899,117 @@ main.portal-grid section:nth-child(4) .item-toggle {
   .category-tab:last-child { border-radius: 0; }
   .portal-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+@media (max-width: 1000px) {
+  .category-tab-icon {
+    display: none !important;
+  }
+  .category-tab {
+    gap: 0;
+  }
+}
 @media (max-width: 560px) {
+  body {
+    overflow-x: hidden;
+    background: linear-gradient(180deg, #061a46 0 188px, #f2f6fb 188px 100%) !important;
+  }
+  .public-shell { padding: 12px 10px 18px; }
+  .public-top {
+    min-height: auto;
+    margin: -12px -10px 0;
+    padding: 14px 12px 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .public-brand { gap: 10px; min-width: 0; }
+  .public-logo { width: 44px; height: 44px; flex: 0 0 44px; }
+  .public-name {
+    max-width: calc(100vw - 150px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 21px;
+  }
+  .public-sub { display: none; }
+  .login-entry {
+    min-width: 86px;
+    height: 40px;
+    padding: 0 12px !important;
+    font-size: 14px;
+  }
+  .category-tabs {
+    min-height: 46px;
+    margin-bottom: 10px;
+    grid-auto-columns: minmax(104px, max-content);
+    border-radius: 8px;
+  }
+  .category-tab {
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+  .portal-links-bar {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(8, 28, 72, .52);
+  }
+  .portal-link {
+    min-height: 34px;
+    padding: 0 12px;
+    border-right-color: rgba(198,215,255,.20);
+  }
+  .portal-title-card {
+    min-height: auto;
+    padding: 14px 16px;
+  }
+  .portal-title { font-size: 22px; }
+  .portal-desc {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .portal-stat {
+    min-height: 64px;
+    padding: 10px 14px;
+  }
+  .portal-stat .stat-mini-icon {
+    width: 30px;
+    height: 30px;
+    right: 12px;
+    bottom: 12px;
+  }
+  .portal-stat strong { font-size: 23px; }
+  .portal-stat span {
+    max-width: calc(100% - 36px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .portal-stats,
   .portal-grid {
     grid-template-columns: 1fr;
+  }
+  .portal-panel {
+    min-height: auto;
+    border-radius: 8px;
+  }
+  .panel-head {
+    height: auto;
+    min-height: 52px;
+    padding: 10px 14px;
+  }
+  .panel-title {
+    min-width: 0;
+    font-size: 16px;
+  }
+  .panel-body { padding: 4px 14px 12px; }
+  .item-title-row { align-items: flex-start; }
+  .item-title-link {
+    white-space: normal;
+    line-height: 1.45;
+  }
+  .item-toggle {
+    min-height: 30px;
+    padding: 0 8px;
+    white-space: nowrap;
   }
 }
 </style>
@@ -925,13 +1033,13 @@ main.portal-grid section:nth-child(4) .item-toggle {
 
   <nav class="category-tabs">
     <a class="category-tab {% if not active_category %}active{% endif %}" href="{{ url_for('index_bp.index') }}" style="--tab-color:#1266f3;">
-      <span>{{ icon('category') }}</span>
+      <span class="category-tab-icon">{{ icon('category') }}</span>
       <span>全部</span>
     </a>
     {% if categories %}
       {% for cat in categories %}
       <a class="category-tab {% if active_category and cat.id == active_category.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id) }}" style="--tab-color:{{ cat.color or '#047857' }};">
-        <span>{{ icon(cat.icon|icon_id) }}</span>
+        <span class="category-tab-icon">{{ icon(cat.icon|icon_id) }}</span>
         <span>{{ cat.name }}</span>
       </a>
       {% endfor %}
