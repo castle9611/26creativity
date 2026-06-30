@@ -571,8 +571,22 @@ class OnlineDocument(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    editor_kind = db.Column(db.String(20), default='legacy_html', nullable=False, index=True)
+    office_type = db.Column(db.String(10), default='')
+    file_ext = db.Column(db.String(10), default='', index=True)
+    original_filename = db.Column(db.String(500), default='')
+    stored_filename = db.Column(db.String(100), default='')
+    storage_relpath = db.Column(db.String(1000), default='')
+    mime_type = db.Column(db.String(150), default='')
+    file_size = db.Column(db.Integer, default=0)
+    file_version = db.Column(db.Integer, default=1, nullable=False)
+    document_key = db.Column(db.String(100), default='', index=True)
+    checksum = db.Column(db.String(64), default='')
+    last_editor_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
+    last_saved_at = db.Column(db.DateTime)
 
-    creator = db.relationship('User', backref=db.backref('online_documents', lazy='dynamic'))
+    creator = db.relationship('User', foreign_keys=[created_by], backref=db.backref('online_documents', lazy='dynamic'))
+    last_editor = db.relationship('User', foreign_keys=[last_editor_id])
 
     def to_dict(self):
         return {
@@ -588,6 +602,8 @@ class OnlineDocument(db.Model):
             'created_by': self.created_by,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else '',
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
+            , 'editor_kind': self.editor_kind or 'legacy_html', 'office_type': self.office_type,
+            'file_ext': self.file_ext, 'file_size': self.file_size
         }
 
 
@@ -682,6 +698,10 @@ class DocVersion(db.Model):
     change_summary = db.Column(db.String(500), default='')
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    storage_relpath = db.Column(db.String(1000), default='')
+    file_size = db.Column(db.Integer, default=0)
+    checksum = db.Column(db.String(64), default='')
+    version_kind = db.Column(db.String(20), default='legacy_html', nullable=False, index=True)
 
     document = db.relationship('OnlineDocument', backref=db.backref('versions', lazy='dynamic', cascade='all, delete-orphan'))
     creator = db.relationship('User', backref=db.backref('doc_versions', lazy='dynamic'))

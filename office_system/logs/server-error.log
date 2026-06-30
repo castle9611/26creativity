@@ -11,3 +11,22 @@
 127.0.0.1 - - [10/Jun/2026 10:40:44] "GET /static/css/app.css HTTP/1.1" 304 -
 127.0.0.1 - - [10/Jun/2026 10:40:44] "GET /static/avatars/user_1.png HTTP/1.1" 200 -
 127.0.0.1 - - [10/Jun/2026 10:40:44] "GET /static/icons.svg HTTP/1.1" 304 -
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://198.18.0.1:5000/ (Press CTRL+C to quit)
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://198.18.0.1:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [30/Jun/2026 10:32:50] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 10:32:50] "GET /static/js/theme.js HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 10:32:50] "GET /static/css/app.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 10:32:50] "GET /static/brand-icon.png HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 10:32:50] "GET /static/icons.svg HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 10:33:32] "GET /static/css/app.css HTTP/1.1" 304 -
+127.0.0.1 - - [30/Jun/2026 10:33:32] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+127.0.0.1 - - [30/Jun/2026 10:33:55] "GET /?category_id=12 HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 10:33:55] "GET /static/css/app.css HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 10:33:55] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+127.0.0.1 - - [30/Jun/2026 10:33:55] "GET /static/js/theme.js HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 10:33:55] "GET /static/brand-icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [30/Jun/2026 10:33:56] "GET /static/icons.svg HTTP/1.1" 200 -

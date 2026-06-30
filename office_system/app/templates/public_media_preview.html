@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+{% from '_icon.html' import icon %}
+<html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ file.original_name }} - 公开预览</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { margin:0; padding:20px; background:#edf3fb; }
+.media-shell { max-width:1120px; margin:0 auto; }
+.media-head { display:table; width:100%; box-sizing:border-box; padding:14px 16px; background:#fff; border:1px solid #d9e5f4; border-radius:10px 10px 0 0; }
+.media-title,.media-actions { display:table-cell; vertical-align:middle; }
+.media-title { font-weight:700; word-break:break-all; }
+.media-actions { text-align:right; white-space:nowrap; }
+.media-stage { padding:24px; text-align:center; background:#0f172a; border-radius:0 0 10px 10px; overflow:hidden; }
+.media-stage img { max-width:100%; max-height:78vh; }
+.media-stage video { display:block; width:100%; max-height:76vh; margin:0 auto; background:#000; }
+.media-stage audio { display:block; width:90%; max-width:760px; margin:70px auto; }
+.media-tip { color:#cbd5e1; margin-top:16px; font-size:13px; }
+@media(max-width:640px){ body{padding:10px}.media-title,.media-actions{display:block}.media-actions{text-align:left;margin-top:10px}.media-stage{padding:10px} }
+</style></head><body>
+<div class="media-shell"><div class="media-head"><div class="media-title">{{ icon('file') }} {{ file.original_name }}</div><div class="media-actions"><a class="btn btn-sm" href="{{ url_for('index_bp.index') }}">返回首页</a> <a class="btn btn-primary btn-sm" href="{{ url_for('index_bp.public_file_download', file_id=file.id) }}">下载</a></div></div>
+<div class="media-stage">
+{% if preview_type=='image' %}<img src="{{ url_for('index_bp.public_file_stream', file_id=file.id) }}" alt="{{ file.original_name }}">
+{% elif preview_type=='audio' %}<audio controls preload="metadata"><source src="{{ url_for('index_bp.public_file_stream', file_id=file.id) }}">当前浏览器不支持音频播放。</audio>
+{% else %}<video controls preload="metadata"><source src="{{ url_for('index_bp.public_file_stream', file_id=file.id) }}">当前浏览器不支持视频播放。</video>{% endif %}
+{% if preview_type!='image' %}<div class="media-tip">无法播放时可能是浏览器不支持文件编码，请下载后查看。</div>{% endif %}
+</div></div></body></html>

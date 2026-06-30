@@ -26,7 +26,7 @@ def create_app(config_class=Config):
     # Ensure data directories exist
     data_dir = os.path.join(BASE_DIR, 'data')
     upload_dir = os.path.join(data_dir, 'uploads')
-    for d in [data_dir, upload_dir]:
+    for d in [data_dir, upload_dir, app.config['DOCUMENT_STORAGE_FOLDER'], app.config['DOCUMENT_VERSION_FOLDER']]:
         if not os.path.exists(d):
             os.makedirs(d)
 
@@ -52,6 +52,8 @@ def ensure_runtime_tables(app):
         from app.models import QuickLink, Task, TaskAssignee, File, FileRelation
         db.create_all()
         inspector = db.inspect(db.engine)
+        from app.schema import migrate_onlyoffice_schema
+        migrate_onlyoffice_schema()
         file_columns = [col['name'] for col in inspector.get_columns('files')]
         if 'category_id' not in file_columns:
             db.session.execute(db.text('ALTER TABLE files ADD COLUMN category_id INTEGER'))

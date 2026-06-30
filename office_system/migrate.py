@@ -21,6 +21,9 @@ def migrate():
 
     with app.app_context():
         print('[INFO] Starting database migration...')
+        from app.schema import migrate_onlyoffice_schema
+        migrate_onlyoffice_schema()
+        print('[MIG] ONLYOFFICE document schema ready')
 
         # Get existing columns to check what needs adding
         existing_cols = db.session.execute(text("PRAGMA table_info(tabs)")).fetchall()

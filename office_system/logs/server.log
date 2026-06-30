@@ -8,3 +8,23 @@
    WARNING: This is a development server. Do not use it in a production deployment.
    Use a production WSGI server instead.
  * Debug mode: off
+[INFO] Database exists - running migration if needed...
+[INFO] Starting database migration...
+[OK] Migration complete - no data lost
+[INFO] Restart the server for changes to take effect
+[INFO] Starting server on http://0.0.0.0:5000
+ * Serving Flask app 'app' (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: off
+[INFO] Database exists - running migration if needed...
+[INFO] Starting database migration...
+[OK] Migration complete - no data lost
+[INFO] Restart the server for changes to take effect
+[INFO] Starting server on http://0.0.0.0:5000
+ * Serving Flask app 'app' (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: off

@@ -5,6 +5,7 @@ Upload / download / delete / association binding.
 """
 import os
 import uuid
+import mimetypes
 from datetime import datetime
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, flash, session, send_file, jsonify)
@@ -17,6 +18,39 @@ from app.utils import (add_log, get_pagination, format_file_size,
                        content_disposition, check_visible)
 
 files_bp = Blueprint('files', __name__)
+
+IMAGE_EXTENSIONS = ('jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp')
+AUDIO_EXTENSIONS = ('mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac')
+VIDEO_EXTENSIONS = ('mp4', 'webm', 'ogv', 'mov', 'm4v')
+MEDIA_MIME_TYPES = {
+    'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'm4a': 'audio/mp4',
+    'aac': 'audio/aac', 'ogg': 'audio/ogg', 'flac': 'audio/flac',
+    'mp4': 'video/mp4', 'webm': 'video/webm', 'ogv': 'video/ogg',
+    'mov': 'video/quicktime', 'm4v': 'video/x-m4v',
+    'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
+    'gif': 'image/gif', 'bmp': 'image/bmp', 'webp': 'image/webp'
+}
+
+
+def require_file_access(file_record):
+    """Enforce the same visibility rule for preview, stream and download."""
+    if file_record.is_deleted:
+        return False
+    role = session.get('role', '')
+    return role in ('super_admin', 'dept_admin') or file_record.uploaded_by == session.get('user_id')
+
+
+def safe_file_path(file_record):
+    """Resolve a stored relative path without allowing it to escape BASE_DIR."""
+    from app.config import BASE_DIR
+    root = os.path.realpath(BASE_DIR)
+    relative = (file_record.file_path or '').replace('\\', '/')
+    if not relative or os.path.isabs(relative) or '..' in relative.split('/'):
+        raise ValueError('Invalid file path')
+    path = os.path.realpath(os.path.join(root, *relative.split('/')))
+    if os.path.commonpath([root, path]) != root:
+        raise ValueError('File path escapes storage')
+    return path
 
 
 def infer_category_id(related_type, related_id, category_id=0):
@@ -337,18 +371,12 @@ def upload():
 def download(file_id):
     """Download a file."""
     file_record = File.query.get_or_404(file_id)
-    user_role = session['role']
-    user_id = session['user_id']
-
-    # Permission check
-    if user_role not in ('super_admin', 'dept_admin'):
-        if file_record.uploaded_by != user_id:
-            flash('无权执行此操作', 'danger')
-            return redirect(url_for('files.list_files'))
-
-    from app.config import Config, BASE_DIR
-    # file_path is stored as relative path from BASE_DIR, e.g. "data/uploads/2026-06/xxx.ext"
-    full_path = os.path.join(BASE_DIR, file_record.file_path.replace('/', os.sep))
+    if not require_file_access(file_record):
+        return jsonify({'success': False, 'message': '无权访问此文件'}), 403
+    try:
+        full_path = safe_file_path(file_record)
+    except ValueError:
+        return jsonify({'success': False, 'message': '文件路径无效'}), 404
 
     if not os.path.exists(full_path):
         flash('文件不存在', 'danger')
@@ -367,25 +395,24 @@ def download(file_id):
 def preview(file_id):
     """Preview a file inline (images, PDF, text)."""
     file_record = File.query.get_or_404(file_id)
-    user_role = session['role']
-    user_id = session['user_id']
-
-    if user_role not in ('super_admin', 'dept_admin'):
-        if file_record.uploaded_by != user_id:
-            flash('无权执行此操作', 'danger')
-            return redirect(url_for('files.list_files'))
-
-    from app.config import Config, BASE_DIR
-    full_path = os.path.join(BASE_DIR, file_record.file_path.replace('/', os.sep))
+    if not require_file_access(file_record):
+        return jsonify({'success': False, 'message': '无权访问此文件'}), 403
+    try:
+        full_path = safe_file_path(file_record)
+    except ValueError:
+        return jsonify({'success': False, 'message': '文件路径无效'}), 404
 
     if not os.path.exists(full_path):
         return jsonify({'success': False, 'message': '文件不存在'}), 404
 
     ext = file_record.file_type.lower() if file_record.file_type else ''
 
-    # Images: serve directly for inline viewing
-    if ext in ('jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'):
-        return send_file(full_path, mimetype='image/' + ext)
+    # Images, audio and video share the preview page; bytes come from /stream.
+    if ext in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS:
+        preview_type = 'image' if ext in IMAGE_EXTENSIONS else ('audio' if ext in AUDIO_EXTENSIONS else 'video')
+        return render_template('files/preview.html', file=file_record,
+                               relation_labels=relation_labels_for([file_record]).get(file_record.id, []),
+                               content='', preview_type=preview_type)
 
     # PDF
     if ext == 'pdf':
@@ -417,6 +444,31 @@ def preview(file_id):
                            relation_labels=relation_labels_for([file_record]).get(file_record.id, []),
                            content='',
                            preview_type='unknown')
+
+
+@files_bp.route('/<int:file_id>/stream')
+@login_required
+def stream(file_id):
+    """Serve previewable media inline with conditional/Range request support."""
+    file_record = File.query.get_or_404(file_id)
+    if not require_file_access(file_record):
+        return jsonify({'success': False, 'message': '无权访问此文件'}), 403
+    ext = (file_record.file_type or '').lower()
+    if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS:
+        return jsonify({'success': False, 'message': '该文件类型不支持媒体预览'}), 415
+    try:
+        full_path = safe_file_path(file_record)
+    except ValueError:
+        return jsonify({'success': False, 'message': '文件路径无效'}), 404
+    if not os.path.isfile(full_path):
+        return jsonify({'success': False, 'message': '文件不存在'}), 404
+    mime_type = MEDIA_MIME_TYPES.get(ext) or mimetypes.guess_type(file_record.original_name)[0] or 'application/octet-stream'
+    response = send_file(full_path, mimetype=mime_type, conditional=True, as_attachment=False,
+                         download_name=file_record.original_name)
+    response.headers['Accept-Ranges'] = 'bytes'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Content-Disposition'] = 'inline'
+    return response
 
 
 @files_bp.route('/<int:file_id>/save-text', methods=['POST'])

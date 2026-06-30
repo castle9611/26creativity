@@ -174,15 +174,62 @@ def register_blueprints(app):
         """Public download for files shown on the portal."""
         from flask import send_file
         import os
-        from app.config import BASE_DIR
         from app.utils import content_disposition
+        from app.views.files import safe_file_path
 
         file_record = File.query.filter_by(id=file_id, is_deleted=0).first_or_404()
-        full_path = os.path.join(BASE_DIR, file_record.file_path.replace('/', os.sep))
-        if not os.path.exists(full_path):
+        try:
+            full_path = safe_file_path(file_record)
+        except ValueError:
+            return render_template('errors/404.html'), 404
+        if not os.path.isfile(full_path):
             return render_template('errors/404.html'), 404
         response = send_file(full_path, as_attachment=True)
         response.headers['Content-Disposition'] = content_disposition(file_record.original_name)
+        return response
+
+    @index_bp.route('/public/file/<int:file_id>/preview')
+    def public_file_preview(file_id):
+        """Public media preview for files already exposed by the portal."""
+        import os
+        from app.views.files import IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, safe_file_path
+        file_record = File.query.filter_by(id=file_id, is_deleted=0).first_or_404()
+        ext = (file_record.file_type or '').lower()
+        if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS:
+            return redirect(url_for('index_bp.public_file_download', file_id=file_id))
+        try:
+            path = safe_file_path(file_record)
+        except ValueError:
+            return render_template('errors/404.html'), 404
+        if not os.path.isfile(path):
+            return render_template('errors/404.html'), 404
+        preview_type = 'image' if ext in IMAGE_EXTENSIONS else ('audio' if ext in AUDIO_EXTENSIONS else 'video')
+        return render_template('public_media_preview.html', file=file_record, preview_type=preview_type)
+
+    @index_bp.route('/public/file/<int:file_id>/stream')
+    def public_file_stream(file_id):
+        """Public inline media response with Range support."""
+        from flask import send_file
+        from app.views.files import (IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, VIDEO_EXTENSIONS,
+                                     MEDIA_MIME_TYPES, safe_file_path)
+        import mimetypes
+        import os
+        file_record = File.query.filter_by(id=file_id, is_deleted=0).first_or_404()
+        ext = (file_record.file_type or '').lower()
+        if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS:
+            return jsonify({'success': False, 'message': '该文件类型不支持媒体预览'}), 415
+        try:
+            path = safe_file_path(file_record)
+        except ValueError:
+            return jsonify({'success': False, 'message': '文件路径无效'}), 404
+        if not os.path.isfile(path):
+            return jsonify({'success': False, 'message': '文件不存在'}), 404
+        mime_type = MEDIA_MIME_TYPES.get(ext) or mimetypes.guess_type(file_record.original_name)[0] or 'application/octet-stream'
+        response = send_file(path, mimetype=mime_type, conditional=True, as_attachment=False,
+                             download_name=file_record.original_name)
+        response.headers['Accept-Ranges'] = 'bytes'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Content-Disposition'] = 'inline'
         return response
 
     @index_bp.route('/public/list/<string:list_type>')

@@ -23,8 +23,7 @@ if not exist "%PYTHON_EXE%" (
     echo.
     pause
     exit /b 1
-)
-
+) 
 :: Make bundled DLLs visible to Python extension modules on older Win7 systems.
 set "PATH=%PYTHON_DIR%;%PYTHON_DIR%\DLLs;%PATH%"
 set "PYTHONPATH=%PROJECT_DIR%"

@@ -139,7 +139,7 @@ body {
         <a class="public-list-name" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{{ item.title }}</a>
         <div class="public-list-meta">{% if item.expire_date %}有效期至 {{ item.expire_date.strftime('%Y-%m-%d') }}{% else %}长期有效{% endif %} · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</div>
         {% else %}
-        <a class="public-list-name" href="{{ url_for('index_bp.public_file_download', file_id=item.id) }}">{{ item.original_name }}</a>
+        <a class="public-list-name" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) if item.file_type in ('jpg','jpeg','png','gif','bmp','webp','mp3','wav','m4a','aac','ogg','flac','mp4','webm','ogv','mov','m4v') else url_for('index_bp.public_file_download', file_id=item.id) }}">{{ item.original_name }}</a>
         <div class="public-list-meta">
           {{ item.file_type|upper if item.file_type else 'FILE' }}
           · {% if item.file_size < 1024 %}{{ item.file_size }}B{% elif item.file_size < 1048576 %}{{ (item.file_size/1024)|round(1) }}KB{% else %}{{ (item.file_size/1048576)|round(1) }}MB{% endif %}
@@ -150,6 +150,7 @@ body {
       </div>
       <div class="public-list-actions">
         {% if list_type == 'files' %}
+        {% if item.file_type in ('jpg','jpeg','png','gif','bmp','webp','mp3','wav','m4a','aac','ogg','flac','mp4','webm','ogv','mov','m4v') %}<a class="btn" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">预览</a>{% endif %}
         <a class="btn btn-primary" href="{{ url_for('index_bp.public_file_download', file_id=item.id) }}">下载</a>
         {% elif list_type == 'memos' %}
         <a class="btn btn-primary" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">查看详情</a>

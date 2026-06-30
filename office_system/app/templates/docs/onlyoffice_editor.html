@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ doc.title }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+html,body { height:100%; margin:0; overflow:hidden; background:#f1f5f9; }
+.office-bar { height:52px; line-height:52px; padding:0 16px; background:#fff; border-bottom:1px solid #dbe3ef; white-space:nowrap; overflow:hidden; }
+.office-title { font-weight:600; margin:0 16px; }
+.office-status { color:#64748b; font-size:13px; }
+#onlyofficeEditor { position:absolute; top:53px; bottom:0; left:0; right:0; }
+.fallback { margin:60px auto; max-width:620px; background:#fff; border:1px solid #dbe3ef; border-radius:8px; padding:30px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="office-bar"><a class="btn btn-sm" href="{{ url_for('docs.list_docs') }}">← 返回</a><span class="office-title">{{ doc.title }}</span><span class="office-status">{% if can_edit %}编辑模式{% else %}只读模式{% endif %}</span> <a class="btn btn-sm" href="{{ url_for('docs.download_doc', doc_id=doc.id) }}">下载原文件</a></div>
+{% if configured %}
+<div id="onlyofficeEditor"></div>
+<div id="loadError" class="fallback" style="display:none;">ONLYOFFICE 编辑器加载失败，请检查 Document Server 网络与 HTTPS 配置。<div style="margin-top:16px;"><a class="btn btn-primary" href="{{ url_for('docs.download_doc', doc_id=doc.id) }}">下载原文件</a></div></div>
+<script src="{{ server_url }}/web-apps/apps/api/documents/api.js" onerror="showEditorError();"></script>
+<script>
+function showEditorError(){ document.getElementById('onlyofficeEditor').style.display='none'; document.getElementById('loadError').style.display='block'; }
+(function(){
+  if (!window.DocsAPI || !window.DocsAPI.DocEditor) { showEditorError(); return; }
+  try { new DocsAPI.DocEditor('onlyofficeEditor', {{ editor_config|tojson }}); } catch(e) { showEditorError(); }
+}());
+</script>
+{% else %}
+<div class="fallback"><h3>ONLYOFFICE 在线编辑尚未配置</h3><p>管理员需要启用服务地址{% if not server_url %}并配置 ONLYOFFICE_SERVER_URL{% endif %}。您仍可下载原始文件。</p><a class="btn btn-primary" href="{{ url_for('docs.download_doc', doc_id=doc.id) }}">下载原文件</a></div>
+{% endif %}
+</body></html>

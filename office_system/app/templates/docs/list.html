@@ -57,7 +57,20 @@ body { background: #f1f5f9; }
   </div>
   <div class="page-actions">
     {% if user_role in ('super_admin','dept_admin') %}
-    <a href="{{ url_for('docs.create_doc') }}" class="btn btn-primary">{{ icon('add') }} 新建文档</a>
+    <form method="post" action="{{ url_for('docs.create_office_doc') }}" style="display:inline;">
+      <input type="hidden" name="file_ext" value="docx"><button class="btn btn-primary" type="submit">新建 Word</button>
+    </form>
+    <form method="post" action="{{ url_for('docs.create_office_doc') }}" style="display:inline;">
+      <input type="hidden" name="file_ext" value="xlsx"><button class="btn" type="submit">新建 Excel</button>
+    </form>
+    <form method="post" action="{{ url_for('docs.create_office_doc') }}" style="display:inline;">
+      <input type="hidden" name="file_ext" value="pptx"><button class="btn" type="submit">新建 PowerPoint</button>
+    </form>
+    <a href="{{ url_for('docs.create_doc') }}" class="btn">旧版富文本</a>
+    <form method="post" action="{{ url_for('docs.upload_office_doc') }}" enctype="multipart/form-data" style="display:inline;" id="officeUploadForm">
+      <input type="file" name="file" id="officeFile" accept=".docx,.xlsx,.pptx" style="display:none;" onchange="document.getElementById('officeUploadForm').submit();">
+      <button type="button" class="btn" onclick="document.getElementById('officeFile').click();">上传 Office</button>
+    </form>
     {% endif %}
   </div>
 </div>
@@ -87,6 +100,12 @@ body { background: #f1f5f9; }
         <option value="draft" {% if status=='draft' %}selected{% endif %}>草稿</option>
         <option value="published" {% if status=='published' %}selected{% endif %}>已发布</option>
       </select>
+      <select name="file_type" class="form-select">
+        <option value="">全部类型</option><option value="legacy_html" {% if file_type=='legacy_html' %}selected{% endif %}>旧版富文本</option>
+        <option value="docx" {% if file_type=='docx' %}selected{% endif %}>Word</option>
+        <option value="xlsx" {% if file_type=='xlsx' %}selected{% endif %}>Excel</option>
+        <option value="pptx" {% if file_type=='pptx' %}selected{% endif %}>PowerPoint</option>
+      </select>
       <input type="text" name="keyword" placeholder="搜索标题" value="{{ keyword }}" class="form-input" style="width:180px;">
       <button type="submit" class="btn btn-primary">{{ icon('search') }} 搜索</button>
       <a href="{{ url_for('docs.list_docs') }}" class="btn">重置</a>
@@ -99,14 +118,16 @@ body { background: #f1f5f9; }
   {% for d in docs %}
   <div class="doc-card" onclick="location.href='{{ url_for('docs.view_doc', doc_id=d.id) }}'">
     <div class="doc-card-title">
-      {{ icon('file') }} {{ d.title }}
+      {% if d.editor_kind=='onlyoffice' %}<span style="color:{% if d.file_ext=='docx' %}#2563eb{% elif d.file_ext=='xlsx' %}#059669{% else %}#dc2626{% endif %};font-weight:700;">{{ d.file_ext|upper }}</span>{% else %}{{ icon('file') }}{% endif %} {{ d.title }}
       <span class="doc-badge {% if d.status=='published' %}doc-badge-published{% else %}doc-badge-draft{% endif %}" style="margin-left:6px;">{% if d.status=='published' %}已发布{% else %}草稿{% endif %}</span>
     </div>
-    <div class="doc-card-preview">{{ d.content|striptags|truncate(120) if d.content else '（空文档）' }}</div>
+    <div class="doc-card-preview">{% if d.editor_kind=='onlyoffice' %}原始文件：{{ d.original_filename }} · {{ format_file_size(d.file_size or 0) }}{% else %}{{ d.content|striptags|truncate(120) if d.content else '（空文档）' }}{% endif %}</div>
     <div class="doc-card-footer">
       <span>{{ users_dict.get(d.created_by,'') }} · {{ d.updated_at.strftime('%Y-%m-%d') if d.updated_at else '' }}</span>
       <div class="doc-card-actions" onclick="event.stopPropagation();">
         <a href="{{ url_for('docs.view_doc', doc_id=d.id) }}" class="btn btn-sm">{{ icon('eye') }} 查看</a>
+        <a href="{{ url_for('docs.download_doc', doc_id=d.id) }}" class="btn btn-sm">下载</a>
+        <a href="{{ url_for('docs.doc_versions', doc_id=d.id) }}" class="btn btn-sm">版本</a>
         {% if session.get('role') in ('super_admin','dept_admin') or d.created_by==session.get('user_id') %}
         <a href="{{ url_for('docs.edit_doc', doc_id=d.id) }}" class="btn btn-sm">{{ icon('edit') }} 编辑</a>
         <form method="post" action="{{ url_for('docs.delete_doc', doc_id=d.id) }}" style="display:inline;" onsubmit="return confirm('确认删除此文档？');">
@@ -155,7 +176,6 @@ body { background: #f1f5f9; }
 
 </body>
 </html>
-
 
 
 

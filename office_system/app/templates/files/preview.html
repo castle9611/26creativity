@@ -28,6 +28,10 @@ body { background: #f1f5f9; padding: 24px; }
 /* Image preview */
 .image-preview { padding: 24px; text-align: center; }
 .image-preview img { max-width: 100%; max-height: 80vh; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.media-preview { padding:24px; text-align:center; background:#0f172a; }
+.media-preview video { display:block; width:100%; max-width:1100px; max-height:75vh; margin:0 auto; background:#000; }
+.media-preview audio { display:block; width:100%; max-width:760px; margin:60px auto; }
+.media-tip { color:#cbd5e1; margin-top:16px; font-size:13px; }
 
 /* Text preview + inline editor */
 .text-preview { padding: 24px; }
@@ -111,7 +115,19 @@ body { background: #f1f5f9; padding: 24px; }
 
     {% elif preview_type == 'image' %}
     <div class="image-preview">
-      <img src="{{ url_for('files.preview', file_id=file.id) }}" alt="{{ file.original_name }}">
+      <img src="{{ url_for('files.stream', file_id=file.id) }}" alt="{{ file.original_name }}">
+    </div>
+
+    {% elif preview_type == 'audio' %}
+    <div class="media-preview">
+      <audio controls preload="metadata"><source src="{{ url_for('files.stream', file_id=file.id) }}">当前浏览器不支持音频播放。</audio>
+      <div class="media-tip">如果无法播放，可能是浏览器不支持该文件编码，请下载后查看。</div>
+    </div>
+
+    {% elif preview_type == 'video' %}
+    <div class="media-preview">
+      <video controls preload="metadata"><source src="{{ url_for('files.stream', file_id=file.id) }}">当前浏览器不支持视频播放。</video>
+      <div class="media-tip">推荐使用 H.264 + AAC 编码的 MP4；无法播放时可下载原文件。</div>
     </div>
 
     {% elif preview_type == 'pdf' %}

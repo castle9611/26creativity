@@ -18,6 +18,9 @@ def add_indexes():
     app = create_app()
 
     with app.app_context():
+        from app.schema import migrate_onlyoffice_schema
+        migrate_onlyoffice_schema()
+        print('[OK] ONLYOFFICE document schema ready')
         # First, migrate tabs table for new columns
         tab_migrations = [
             "ALTER TABLE tabs ADD COLUMN tab_type VARCHAR(20) DEFAULT 'bulletin'",

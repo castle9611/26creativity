@@ -50,6 +50,7 @@ body { background: #f1f5f9; padding: 24px; }
     <div class="version-info">
       <div style="font-weight:600;color:#0f172a;">{{ v.change_summary or '更新' }}</div>
       <div class="version-meta"><strong>{{ users_dict.get(v.created_by,'') }}</strong> · {{ v.created_at.strftime('%Y-%m-%d %H:%M') if v.created_at else '' }}</div>
+      {% if v.version_kind=='onlyoffice' %}<div class="version-meta">Office 文件快照 · {{ v.file_size or 0 }} 字节</div>{% endif %}
     </div>
     <div class="version-actions">
       {% if session.get('role') in ('super_admin','dept_admin') and v.version_num > 1 %}

@@ -16,6 +16,13 @@ if BASE_DIR not in sys.path:
 PYTHON_DIR = os.path.join(BASE_DIR, 'python')
 
 
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ('1', 'true', 'yes', 'on')
+
+
 class Config:
     """Flask application configuration"""
     # Flask secret key (internal network, static value is fine)
@@ -30,6 +37,22 @@ class Config:
     # File upload
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'data', 'uploads')
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
+
+    # ONLYOFFICE Docs (all deployment-specific values come from environment)
+    ONLYOFFICE_ENABLED = env_bool('ONLYOFFICE_ENABLED', False)
+    ONLYOFFICE_SERVER_URL = os.environ.get('ONLYOFFICE_SERVER_URL', '').strip().rstrip('/')
+    ONLYOFFICE_JWT_ENABLED = env_bool('ONLYOFFICE_JWT_ENABLED', True)
+    ONLYOFFICE_JWT_SECRET = os.environ.get('ONLYOFFICE_JWT_SECRET', '')
+    APP_PUBLIC_URL = os.environ.get('APP_PUBLIC_URL', '').strip().rstrip('/')
+    DOCUMENT_STORAGE_FOLDER = os.path.abspath(os.environ.get(
+        'DOCUMENT_STORAGE_FOLDER', os.path.join(BASE_DIR, 'data', 'online_documents')))
+    DOCUMENT_VERSION_FOLDER = os.path.abspath(os.environ.get(
+        'DOCUMENT_VERSION_FOLDER', os.path.join(BASE_DIR, 'data', 'document_versions')))
+    DOCUMENT_MAX_UPLOAD_MB = max(1, int(os.environ.get('DOCUMENT_MAX_UPLOAD_MB', '50')))
+    DOCUMENT_URL_TOKEN_MAX_AGE = max(60, int(os.environ.get('DOCUMENT_URL_TOKEN_MAX_AGE', '600')))
+    ONLYOFFICE_DOWNLOAD_HOSTS = tuple(
+        item.strip().lower() for item in os.environ.get('ONLYOFFICE_DOWNLOAD_HOSTS', '').split(',')
+        if item.strip())
     ALLOWED_EXTENSIONS = {
         'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
         'pdf', 'txt', 'csv', 'rtf',
