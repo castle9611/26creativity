@@ -1,5 +1,25 @@
 ﻿<!DOCTYPE html>
 {% from '_icon.html' import icon %}
+{% set icon_choices = [
+  ('gen-link', '通用链接'),
+  ('public-home', '公开首页'),
+  ('dashboard', '工作台'),
+  ('settings', '管理设置'),
+  ('folder', '文件资料'),
+  ('file', '在线文档'),
+  ('memo', '备忘表格'),
+  ('bulletin', '公示通知'),
+  ('task', '任务事项'),
+  ('chart', '统计查询'),
+  ('archive', '资料归档'),
+  ('cat-police', '警务'),
+  ('cat-duty', '值班'),
+  ('cat-command', '指挥'),
+  ('cat-security', '安全'),
+  ('gen-report', '报告'),
+  ('gen-calendar-check', '日程'),
+  ('gen-folder-check', '文件核验')
+] %}
 <html>
 <head>
 <meta charset="utf-8"><title>我的快捷链接</title>
@@ -14,8 +34,16 @@ body { padding:24px; background:#f1f5f9; }
 .link-cell-title { font-size: var(--text-sm); color:#64748b; font-weight:700; }
 .form-input.small { height:34px; padding:6px 8px; font-size: var(--text-sm); }
 .hint { color:#64748b; font-size: var(--text-xs); line-height:1.7; }
+.icon-sample-grid { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:8px; }
+.icon-sample {
+  min-height:34px; display:flex; align-items:center; gap:8px; padding:6px 8px;
+  border:1px solid #d9e5f4; border-radius:8px; background:#f8fbff;
+  color:#40516a; font-size:12px; font-weight:800;
+}
+.icon-sample .svg-icon { width:16px; height:16px; color:#1266f3; }
 .actions { display:flex; gap:6px; justify-content:flex-end; }
 @media (max-width: 1100px) { .link-layout { grid-template-columns:1fr; } .link-row { grid-template-columns:1fr; } }
+@media (max-width: 560px) { .icon-sample-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 </head>
 <body>
@@ -48,13 +76,26 @@ body { padding:24px; background:#f1f5f9; }
       <form method="post" action="{{ url_for('index_bp.quick_link_add') }}" class="link-form">
         <input class="form-input" name="name" maxlength="120" placeholder="链接名称，例如 常用系统">
         <input class="form-input" name="url" maxlength="1000" placeholder="https://example.com">
-        <input class="form-input" name="icon" maxlength="50" value="gen-link" placeholder="图标 ID">
-        <input class="form-input" name="sort_order" type="number" value="0" placeholder="排序">
+        <select class="form-input" name="icon">
+          {% for icon_id, icon_label in icon_choices %}
+          <option value="{{ icon_id }}" {% if icon_id == 'gen-link' %}selected{% endif %}>{{ icon_label }} · {{ icon_id }}</option>
+          {% endfor %}
+        </select>
+        <select class="form-input" name="sort_order">
+          {% for n in range(max_links) %}
+          <option value="{{ n }}">{{ n + 1 }}</option>
+          {% endfor %}
+        </select>
         <label style="display:flex;align-items:center;gap:8px;color:#334155;font-size:13px;">
           <input type="checkbox" name="is_active" value="1" checked> 启用
         </label>
         <button class="btn btn-primary" type="submit">{{ icon('add') }} 添加链接</button>
-        <div class="hint">可用图标示例：gen-link、gen-folder-check、gen-calendar-check、gen-report、cat-police、cat-duty、cat-command。</div>
+        <div class="hint">图标示例</div>
+        <div class="icon-sample-grid">
+          {% for icon_id, icon_label in icon_choices %}
+          <div class="icon-sample">{{ icon(icon_id) }} <span>{{ icon_label }}</span></div>
+          {% endfor %}
+        </div>
       </form>
     </div>
   </div>
@@ -72,8 +113,24 @@ body { padding:24px; background:#f1f5f9; }
     <form method="post" action="{{ url_for('index_bp.quick_link_edit', link_id=link.id) }}" class="link-row">
       <input class="form-input small" name="name" value="{{ link.name }}" maxlength="120">
       <input class="form-input small" name="url" value="{{ link.url }}" maxlength="1000">
-      <input class="form-input small" name="icon" value="{{ link.icon or 'gen-link' }}" maxlength="50">
-      <input class="form-input small" name="sort_order" type="number" value="{{ link.sort_order }}">
+      {% set current_icon = link.icon or 'gen-link' %}
+      {% set known_icons = icon_choices|map(attribute=0)|list %}
+      <select class="form-input small" name="icon">
+        {% for icon_id, icon_label in icon_choices %}
+        <option value="{{ icon_id }}" {% if current_icon == icon_id %}selected{% endif %}>{{ icon_label }}</option>
+        {% endfor %}
+        {% if current_icon not in known_icons %}
+        <option value="{{ current_icon }}" selected>{{ current_icon }}</option>
+        {% endif %}
+      </select>
+      <select class="form-input small" name="sort_order">
+        {% for n in range(max_links) %}
+        <option value="{{ n }}" {% if link.sort_order == n %}selected{% endif %}>{{ n + 1 }}</option>
+        {% endfor %}
+        {% if link.sort_order < 0 or link.sort_order >= max_links %}
+        <option value="{{ link.sort_order }}" selected>{{ link.sort_order }}</option>
+        {% endif %}
+      </select>
       <select class="form-input small" name="is_active">
         <option value="1" {% if link.is_active %}selected{% endif %}>启用</option>
         <option value="0" {% if not link.is_active %}selected{% endif %}>停用</option>

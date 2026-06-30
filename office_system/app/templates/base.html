@@ -25,7 +25,7 @@
   </div>
 
   <div class="header-right">
-    <a href="{{ url_for('index_bp.index') }}" target="_top" class="btn btn-ghost btn-sm">{{ icon('globe') }} 公开首页</a>
+    <a href="{{ url_for('index_bp.index') }}" target="_top" class="btn btn-ghost btn-sm">{{ icon('public-home') }} 公开首页</a>
     <a href="{{ url_for('index_bp.help_page') }}" target="mainFrame" class="btn btn-ghost btn-sm">帮助</a>
     <a href="{{ url_for('auth.profile') }}" target="mainFrame" class="btn btn-ghost btn-sm">设置</a>
     {% if session.get('role')=='super_admin' %}
@@ -84,7 +84,7 @@
   <div class="nav-section">
     <div class="nav-section-title">工作台</div>
     <a href="{{ url_for('index_bp.index') }}" target="_top" class="nav-item">
-      <span class="nav-icon">{{ icon('globe') }}</span>
+      <span class="nav-icon">{{ icon('public-home') }}</span>
       <span>公开首页</span>
     </a>
     <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('index_bp.workbench') }}" data-title="工作台" data-id="home">

@@ -877,6 +877,12 @@ main.portal-grid section:nth-child(4) .item-toggle {
   border-color: #e5d8ff;
 }
 @media (max-width: 1200px) {
+  .portal-hero {
+    flex-direction: column;
+  }
+  .portal-title-card {
+    width: 100%;
+  }
   .portal-stats { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .portal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -891,6 +897,12 @@ main.portal-grid section:nth-child(4) .item-toggle {
   .category-tab:first-child,
   .category-tab:last-child { border-radius: 0; }
   .portal-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .portal-stats,
+  .portal-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 </head>

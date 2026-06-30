@@ -155,7 +155,7 @@ body {
 <div class="detail-shell">
   <nav class="public-detail-nav" aria-label="公开详情导航">
     <div class="public-detail-crumb">
-      <a href="{{ back_url }}" class="public-home-link">{{ icon('home') }} 返回公开首页</a>
+      <a href="{{ back_url }}" class="public-home-link">{{ icon('public-home') }} 返回公开首页</a>
       <span class="public-detail-sep">›</span>
       <span class="public-detail-current">
         {% if detail_type == 'task' %}任务详情
@@ -166,7 +166,7 @@ body {
   </nav>
 
   <div class="detail-top">
-    <a href="{{ back_url }}" class="public-home-link">{{ icon('home') }} 公开首页</a>
+    <a href="{{ back_url }}" class="public-home-link">{{ icon('public-home') }} 公开首页</a>
     <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;">
       <span class="readonly-badge">{{ icon('lock') }} 公开只读</span>
       {% if session.get('user_id') %}

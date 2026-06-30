@@ -267,6 +267,7 @@
     <symbol id="user-key" viewBox="0 0 48 48"><use href="#base-shield-lock"/></symbol>
     <symbol id="lock" viewBox="0 0 48 48"><use href="#base-lock"/></symbol>
     <symbol id="globe" viewBox="0 0 48 48"><use href="#base-globe"/></symbol>
+    <symbol id="public-home" viewBox="0 0 48 48"><path class="line" d="M9 12h30v22H9zM17 39h14M24 34v5"/><circle class="line" cx="29" cy="23" r="5"/><path class="line" d="M33 27l5 5"/></symbol>
     <symbol id="browser-window" viewBox="0 0 48 48"><use href="#base-window"/></symbol>
     <symbol id="browser-compass" viewBox="0 0 48 48"><use href="#base-compass"/></symbol>
     <symbol id="search" viewBox="0 0 48 48"><use href="#base-search"/></symbol>
