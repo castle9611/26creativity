@@ -14,7 +14,7 @@ html,body { height:100%; margin:0; overflow:hidden; background:#f1f5f9; }
 </style>
 </head>
 <body>
-<div class="office-bar"><a class="btn btn-sm" href="{{ url_for('docs.list_docs') }}">← 返回</a><span class="office-title">{{ doc.title }}</span><span class="office-status">{% if can_edit %}编辑模式{% else %}只读模式{% endif %}</span> <a class="btn btn-sm" href="{{ url_for('docs.download_doc', doc_id=doc.id) }}">下载原文件</a></div>
+<div class="office-bar"><a class="btn btn-sm nav-text-link" href="{{ url_for('index_bp.workbench') }}">返回首页</a><span class="office-title">{{ doc.title }}</span><span class="office-status">{% if can_edit %}编辑模式{% else %}只读模式{% endif %}</span> <a class="btn btn-sm" href="{{ url_for('docs.download_doc', doc_id=doc.id) }}">下载原文件</a></div>
 {% if configured %}
 <div id="onlyofficeEditor"></div>
 <div id="loadError" class="fallback" style="display:none;">ONLYOFFICE 编辑器加载失败，请检查 Document Server 网络与 HTTPS 配置。<div style="margin-top:16px;"><a class="btn btn-primary" href="{{ url_for('docs.download_doc', doc_id=doc.id) }}">下载原文件</a></div></div>

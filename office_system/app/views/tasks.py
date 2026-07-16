@@ -200,7 +200,8 @@ def list_tasks():
                                completed_count=completed_count,
                                archived_count=archived_count,
                                rejected_count=rejected_count,
-                               overdue_count=overdue_count)
+                               overdue_count=overdue_count,
+                               today=today)
         return html
 
     return render_template('tasks/list.html',
@@ -226,7 +227,8 @@ def list_tasks():
                            completed_count=completed_count,
                            archived_count=archived_count,
                            rejected_count=rejected_count,
-                           overdue_count=overdue_count)
+                           overdue_count=overdue_count,
+                           today=today)
 
 
 @tasks_bp.route('/create', methods=['GET', 'POST'])

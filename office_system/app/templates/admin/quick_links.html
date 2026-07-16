@@ -2,7 +2,7 @@
 {% from '_icon.html' import icon %}
 {% set icon_choices = [
   ('gen-link', '通用链接'),
-  ('public-home', '公开首页'),
+  ('public-home', '首页'),
   ('dashboard', '工作台'),
   ('settings', '管理设置'),
   ('folder', '文件资料'),
@@ -84,7 +84,7 @@ body { padding:24px; background:#f1f5f9; }
 </head>
 <body>
 <div class="breadcrumb">
-  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
   <span class="breadcrumb-sep">›</span>
   <span>首页快捷链接</span>
 </div>
@@ -92,7 +92,7 @@ body { padding:24px; background:#f1f5f9; }
 <div class="page-header">
   <div>
     <h2 class="page-title">首页快捷链接</h2>
-    <p class="page-subtitle">配置公开首页右上方快捷跳转，最多 {{ max_links }} 个，仅超级管理员可维护。</p>
+    <p class="page-subtitle">配置首页右上方快捷跳转，最多 {{ max_links }} 个，仅超级管理员可维护。</p>
   </div>
   <a class="btn" href="{{ url_for('index_bp.index') }}" target="_blank">{{ icon('public-home') }} 查看首页</a>
 </div>

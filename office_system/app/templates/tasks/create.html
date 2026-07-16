@@ -21,19 +21,12 @@ body { background: #f1f5f9; }
 
 <!-- Breadcrumb -->
 <div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
+  <span class="breadcrumb-sep">›</span>
   <a href="{{ url_for('tasks.list_tasks') }}">任务列表</a>
   <span class="breadcrumb-sep">›</span>
   {% if is_edit %}<a href="{{ url_for('tasks.detail_task', task_id=task.id) }}">{{ task.title[:20] }}</a><span class="breadcrumb-sep">›</span>{% endif %}
   <span>{% if is_edit %}编辑任务{% else %}创建任务{% endif %}</span>
-</div>
-
-<!-- Back Button -->
-<div style="margin-bottom:16px;">
-  {% if is_edit %}
-  <a href="{{ url_for('tasks.detail_task', task_id=task.id) }}" class="back-btn">← 返回任务详情</a>
-  {% else %}
-  <a href="{{ url_for('tasks.list_tasks') }}" class="back-btn">← 返回列表</a>
-  {% endif %}
 </div>
 
 <div class="form-card">
@@ -291,6 +284,7 @@ function toggleLinkSection() {
 }
 </script>
 
+<script src="{{ url_for('static', filename='js/ux.js') }}"></script>
 </body>
 </html>
 

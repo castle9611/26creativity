@@ -48,13 +48,11 @@ body { background: #f1f5f9; }
 <body style="padding:24px;background:#f1f5f9;">
 
 <div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
+  <span class="breadcrumb-sep">›</span>
   <a href="{{ url_for('tasks.list_tasks') }}">任务列表</a>
   <span class="breadcrumb-sep">›</span>
   <span>任务详情</span>
-</div>
-
-<div style="margin-bottom:16px;">
-  <a href="{{ url_for('tasks.list_tasks') }}" class="back-btn">← 返回列表</a>
 </div>
 
 <div class="detail-header">
@@ -302,7 +300,6 @@ function updateProgress(delta) {
   </form>
   {% endif %}
 
-  <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-lg" style="margin-left:auto;">← 返回列表</a>
 </div>
 
 {% if transfers|length>0 %}

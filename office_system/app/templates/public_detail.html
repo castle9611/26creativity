@@ -21,47 +21,53 @@ body {
   padding: 26px 20px 46px;
 }
 .public-detail-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  display: block;
   margin-bottom: 16px;
 }
 .public-detail-crumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: #60708a;
-  font-size: 15px;
-  font-weight: 800;
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 24px;
 }
 .public-home-link {
-  min-height: 42px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 20px;
-  border: 1px solid #d7e4f6;
-  border-radius: 999px;
+  display: inline-block;
+  min-height: 40px;
+  padding: 5px 0 7px;
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  border-bottom: 3px solid #1266f3;
   color: #1266f3;
-  background: rgba(255,255,255,.94);
+  font-size: 18px;
+  line-height: 27px;
+  font-weight: 700;
+  background: transparent;
   text-decoration: none;
-  box-shadow: 0 12px 26px rgba(22,48,82,.08);
+  outline: none;
+  box-shadow: none;
 }
+.public-home-link:before { content: "\2190"; margin-right: 8px; font-size: 19px; }
 .public-home-link:hover {
-  border-color: #1266f3;
-  background: #eef5ff;
+  background: transparent;
+  text-decoration: underline;
 }
 .public-detail-sep {
-  color: #8fa0b8;
-  font-size: 18px;
+  display: inline-block;
+  width: 20px;
+  color: transparent;
+  font-size: 0;
+  text-align: center;
 }
+.public-detail-sep:before { content: "/"; color: #cbd5e1; font-size: 13px; }
 .public-detail-current {
-  color: #071526;
+  color: #334155;
+  font-weight: 400;
 }
 .detail-top {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 12px;
   margin-bottom: 18px;
@@ -155,7 +161,7 @@ body {
 <div class="detail-shell">
   <nav class="public-detail-nav" aria-label="公开详情导航">
     <div class="public-detail-crumb">
-      <a href="{{ back_url }}" class="public-home-link">{{ icon('public-home') }} 返回公开首页</a>
+      <a href="{{ back_url }}" class="public-home-link">返回首页</a>
       <span class="public-detail-sep">›</span>
       <span class="public-detail-current">
         {% if detail_type == 'task' %}任务详情
@@ -166,7 +172,6 @@ body {
   </nav>
 
   <div class="detail-top">
-    <a href="{{ back_url }}" class="public-home-link">{{ icon('public-home') }} 公开首页</a>
     <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;">
       <span class="readonly-badge">{{ icon('lock') }} 公开只读</span>
       {% if session.get('user_id') %}

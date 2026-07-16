@@ -72,14 +72,11 @@ body { background: #f1f5f9; }
 
 <!-- Breadcrumb -->
 <div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
+  <span class="breadcrumb-sep">›</span>
   <a href="{{ url_for('bulletin.index') }}">{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</a>
   <span class="breadcrumb-sep">›</span>
   <span>详情</span>
-</div>
-
-<!-- Back Button -->
-<div style="margin-bottom:16px;">
-  <a href="{{ url_for('bulletin.index') }}" class="back-btn">← 返回公示</a>
 </div>
 
 <!-- Bulletin Header -->
@@ -235,11 +232,6 @@ body { background: #f1f5f9; }
   <form method="post" action="{{ url_for('bulletin.delete', bulletin_id=bulletin.id) }}" style="display:inline;" onsubmit="return confirm('确认删除该内容？');">
     <button type="submit" class="btn btn-danger btn-lg">{{ icon('trash') }} 删除</button>
   </form>
-  {% endif %}
-  {% if bulletin.column_id %}
-  <a href="{{ url_for('bulletin.column_list', column_id=bulletin.column_id) }}" class="btn btn-lg" style="margin-left:auto;">← 返回列表</a>
-  {% else %}
-  <a href="{{ url_for('bulletin.index', category_id=bulletin.category_id) }}" class="btn btn-lg" style="margin-left:auto;">← 返回列表</a>
   {% endif %}
 </div>
 

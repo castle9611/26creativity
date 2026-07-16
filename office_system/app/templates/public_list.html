@@ -109,7 +109,7 @@ body {
 <body>
 <div class="public-list-shell">
   <div class="breadcrumb">
-    <a href="{{ back_url }}">公开首页</a>
+    <a href="{{ back_url }}">首页</a>
     <span class="breadcrumb-sep">›</span>
     <span>{{ list_title }}</span>
   </div>
@@ -122,7 +122,6 @@ body {
         <p>{% if active_category %}{{ active_category.name }} · {% endif %}共 {{ pagination.total }} 条</p>
       </div>
     </div>
-    <a href="{{ back_url }}" class="btn">{{ icon('public-home') }} 返回公开首页</a>
   </header>
 
   <section class="public-list-card">

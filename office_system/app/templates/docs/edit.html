@@ -39,6 +39,8 @@ body { background:#e5e7eb; padding:24px; }
 <body>
 
 <div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
+  <span class="breadcrumb-sep">›</span>
   <a href="{{ url_for('docs.list_docs') }}">在线文档</a>
   <span class="breadcrumb-sep">›</span>
   <span>{% if is_edit %}编辑文档{% else %}新建文档{% endif %}</span>
@@ -316,6 +318,7 @@ document.getElementById('editorBox').addEventListener('paste', function(e) {
   window.addEventListener('resize', positionHandles);
 })();
 </script>
+<script src="{{ url_for('static', filename='js/ux.js') }}"></script>
 </body>
 </html>
 

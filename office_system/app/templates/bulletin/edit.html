@@ -166,14 +166,11 @@ body { background: #f1f5f9; }
 
 <!-- Breadcrumb -->
 <div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
+  <span class="breadcrumb-sep">›</span>
   <a href="{{ url_for('bulletin.index') }}">{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</a>
   <span class="breadcrumb-sep">›</span>
   <span>编辑</span>
-</div>
-
-<!-- Back Button -->
-<div style="margin-bottom:16px;">
-  <a href="{{ url_for('bulletin.index') }}" class="back-btn">← 返回公示</a>
 </div>
 
 <div class="form-card">
@@ -652,6 +649,7 @@ updateBulletinColumnSelect(true);
 
 </script>
 
+<script src="{{ url_for('static', filename='js/ux.js') }}"></script>
 </body>
 </html>
 

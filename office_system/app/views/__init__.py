@@ -36,6 +36,15 @@ def register_blueprints(app):
     @app.before_request
     def load_tabs():
         """Load tabs and columns for sidebar (app-wide)."""
+        # Success flashes interrupt the compact OA workflow and can accumulate
+        # across iframe pages. Keep warnings and errors, discard success noise.
+        flashes = session.get('_flashes', [])
+        if flashes:
+            remaining = [item for item in flashes if item[0] != 'success']
+            if remaining:
+                session['_flashes'] = remaining
+            else:
+                session.pop('_flashes', None)
         if 'user_id' not in session:
             return
         user_role = session.get('role', '')
@@ -385,6 +394,19 @@ def register_blueprints(app):
             Task.status == 'pending',
             Task.reminder_seen_at == None
         ).order_by(Task.created_at.desc()).limit(5).all()
+
+        # Action-oriented queue: show the work that needs attention first.
+        queue_query = Task.query.filter(Task.status.in_(active_statuses))
+        if user_role == 'dept_admin':
+            queue_query = queue_query.filter(Task.department == user_dept)
+        elif user_role == 'user':
+            queue_query = queue_query.filter(_assignee_clause(user_id))
+        work_queue = queue_query.order_by(
+            db.case([(Task.deadline < today, 0)], else_=1),
+            Task.deadline.asc(),
+            db.case([(Task.priority == 'high', 0), (Task.priority == 'medium', 1)], else_=2),
+            Task.updated_at.desc()
+        ).limit(8).all()
         quick_links = QuickLink.query.filter_by(
             scope='user',
             user_id=user_id,
@@ -409,6 +431,8 @@ def register_blueprints(app):
                                total_columns=total_columns,
                                latest_bulletins=visible_bulletins[:5],
                                assigned_alerts=assigned_alerts,
+                               work_queue=work_queue,
+                               today=today,
                                quick_links=quick_links,
                                search=search,
                                super_admins=super_admins,

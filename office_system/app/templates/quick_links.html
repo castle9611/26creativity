@@ -2,7 +2,7 @@
 {% from '_icon.html' import icon %}
 {% set icon_choices = [
   ('gen-link', '通用链接'),
-  ('public-home', '公开首页'),
+  ('public-home', '首页'),
   ('dashboard', '工作台'),
   ('settings', '管理设置'),
   ('folder', '文件资料'),
@@ -81,7 +81,7 @@ body { padding:24px; background:#f1f5f9; }
 </head>
 <body>
 <div class="breadcrumb">
-  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
   <span class="breadcrumb-sep">›</span>
   <span>我的快捷链接</span>
 </div>
@@ -91,7 +91,6 @@ body { padding:24px; background:#f1f5f9; }
     <h2 class="page-title">我的快捷链接</h2>
     <p class="page-subtitle">配置工作台下方的个人网站跳转，最多 {{ max_links }} 个。</p>
   </div>
-  <a class="btn" href="{{ url_for('index_bp.workbench') }}">{{ icon('dashboard') }} 返回工作台</a>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}

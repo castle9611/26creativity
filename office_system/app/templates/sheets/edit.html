@@ -33,7 +33,7 @@ body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","M
     <button class="btn btn-primary" onclick="publishSheet()">{{ icon('export') }} 发布</button>
     <a href="{{ url_for('sheets.export_xls', sheet_id=sheet.id) }}" class="btn">{{ icon('export') }} XLS</a>
     <a href="{{ url_for('sheets.view_sheet', sheet_id=sheet.id) }}" class="btn">{{ icon('gen-eye') }} 预览</a>
-    <a href="{{ url_for('sheets.list_sheets') }}" class="btn">{{ icon('home') }} 返回列表</a>
+    <a href="{{ url_for('index_bp.workbench') }}" class="btn nav-text-link">返回首页</a>
   </div>
 </div>
 

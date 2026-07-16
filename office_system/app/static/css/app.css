@@ -73,6 +73,249 @@
     --text-xxs: 11px;     /* .badge, .footer-bar, .copyright-corner */
 }
 
+/* ==================== Unified page navigation ==================== */
+/* One compact, flat navigation surface per page. */
+.breadcrumb,
+.oa-list-crumb,
+.task-crumb {
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #64748b;
+}
+.breadcrumb a,
+.oa-list-crumb a,
+.task-crumb a {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 5px;
+    color: #31547f;
+    font-weight: 600;
+}
+.breadcrumb a:hover,
+.oa-list-crumb a:hover,
+.task-crumb a:hover {
+    background: #e8f0fb;
+    color: #174ea6;
+}
+.breadcrumb-sep,
+.task-crumb-sep { color: #9aa9bd; padding: 0 2px; }
+.breadcrumb > span:last-child,
+.task-crumb > span:last-child { color: #1f2937; font-weight: 600; }
+
+.back-btn,
+.nav-back-btn {
+    border-color: #cbd8e8 !important;
+    background: #ffffff !important;
+    color: #31547f !important;
+    font-weight: 600;
+}
+.back-btn:hover,
+.nav-back-btn:hover {
+    border-color: #2563eb !important;
+    color: #174ea6 !important;
+    background: #eff6ff !important;
+}
+
+/* Clearer urgency labels shared by dashboard and task tables. */
+.deadline-hint { display:block; margin-top:3px; font-size:11px; font-weight:600; white-space:nowrap; }
+.deadline-today { color:#d97706; }
+.deadline-soon { color:#2563eb; }
+.deadline-overdue { color:#dc2626; }
+
+.work-queue-item { display:table; width:100%; padding:11px 4px; border-bottom:1px solid var(--border-light); }
+.work-queue-main, .work-queue-side { display:table-cell; vertical-align:middle; }
+.work-queue-main { padding-right:14px; }
+.work-queue-side { width:150px; text-align:right; white-space:nowrap; }
+.work-queue-title { font-weight:600; color:var(--text-primary); }
+.work-queue-meta { margin-top:3px; color:var(--text-muted); font-size:12px; }
+
+/* ==================== Minimal breadcrumb navigation ==================== */
+/* Final override: navigation is text-only across legacy page templates. */
+.breadcrumb,
+.oa-list-crumb,
+.task-crumb {
+    display: block !important;
+    min-height: 0 !important;
+    margin-bottom: 14px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #64748b !important;
+    font-size: 13px !important;
+    line-height: 24px !important;
+}
+.breadcrumb a,
+.oa-list-crumb a,
+.task-crumb a {
+    display: inline !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #2563eb !important;
+    font-weight: 400 !important;
+    text-decoration: none !important;
+}
+.breadcrumb a:hover,
+.oa-list-crumb a:hover,
+.task-crumb a:hover {
+    background: transparent !important;
+    color: #1d4ed8 !important;
+    text-decoration: underline !important;
+}
+.breadcrumb-sep,
+.task-crumb-sep,
+.oa-list-crumb-sep {
+    display: inline-block !important;
+    width: 20px !important;
+    padding: 0 !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    text-align: center !important;
+}
+.breadcrumb-sep:before,
+.task-crumb-sep:before,
+.oa-list-crumb-sep:before {
+    content: "/";
+    color: #cbd5e1;
+    font-size: 13px;
+}
+.breadcrumb > span:last-child,
+.task-crumb > span:last-child {
+    color: #334155 !important;
+    font-weight: 400 !important;
+}
+.nav-text-link {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #2563eb !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+.nav-text-link:hover { color: #1d4ed8 !important; text-decoration: underline !important; }
+
+/* Keep the home return visually dominant after every page-level override. */
+.breadcrumb > a:first-child,
+.oa-list-crumb > a:first-child,
+.task-crumb > a:first-child {
+    display: inline-block !important; min-height: 40px !important; padding: 5px 0 7px !important;
+    color: #1266f3 !important; font-size: 0 !important; line-height: 24px !important;
+    font-weight: 700 !important; letter-spacing: .3px;
+    border-top: 0 !important; border-right: 0 !important; border-left: 0 !important;
+    border-bottom: 3px solid #1266f3 !important;
+}
+.breadcrumb > a:first-child:before,
+.oa-list-crumb > a:first-child:before,
+.task-crumb > a:first-child:before {
+    content: "\2190  返回首页"; display: inline-block; color: #1266f3;
+    font-size: 18px; line-height: 27px; font-weight: 700;
+}
+.breadcrumb > a:first-child:hover,
+.oa-list-crumb > a:first-child:hover,
+.task-crumb > a:first-child:hover { color: #0b4fd1 !important; text-decoration: none !important; }
+.breadcrumb > a:first-child:hover:before,
+.oa-list-crumb > a:first-child:hover:before,
+.task-crumb > a:first-child:hover:before { transform: translateX(-2px); }
+.nav-text-link[href*="workbench"] {
+    display: inline-block !important; min-height: 40px !important; padding: 5px 0 7px !important;
+    color: #1266f3 !important; font-size: 18px !important; line-height: 27px !important;
+    font-weight: 700 !important; text-decoration: none !important;
+    border-bottom: 3px solid #1266f3 !important;
+}
+.nav-text-link[href*="workbench"]:before {
+    content: "\2190"; display: inline-block; margin-right: 8px; font-size: 19px;
+}
+
+/* Square interaction language: all actionable controls use straight edges. */
+.btn,
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.quick-action,
+.back-btn,
+.nav-back-btn,
+.public-home-link,
+.login-home-link,
+.read-toggle,
+.stats-btn,
+.stats-btn-sm,
+.pagination a,
+.oa-pagination a,
+.tab-ops a {
+    border-radius: 0 !important;
+}
+
+/* Breadcrumb return controls must never regain the old pill treatment. */
+.breadcrumb > a:first-child,
+.oa-list-crumb > a:first-child,
+.task-crumb > a:first-child,
+.public-home-link {
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Prominent home return without turning navigation back into a pill button. */
+.breadcrumb > a:first-child,
+.oa-list-crumb > a:first-child,
+.task-crumb > a:first-child {
+    display: inline-block !important;
+    min-height: 32px !important;
+    padding: 4px 0 !important;
+    color: #1266f3 !important;
+    font-size: 0 !important;
+    line-height: 24px !important;
+    font-weight: 700 !important;
+    letter-spacing: .2px;
+}
+.breadcrumb > a:first-child:before,
+.oa-list-crumb > a:first-child:before,
+.task-crumb > a:first-child:before {
+    content: "\2190  返回首页";
+    display: inline-block;
+    margin-right: 0;
+    color: #1266f3;
+    font-size: 15px;
+    font-weight: 700;
+    vertical-align: -1px;
+}
+.breadcrumb > a:first-child:hover,
+.oa-list-crumb > a:first-child:hover,
+.task-crumb > a:first-child:hover {
+    color: #0b4fd1 !important;
+    text-decoration: none !important;
+}
+.breadcrumb > a:first-child:hover:before,
+.oa-list-crumb > a:first-child:hover:before,
+.task-crumb > a:first-child:hover:before { transform: translateX(-2px); }
+
+.nav-text-link[href*="workbench"] {
+    display: inline-block !important;
+    min-height: 32px !important;
+    padding: 4px 0 !important;
+    color: #1266f3 !important;
+    font-size: 15px !important;
+    line-height: 24px !important;
+    font-weight: 700 !important;
+}
+.nav-text-link[href*="workbench"]:before {
+    content: "\2190";
+    display: inline-block;
+    margin-right: 7px;
+    font-size: 17px;
+    vertical-align: -1px;
+}
+
 /* ==================== Reset & Base ==================== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -4216,4 +4459,103 @@ table.table tr:hover td,
     }
 }
 
+/* Final cascade for text-only page navigation. */
+.breadcrumb, .oa-list-crumb, .task-crumb {
+    display: block !important; min-height: 0 !important; margin-bottom: 14px !important;
+    padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+    background: transparent !important; box-shadow: none !important;
+    color: #64748b !important; font-size: 13px !important; line-height: 24px !important;
+}
+.breadcrumb a, .oa-list-crumb a, .task-crumb a {
+    display: inline !important; padding: 0 !important; border: 0 !important;
+    border-radius: 0 !important; background: transparent !important; box-shadow: none !important;
+    outline: 0 !important; outline-offset: 0 !important;
+    color: #2563eb !important; font-weight: 400 !important; text-decoration: none !important;
+}
+.breadcrumb a:hover, .oa-list-crumb a:hover, .task-crumb a:hover {
+    background: transparent !important; color: #1d4ed8 !important; text-decoration: underline !important;
+}
+.breadcrumb-sep, .task-crumb-sep, .oa-list-crumb-sep {
+    display: inline-block !important; width: 20px !important; padding: 0 !important;
+    color: transparent !important; font-size: 0 !important; text-align: center !important;
+}
+.breadcrumb-sep:before, .task-crumb-sep:before, .oa-list-crumb-sep:before {
+    content: "/"; color: #cbd5e1; font-size: 13px;
+}
+.breadcrumb > span:last-child, .task-crumb > span:last-child {
+    color: #334155 !important; font-weight: 400 !important;
+}
+.nav-text-link {
+    padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+    background: transparent !important; box-shadow: none !important;
+    color: #2563eb !important; font-size: 13px !important; font-weight: 400 !important;
+}
+.nav-text-link:hover { color: #1d4ed8 !important; text-decoration: underline !important; }
 
+/* The return-home control is deliberately stronger than the remaining trail. */
+.breadcrumb > a:first-child,
+.oa-list-crumb > a:first-child,
+.task-crumb > a:first-child {
+    display: inline-block !important; min-height: 40px !important; padding: 5px 0 7px !important;
+    color: #1266f3 !important; font-size: 0 !important; line-height: 24px !important;
+    font-weight: 700 !important; letter-spacing: .3px;
+    border-width: 0 0 3px 0 !important;
+    border-style: solid !important;
+    border-color: transparent transparent #1266f3 transparent !important;
+    border-top: none !important;
+    border-right: none !important;
+    border-left: none !important;
+    border-bottom: 3px solid #1266f3 !important;
+    border-radius: 0 !important; background: transparent !important; box-shadow: none !important;
+    outline: none !important;
+}
+.breadcrumb > a:first-child:before,
+.oa-list-crumb > a:first-child:before,
+.task-crumb > a:first-child:before {
+    content: "\2190  返回首页"; display: inline-block; color: #1266f3;
+    font-size: 18px; line-height: 27px; font-weight: 700;
+}
+.breadcrumb > a:first-child:hover,
+.oa-list-crumb > a:first-child:hover,
+.task-crumb > a:first-child:hover { color: #0b4fd1 !important; text-decoration: none !important; }
+.breadcrumb > a:first-child:hover:before,
+.oa-list-crumb > a:first-child:hover:before,
+.task-crumb > a:first-child:hover:before { transform: translateX(-2px); }
+.nav-text-link[href*="workbench"] {
+    display: inline-block !important; min-height: 40px !important; padding: 5px 0 7px !important;
+    color: #1266f3 !important; font-size: 18px !important; line-height: 27px !important;
+    font-weight: 700 !important; text-decoration: none !important;
+    border-top: 0 !important; border-right: 0 !important; border-left: 0 !important;
+    border-bottom: 3px solid #1266f3 !important;
+    border-radius: 0 !important; background: transparent !important; box-shadow: none !important;
+    outline: 0 !important; outline-offset: 0 !important;
+}
+.nav-text-link[href*="workbench"]:before {
+    content: "\2190"; display: inline-block; margin-right: 8px; font-size: 19px;
+}
+
+.breadcrumb > a:first-child:focus,
+.breadcrumb > a:first-child:active,
+.oa-list-crumb > a:first-child:focus,
+.oa-list-crumb > a:first-child:active,
+.task-crumb > a:first-child:focus,
+.task-crumb > a:first-child:active,
+.nav-text-link[href*="workbench"]:focus,
+.nav-text-link[href*="workbench"]:active,
+.public-home-link:focus,
+.public-home-link:active {
+    border-top: 0 !important; border-right: 0 !important; border-left: 0 !important;
+    outline: 0 !important; box-shadow: none !important; background: transparent !important;
+}
+
+/* All actionable controls use square corners. Badges and avatars are excluded. */
+.btn, button,
+input[type="button"], input[type="submit"], input[type="reset"],
+.quick-action, .back-btn, .nav-back-btn, .public-home-link, .login-home-link,
+.read-toggle, .stats-btn, .stats-btn-sm,
+.pagination a, .oa-pagination a, .tab-ops a {
+    border-radius: 0 !important;
+}
+
+/* Successful operations continue silently; warnings and errors stay visible. */
+.alert-success { display: none !important; }

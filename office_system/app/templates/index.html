@@ -1767,7 +1767,7 @@ body:not(.sidebar-collapsed) .header-right {
   </div>
 
   <div class="header-right">
-    <a href="{{ url_for('index_bp.index') }}" class="btn">{{ icon('public-home') }} 公开首页</a>
+    <a href="{{ url_for('index_bp.index') }}" class="btn">{{ icon('public-home') }} 首页</a>
     <a href="{{ url_for('index_bp.help_page') }}" class="btn">{{ icon('help') }} 帮助</a>
     <a href="{{ url_for('auth.profile') }}" class="btn">{{ icon('settings') }} 设置</a>
     {% if session.get('role')=='super_admin' %}
@@ -1822,9 +1822,9 @@ body:not(.sidebar-collapsed) .header-right {
 <!-- Sidebar -->
 <div class="sidebar">
   <div class="nav-section">
-    <a href="{{ url_for('index_bp.index') }}" class="nav-item" title="公开首页">
+    <a href="{{ url_for('index_bp.index') }}" class="nav-item" title="首页">
       <span class="nav-icon">{{ icon('public-home') }}</span>
-      <span>公开首页</span>
+      <span>首页</span>
     </a>
     <a href="{{ url_for('index_bp.workbench') }}" class="nav-item active" title="工作台">
       <span class="nav-icon">{{ icon('home') }}</span>
@@ -2172,6 +2172,41 @@ body:not(.sidebar-collapsed) .header-right {
           {% endif %}
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="card-header">
+      <div>
+        <div class="card-title">我的待处理</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">逾期和临期事项优先显示</div>
+      </div>
+      <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-sm">查看全部</a>
+    </div>
+    <div class="card-body" style="padding:2px 16px 8px;">
+      {% for t in work_queue %}
+      <div class="work-queue-item">
+        <div class="work-queue-main">
+          <a class="work-queue-title" href="{{ url_for('tasks.detail_task', task_id=t.id) }}">{{ t.title }}</a>
+          <div class="work-queue-meta">{{ t.department or '未设置部门' }} · {{ t.status|status_label }} · {{ t.assignee_names }}</div>
+        </div>
+        <div class="work-queue-side">
+          {% if t.deadline %}
+            {% set days = (t.deadline - today).days %}
+            {% if days < 0 %}<span class="badge badge-danger">逾期 {{ -days }} 天</span>
+            {% elif days == 0 %}<span class="badge badge-warning">今天到期</span>
+            {% elif days <= 3 %}<span class="badge badge-info">还剩 {{ days }} 天</span>
+            {% else %}<span style="font-size:12px;color:#64748b;">{{ t.deadline.strftime('%Y-%m-%d') }}</span>{% endif %}
+          {% else %}<span style="font-size:12px;color:#94a3b8;">未设截止日期</span>{% endif %}
+          <a href="{{ url_for('tasks.detail_task', task_id=t.id) }}" class="btn btn-sm" style="margin-left:6px;">处理</a>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:32px 0;">
+        <div class="empty-icon">{{ icon('check') }}</div>
+        <div class="empty-text">当前没有待处理事项</div>
+      </div>
+      {% endfor %}
     </div>
   </div>
 

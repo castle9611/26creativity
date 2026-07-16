@@ -18,7 +18,7 @@ body { background: #f1f5f9; padding: 24px; }
 <body>
 
 <div class="breadcrumb">
-  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
   <span class="breadcrumb-sep">›</span>
   <a href="{{ url_for('sheets.list_sheets') }}">在线表格</a>
   <span class="breadcrumb-sep">›</span>
@@ -59,6 +59,7 @@ body { background: #f1f5f9; padding: 24px; }
   </form>
 </div>
 
+<script src="{{ url_for('static', filename='js/ux.js') }}"></script>
 </body>
 </html>
 

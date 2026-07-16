@@ -32,7 +32,7 @@ body { margin:0; padding:0; background:#f8f9fa; font-family: -apple-system,Blink
     <a href="{{ url_for('sheets.edit_sheet', sheet_id=sheet.id) }}" class="btn btn-primary">{{ icon('edit') }} 编辑</a>
     {% endif %}
     <a href="{{ url_for('sheets.export_xls', sheet_id=sheet.id) }}" class="btn">{{ icon('export') }} 导出XLS</a>
-    <a href="{{ url_for('sheets.list_sheets') }}" class="btn">{{ icon('home') }} 返回列表</a>
+    <a href="{{ url_for('index_bp.workbench') }}" class="btn nav-text-link">返回首页</a>
   </div>
 </div>
 

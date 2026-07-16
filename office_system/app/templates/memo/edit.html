@@ -102,14 +102,11 @@ body { background: #f1f5f9; }
 
 <!-- Breadcrumb -->
 <div class="breadcrumb">
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
+  <span class="breadcrumb-sep">›</span>
   <a href="{{ url_for('memo.list_memos') }}">工作备忘</a>
   <span class="breadcrumb-sep">›</span>
   <span>{% if is_edit %}编辑备忘{% else %}新建备忘{% endif %}</span>
-</div>
-
-<!-- Back Button -->
-<div style="margin-bottom:16px;">
-  <a href="{{ url_for('memo.list_memos') }}" class="back-btn">← 返回列表</a>
 </div>
 
 <div class="form-card">
@@ -435,6 +432,7 @@ dropArea.addEventListener('drop', function(e) {
 
 </script>
 
+<script src="{{ url_for('static', filename='js/ux.js') }}"></script>
 </body>
 </html>
 

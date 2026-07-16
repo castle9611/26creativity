@@ -30,13 +30,9 @@ body { background: #f1f5f9; }
 <body style="padding:24px;background:#f1f5f9;">
 
 <div class="breadcrumb">
-  <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
+  <a href="{{ url_for('index_bp.workbench') }}">首页</a>
   <span class="breadcrumb-sep">›</span>
   <span>在线表格</span>
-</div>
-
-<div style="margin-bottom:16px;">
-  <a href="{{ url_for('index_bp.workbench') }}" class="back-btn">← 返回工作台</a>
 </div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
