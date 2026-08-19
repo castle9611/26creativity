@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Create a copy-and-run offline release package for other Windows computers.
+Create separate Windows and Kylin ARM64 release directories.
 
 Default (copies working directory as-is, including uncommitted changes):
     python\python.exe make_release.py
@@ -18,7 +18,8 @@ import zipfile
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 RELEASE_ROOT = os.path.join(ROOT_DIR, "release")
-PACKAGE_NAME = "office_system_win7_offline"
+WINDOWS_PACKAGE_NAME = os.path.join("windows", "office_system")
+KYLIN_PACKAGE_NAME = os.path.join("kylin_arm64", "office_system")
 
 # Directories to always exclude (relative to BASE_DIR)
 EXCLUDED_DIRS = {
@@ -59,7 +60,7 @@ EXCLUDED_SUFFIXES = {
 ALWAYS_INCLUDE_UNTRACKED = {}  # e.g. {"sample_upload.png": True}
 
 
-def should_skip(src_path, rel_path, fresh_data):
+def should_skip(src_path, rel_path, fresh_data, target):
     """Return True if this file/dir should be excluded from the package."""
     name = os.path.basename(src_path)
 
@@ -73,6 +74,15 @@ def should_skip(src_path, rel_path, fresh_data):
 
     # Handle python/ directory specially
     normalized = rel_path.replace("\\", "/").lower()
+    if target == "kylin-arm64":
+        if normalized == "python" or normalized.startswith("python/"):
+            return True
+        if normalized == "runtime_install" or normalized.startswith("runtime_install/"):
+            return True
+        if normalized.endswith((".bat", ".cmd", ".vbs", ".exe", ".dll", ".pyd", ".msu")):
+            return True
+    elif normalized.endswith(".sh") or normalized == "requirements-kylin-arm64.txt":
+        return True
     if normalized.startswith("python/"):
         lower_name = name.lower()
         # Skip API-MS-WIN-CRT-* DLLs (require target to have KB2999226)
@@ -111,7 +121,7 @@ def copy_file_raw(src_path, dst_path):
         f_out.write(data)
 
 
-def copy_tree(src_dir, dst_dir, fresh_data):
+def copy_tree(src_dir, dst_dir, fresh_data, target):
     """
     Walk src_dir and copy all files to dst_dir, respecting exclusions.
     Reads file content directly to avoid any git/checkout interference.
@@ -128,14 +138,14 @@ def copy_tree(src_dir, dst_dir, fresh_data):
         # Filter subdirectories in-place (prevent os.walk from descending)
         dirs[:] = [
             d for d in dirs
-            if not should_skip(os.path.join(root, d), os.path.join(rel_root, d), fresh_data)
+            if not should_skip(os.path.join(root, d), os.path.join(rel_root, d), fresh_data, target)
         ]
 
         for filename in files:
             src_path = os.path.join(root, filename)
             rel_path = os.path.join(rel_root, filename)
 
-            if should_skip(src_path, rel_path, fresh_data):
+            if should_skip(src_path, rel_path, fresh_data, target):
                 skipped_files += 1
                 continue
 
@@ -152,21 +162,29 @@ def copy_tree(src_dir, dst_dir, fresh_data):
     return copied_files, skipped_files
 
 
-def validate_package(package_dir):
+def validate_package(package_dir, target):
     required = [
-        os.path.join(package_dir, "start.bat"),
-        os.path.join(package_dir, "stop.bat"),
         os.path.join(package_dir, "run.py"),
         os.path.join(package_dir, "health_check.py"),
-        os.path.join(package_dir, "python", "python.exe"),
-        os.path.join(package_dir, "python", "python38.dll"),
-        os.path.join(package_dir, "python", "_sqlite3.pyd"),
-        os.path.join(package_dir, "python", "sqlite3.dll"),
-        os.path.join(package_dir, "python", "vcruntime140.dll"),
-        os.path.join(package_dir, "python", "Lib", "site-packages", "flask"),
-        os.path.join(package_dir, "python", "Lib", "site-packages", "sqlalchemy"),
         os.path.join(package_dir, "app", "__init__.py"),
     ]
+    if target == "windows":
+        required.extend([
+            os.path.join(package_dir, "start.bat"),
+            os.path.join(package_dir, "stop.bat"),
+            os.path.join(package_dir, "python", "python.exe"),
+            os.path.join(package_dir, "python", "python38.dll"),
+            os.path.join(package_dir, "python", "_sqlite3.pyd"),
+            os.path.join(package_dir, "python", "sqlite3.dll"),
+            os.path.join(package_dir, "python", "vcruntime140.dll"),
+        ])
+    else:
+        required.extend([
+            os.path.join(package_dir, "start.sh"),
+            os.path.join(package_dir, "stop.sh"),
+            os.path.join(package_dir, "status.sh"),
+            os.path.join(package_dir, "requirements-kylin-arm64.txt"),
+        ])
     missing = [path for path in required if not os.path.exists(path)]
     if missing:
         print("[FAIL] Missing required files:")
@@ -195,15 +213,13 @@ def dir_size(path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build Win7 offline release package.")
+    parser = argparse.ArgumentParser(description="Build Windows and Kylin ARM64 release packages.")
     parser.add_argument("--fresh-data", action="store_true",
                         help="do not include current database.db or uploaded files")
     parser.add_argument("--no-zip", action="store_true",
                         help="only create release directory, do not create zip")
+    parser.add_argument("--target", choices=("all", "windows", "kylin-arm64"), default="all")
     args = parser.parse_args()
-
-    package_dir = os.path.join(RELEASE_ROOT, PACKAGE_NAME)
-    zip_path = package_dir + ".zip"
 
     # Check for uncommitted changes (informational only)
     git_status_output = ""
@@ -225,10 +241,10 @@ def main():
         pass
 
     print("============================================")
-    print("  Build Win7 Offline Release Package")
+    print("  Build Platform Release Packages")
     print("============================================")
     print("Source : " + BASE_DIR)
-    print("Output : " + package_dir)
+    print("Output : " + RELEASE_ROOT)
     print("Mode   : " + ("fresh first-run data" if args.fresh_data else "include current data"))
 
     if has_uncommitted:
@@ -240,25 +256,28 @@ def main():
 
     print("")
 
-    if os.path.isdir(package_dir):
-        shutil.rmtree(package_dir)
     if not os.path.isdir(RELEASE_ROOT):
         os.makedirs(RELEASE_ROOT)
-
-    copied, skipped = copy_tree(BASE_DIR, package_dir, args.fresh_data)
-    print("[OK] Copied %s files (%s skipped)" % (copied, skipped))
-    print("[OK] App-local UCRT DLLs excluded; target Win7 must use install_win7_runtime.bat")
-
-    if not validate_package(package_dir):
-        return 1
-    print("[OK] Package validation passed")
-
-    if not args.no_zip:
-        make_zip(package_dir, zip_path)
-        print("[OK] Zip created: " + zip_path)
-        print("[OK] Zip size: %.1f MB" % (os.path.getsize(zip_path) / 1024.0 / 1024.0))
-
-    print("[OK] Directory size: %.1f MB" % (dir_size(package_dir) / 1024.0 / 1024.0))
+    targets = ("windows", "kylin-arm64") if args.target == "all" else (args.target,)
+    for target in targets:
+        package_name = WINDOWS_PACKAGE_NAME if target == "windows" else KYLIN_PACKAGE_NAME
+        package_dir = os.path.join(RELEASE_ROOT, package_name)
+        zip_path = os.path.join(RELEASE_ROOT, target.replace("-", "_"), "office_system.zip")
+        if os.path.isdir(package_dir):
+            shutil.rmtree(package_dir)
+        copied, skipped = copy_tree(BASE_DIR, package_dir, args.fresh_data, target)
+        print("[OK] %s: copied %s files (%s skipped)" % (target, copied, skipped))
+        if not validate_package(package_dir, target):
+            return 1
+        if target == "kylin-arm64":
+            for script in ("start.sh", "stop.sh", "status.sh", "install_dependencies.sh"):
+                path = os.path.join(package_dir, script)
+                if os.path.isfile(path):
+                    os.chmod(path, 0o755)
+        if not args.no_zip:
+            make_zip(package_dir, zip_path)
+            print("[OK] Zip created: " + zip_path)
+        print("[OK] %s directory size: %.1f MB" % (target, dir_size(package_dir) / 1024.0 / 1024.0))
     print("")
     print("Next step: copy the release directory or zip to the target offline computer.")
     return 0

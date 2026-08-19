@@ -55,6 +55,19 @@ body {
   color: #64748b;
   font-size: 13px;
 }
+.public-file-search {
+  display: table;
+  width: 390px;
+}
+.public-file-search-input,
+.public-file-search-actions { display: table-cell; vertical-align: middle; }
+.public-file-search-input { width: 100%; }
+.public-file-search .form-input {
+  width: 100%;
+  height: 38px;
+  box-sizing: border-box;
+}
+.public-file-search-actions { padding-left: 8px; white-space: nowrap; }
 .public-list-card {
   border: 1px solid #d9e5f4;
   border-radius: 10px;
@@ -103,6 +116,7 @@ body {
     align-items: stretch;
   }
   .public-list-actions { justify-content: flex-start; }
+  .public-file-search { width: 100%; }
 }
 </style>
 </head>
@@ -119,9 +133,19 @@ body {
       <span class="public-list-icon">{{ icon(list_icon) }}</span>
       <div>
         <h1>{{ list_title }}</h1>
-        <p>{% if active_category %}{{ active_category.name }} · {% endif %}共 {{ pagination.total }} 条</p>
+        <p>{% if active_category %}{{ active_category.name }} · {% endif %}{% if active_column %}{{ active_column.name }} · {% endif %}共 {{ pagination.total }} 条</p>
       </div>
     </div>
+    {% if list_type == 'files' %}
+    <form class="public-file-search" method="get" action="{{ url_for('index_bp.public_list', list_type='files') }}">
+      {% if active_category %}<input type="hidden" name="category_id" value="{{ active_category.id }}">{% endif %}
+      <span class="public-file-search-input"><input class="form-input" type="text" name="keyword" value="{{ keyword }}" placeholder="请输入文件名"></span>
+      <span class="public-file-search-actions">
+        <button class="btn btn-primary" type="submit">{{ icon('search') }} 搜索</button>
+        {% if keyword %}<a class="btn" href="{{ url_for('index_bp.public_list', list_type='files', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='files') }}">重置</a>{% endif %}
+      </span>
+    </form>
+    {% endif %}
   </header>
 
   <section class="public-list-card">
@@ -163,7 +187,7 @@ body {
     {% else %}
     <div class="empty-state" style="padding:56px 0;">
       <div class="empty-icon">{{ icon(list_icon) }}</div>
-      <div class="empty-text">暂无{{ list_title }}</div>
+      <div class="empty-text">{% if list_type == 'files' and keyword %}没有找到匹配“{{ keyword }}”的文件{% else %}暂无{{ list_title }}{% endif %}</div>
     </div>
     {% endfor %}
   </section>
@@ -172,17 +196,17 @@ body {
   <nav class="public-pagination">
     {% include '_page_size.html' %}
     {% if pagination.has_prev %}
-    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=pagination.prev_num, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, page=pagination.prev_num, per_page=request.args.get('per_page', 10)) }}">上一页</a>
+    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, column_id=active_column.id if active_column else none, keyword=keyword, page=pagination.prev_num, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, keyword=keyword, page=pagination.prev_num, per_page=request.args.get('per_page', 10)) }}">上一页</a>
     {% endif %}
     {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
       {% if p %}
-      <a class="btn {% if p == pagination.page %}btn-primary{% endif %}" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=p, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, page=p, per_page=request.args.get('per_page', 10)) }}">{{ p }}</a>
+      <a class="btn {% if p == pagination.page %}btn-primary{% endif %}" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, column_id=active_column.id if active_column else none, keyword=keyword, page=p, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, keyword=keyword, page=p, per_page=request.args.get('per_page', 10)) }}">{{ p }}</a>
       {% else %}
       <span class="btn">…</span>
       {% endif %}
     {% endfor %}
     {% if pagination.has_next %}
-    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, page=pagination.next_num, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, page=pagination.next_num, per_page=request.args.get('per_page', 10)) }}">下一页</a>
+    <a class="btn" href="{{ url_for('index_bp.public_list', list_type=list_type, category_id=active_category.id, column_id=active_column.id if active_column else none, keyword=keyword, page=pagination.next_num, per_page=request.args.get('per_page', 10)) if active_category else url_for('index_bp.public_list', list_type=list_type, keyword=keyword, page=pagination.next_num, per_page=request.args.get('per_page', 10)) }}">下一页</a>
     {% endif %}
   </nav>
   {% endif %}

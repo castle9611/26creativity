@@ -1,24 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-Offline deployment self-check for the Win7 portable package.
-Run with: python\python.exe health_check.py
+Offline deployment self-check for Windows and Linux ARM64 packages.
 """
 import os
 import platform
+import subprocess
 import sys
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IS_WINDOWS = os.name == "nt"
 PYTHON_DIR = os.path.join(BASE_DIR, "python")
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
-os.environ["PATH"] = PYTHON_DIR + os.pathsep + os.path.join(PYTHON_DIR, "DLLs") + os.pathsep + os.environ.get("PATH", "")
+if IS_WINDOWS:
+    os.environ["PATH"] = PYTHON_DIR + os.pathsep + os.path.join(PYTHON_DIR, "DLLs") + os.pathsep + os.environ.get("PATH", "")
 os.environ["PYTHONPATH"] = BASE_DIR
 os.environ["PYTHONIOENCODING"] = "utf-8:backslashreplace"
-REQUIRED_FILES = [
+COMMON_REQUIRED_FILES = [
     "run.py",
     os.path.join("app", "__init__.py"),
     os.path.join("app", "config.py"),
+]
+WINDOWS_REQUIRED_FILES = [
     os.path.join("python", "python.exe"),
     os.path.join("python", "python38.dll"),
     os.path.join("python", "python38.zip"),
@@ -100,8 +104,17 @@ def check_import_child(module_name, label):
         f.write("# -*- coding: utf-8 -*-\n")
         f.write("import " + module_name + "\n")
         f.write("print('OK')\n")
-    cmd = '""' + sys.executable + '" "' + script_file + '" > "' + out_file + '" 2>&1"'
-    rc = os.system(cmd)
+    try:
+        with open(out_file, "wb") as output_stream:
+            completed = subprocess.run(
+                [sys.executable, script_file],
+                stdout=output_stream,
+                stderr=subprocess.STDOUT,
+            )
+        rc = completed.returncode
+    except Exception as exc:
+        fail(label + " child process failed to start: " + repr(exc))
+        return False
     try:
         with open(out_file, "r") as f:
             output = f.read().strip()
@@ -138,7 +151,7 @@ def check_port(port):
 
 def main():
     print("============================================")
-    print("  Win7 Offline Package Self Check")
+    print("  Offline Package Self Check")
     print("============================================")
     print("Base dir : " + BASE_DIR)
     print("Python   : " + sys.executable)
@@ -149,7 +162,8 @@ def main():
     success = True
 
     print("[1/7] Required files")
-    for path in REQUIRED_FILES:
+    required_files = COMMON_REQUIRED_FILES + (WINDOWS_REQUIRED_FILES if IS_WINDOWS else [])
+    for path in required_files:
         success = check_file(path) and success
 
     print("")
@@ -160,7 +174,8 @@ def main():
     success = low_level_success and success
     if not low_level_success:
         print("")
-        fail("Low-level runtime failed. Run: python\\python.exe runtime_diagnose.py")
+        if IS_WINDOWS:
+            fail("Low-level runtime failed. Run: python\\python.exe runtime_diagnose.py")
         return 1
 
     print("")
@@ -214,7 +229,8 @@ def main():
 
     print("")
     if success:
-        ok("Self check passed. You can start the system with start.bat.")
+        command = "start.bat" if IS_WINDOWS else "./start.sh"
+        ok("Self check passed. You can start the system with " + command + ".")
         return 0
 
     fail("Self check failed. Please fix the items above before deployment.")

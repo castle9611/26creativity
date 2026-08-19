@@ -672,6 +672,57 @@ body {
   background: linear-gradient(180deg, #3485ff, #1266f3);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.32), 0 12px 26px rgba(0,87,220,.32);
 }
+.category-tabs {
+  display: table;
+  width: 100%;
+  overflow: visible;
+  position: relative;
+  z-index: 1000;
+}
+.category-menu {
+  position: relative;
+  display: table-cell;
+  vertical-align: middle;
+}
+.category-menu > .category-tab {
+  width: 100%;
+  height: 58px;
+  box-sizing: border-box;
+}
+.category-submenu {
+  display: none;
+  position: absolute;
+  z-index: 1001;
+  left: 8px;
+  top: 52px;
+  min-width: 180px;
+  padding: 7px;
+  border: 1px solid #d8e3f3;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, .22);
+}
+.portal-links-bar,
+.portal-hero,
+.portal-grid {
+  position: relative;
+  z-index: 1;
+}
+.category-menu:hover .category-submenu { display: block; }
+.category-submenu a {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 6px;
+  color: #24364f;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.category-submenu a:hover,
+.category-submenu a:focus,
+.category-submenu a.active { color: #1266f3; background: #eef5ff; }
 .portal-links-bar {
   min-height: 44px;
   margin: 0 0 12px;
@@ -1032,16 +1083,27 @@ main.portal-grid section:nth-child(4) .item-toggle {
   </header>
 
   <nav class="category-tabs">
-    <a class="category-tab {% if not active_category %}active{% endif %}" href="{{ url_for('index_bp.index') }}" style="--tab-color:#1266f3;">
-      <span class="category-tab-icon">{{ icon('category') }}</span>
-      <span>全部</span>
-    </a>
+    <span class="category-menu">
+      <a class="category-tab {% if not active_category %}active{% endif %}" href="{{ url_for('index_bp.index') }}" style="--tab-color:#1266f3;">
+        <span class="category-tab-icon">{{ icon('category') }}</span>
+        <span>全部</span>
+      </a>
+    </span>
     {% if categories %}
       {% for cat in categories %}
-      <a class="category-tab {% if active_category and cat.id == active_category.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id) }}" style="--tab-color:{{ cat.color or '#047857' }};">
-        <span class="category-tab-icon">{{ icon(cat.icon|icon_id) }}</span>
-        <span>{{ cat.name }}</span>
-      </a>
+      <span class="category-menu">
+        <a class="category-tab {% if active_category and cat.id == active_category.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id) }}" style="--tab-color:{{ cat.color or '#047857' }};">
+          <span class="category-tab-icon">{{ icon(cat.icon|icon_id) }}</span>
+          <span>{{ cat.name }}</span>
+        </a>
+        {% if category_columns.get(cat.id) %}
+        <span class="category-submenu">
+          {% for column in category_columns.get(cat.id) %}
+          <a class="{% if active_column and active_column.id == column.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id, column_id=column.id) }}">{{ column.name }}</a>
+          {% endfor %}
+        </span>
+        {% endif %}
+      </span>
       {% endfor %}
     {% else %}
       {% for name in ['教育管理', '狱政管理', '劳动改造', '政工后勤', '等等'] %}
@@ -1069,8 +1131,8 @@ main.portal-grid section:nth-child(4) .item-toggle {
 
   <section class="portal-hero">
     <div class="portal-title-card">
-      <div class="portal-kicker">{{ icon('category') }} 当前类别</div>
-      <div class="portal-title">{{ active_category.name if active_category else '公共信息' }}</div>
+      <div class="portal-kicker">{{ icon('category') }} {% if active_column %}当前栏目{% else %}当前类别{% endif %}</div>
+      <div class="portal-title">{% if active_column %}{{ active_category.name }} · {{ active_column.name }}{% else %}{{ active_category.name if active_category else '公共信息' }}{% endif %}</div>
       <div class="portal-desc">无需登录即可查看公开任务概览、跟踪动态、近期提醒和文件资料。</div>
     </div>
     <div class="portal-stats">
@@ -1141,7 +1203,7 @@ main.portal-grid section:nth-child(4) .item-toggle {
         <div class="panel-title">{{ icon('bell') }} 近期公示提醒要求</div>
         <div class="panel-actions">
           <div class="panel-count">{{ portal_stats.reminders }}</div>
-          {% if portal_stats.reminders > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='reminders', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='reminders') }}">查看更多</a>{% endif %}
+          {% if portal_stats.reminders > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='reminders', category_id=active_category.id, column_id=active_column.id) if active_column else (url_for('index_bp.public_list', list_type='reminders', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='reminders')) }}">查看更多</a>{% endif %}
         </div>
       </div>
       <div class="panel-body">
@@ -1168,7 +1230,7 @@ main.portal-grid section:nth-child(4) .item-toggle {
         <div class="panel-title">{{ icon('folder') }} 文件资料</div>
         <div class="panel-actions">
           <div class="panel-count">{{ portal_stats.files }}</div>
-          {% if portal_stats.files > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='files', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='files') }}">查看更多</a>{% endif %}
+          <a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='files', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='files') }}">搜索{% if portal_stats.files > 5 %}/更多{% endif %}</a>
         </div>
       </div>
       <div class="panel-body">

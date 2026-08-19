@@ -116,7 +116,22 @@ def register_blueprints(app):
             BulletinCategory.sort_order.asc(), BulletinCategory.id.asc()
         ).all()
         selected_id = request.args.get('category_id', type=int)
+        selected_column_id = request.args.get('column_id', type=int)
         active_category = next((c for c in categories if c.id == selected_id), None) if selected_id else None
+        columns = Column.query.filter_by(is_active=1).order_by(
+            Column.sort_order.asc(), Column.id.asc()
+        ).all()
+        category_columns = {}
+        for column in columns:
+            category_columns.setdefault(column.category_id, []).append(column)
+        active_column = next((c for c in columns if c.id == selected_column_id), None) if selected_column_id else None
+        if active_column:
+            if active_category and active_column.category_id != active_category.id:
+                active_column = None
+            elif not active_category:
+                active_category = next((c for c in categories if c.id == active_column.category_id), None)
+                if not active_category:
+                    active_column = None
 
         active_statuses = ['pending', 'processing', 'transferring']
         task_query = Task.query
@@ -129,6 +144,8 @@ def register_blueprints(app):
             task_query = task_query.filter(Task.category_id == active_category.id)
             bulletin_query = bulletin_query.filter(Bulletin.category_id == active_category.id)
             file_query = file_query.filter(File.category_id == active_category.id)
+        if active_column:
+            bulletin_query = bulletin_query.filter(Bulletin.column_id == active_column.id)
 
         from sqlalchemy import or_
         pending_count = task_query.filter(Task.status.in_(active_statuses)).count()
@@ -169,7 +186,9 @@ def register_blueprints(app):
 
         return render_template('public_home.html',
                                categories=categories,
+                               category_columns=category_columns,
                                active_category=active_category,
+                               active_column=active_column,
                                pending_tasks=pending_tasks,
                                tracking_tasks=tracking_tasks,
                                reminders=reminders,
@@ -251,9 +270,21 @@ def register_blueprints(app):
             BulletinCategory.sort_order.asc(), BulletinCategory.id.asc()
         ).all()
         selected_id = request.args.get('category_id', type=int)
+        selected_column_id = request.args.get('column_id', type=int)
         active_category = next((c for c in categories if c.id == selected_id), None) if selected_id else None
+        active_column = None
+        if selected_column_id:
+            active_column = Column.query.filter_by(id=selected_column_id, is_active=1).first()
+            if active_column:
+                if active_category and active_column.category_id != active_category.id:
+                    active_column = None
+                elif not active_category:
+                    active_category = next((c for c in categories if c.id == active_column.category_id), None)
+                    if not active_category:
+                        active_column = None
         from app.utils import get_pagination
         page, per_page = get_pagination()
+        keyword = request.args.get('keyword', '').strip()
 
         titles = {
             'memos': ('公共备忘', 'memo'),
@@ -279,11 +310,15 @@ def register_blueprints(app):
             )
             if active_category:
                 query = query.filter(Bulletin.category_id == active_category.id)
+            if active_column:
+                query = query.filter(Bulletin.column_id == active_column.id)
             query = query.order_by(Bulletin.created_at.desc())
         else:
             query = File.query.filter(File.is_deleted == 0)
             if active_category:
                 query = query.filter(File.category_id == active_category.id)
+            if keyword:
+                query = query.filter(File.original_name.like('%' + keyword + '%'))
             query = query.order_by(File.created_at.desc())
 
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -294,8 +329,10 @@ def register_blueprints(app):
             list_icon=titles[list_type][1],
             items=pagination.items,
             pagination=pagination,
+            keyword=keyword,
             active_category=active_category,
-            back_url=url_for('index_bp.index', category_id=active_category.id) if active_category else url_for('index_bp.index')
+            active_column=active_column,
+            back_url=url_for('index_bp.index', category_id=active_category.id, column_id=active_column.id) if active_column else (url_for('index_bp.index', category_id=active_category.id) if active_category else url_for('index_bp.index'))
         )
 
     @index_bp.route('/workbench')
