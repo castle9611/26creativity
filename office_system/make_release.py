@@ -172,6 +172,7 @@ def validate_package(package_dir, target):
         required.extend([
             os.path.join(package_dir, "start.bat"),
             os.path.join(package_dir, "stop.bat"),
+            os.path.join(package_dir, "convert_video.bat"),
             os.path.join(package_dir, "python", "python.exe"),
             os.path.join(package_dir, "python", "python38.dll"),
             os.path.join(package_dir, "python", "_sqlite3.pyd"),
@@ -183,6 +184,7 @@ def validate_package(package_dir, target):
             os.path.join(package_dir, "start.sh"),
             os.path.join(package_dir, "stop.sh"),
             os.path.join(package_dir, "status.sh"),
+            os.path.join(package_dir, "convert_video.sh"),
             os.path.join(package_dir, "requirements-kylin-arm64.txt"),
         ])
     missing = [path for path in required if not os.path.exists(path)]
@@ -270,7 +272,7 @@ def main():
         if not validate_package(package_dir, target):
             return 1
         if target == "kylin-arm64":
-            for script in ("start.sh", "stop.sh", "status.sh", "install_dependencies.sh"):
+            for script in ("start.sh", "stop.sh", "status.sh", "install_dependencies.sh", "convert_video.sh"):
                 path = os.path.join(package_dir, script)
                 if os.path.isfile(path):
                     os.chmod(path, 0o755)

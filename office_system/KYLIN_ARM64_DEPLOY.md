@@ -12,3 +12,16 @@
 应用数据位于 `data/`。升级或迁移前请先使用 `backup.py` 备份数据库。
 
 注意：ARM64 Python、wheel 与银河麒麟的 glibc/系统 ABI 必须匹配，因此不能在 Windows x64 构建机上安全生成通用原生运行时。
+
+## 视频兼容格式转换
+
+预览失败的视频可转换为浏览器兼容性较好的 MP4（H.264 + AAC）：
+
+```bash
+./convert_video.sh /path/to/video.mov
+./convert_video.sh /path/to/video-directory
+```
+
+转换结果写入源文件旁的 `converted/`，不会覆盖原文件。脚本优先使用
+`tools/ffmpeg/ffmpeg`，也可使用系统 `PATH` 中的 FFmpeg。离线部署时放入的 FFmpeg
+必须是与银河麒麟系统兼容的 ARM64 版本，并包含 `libx264` 和 AAC 编码器。

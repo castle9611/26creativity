@@ -91,7 +91,28 @@ python\python.exe backup.py restore --file 备份文件名.db
 python\python.exe migrate.py
 ```
 
-## 7. 生成离线发布包
+## 7. 视频兼容格式转换
+
+Windows 版可将单个视频或整个目录拖到 `convert_video.bat` 上，也可执行：
+
+```batch
+convert_video.bat "D:\videos\sample.mov"
+convert_video.bat "D:\videos"
+```
+
+银河麒麟 ARM64 版执行：
+
+```bash
+./convert_video.sh /path/to/sample.mov
+./convert_video.sh /path/to/videos
+```
+
+转换结果保存在源文件旁的 `converted/`，原文件不会被覆盖。Windows 版优先查找
+`tools\ffmpeg\ffmpeg.exe`，银河麒麟版优先查找 `tools/ffmpeg/ffmpeg`；找不到时再从
+系统 `PATH` 查找。离线包需另行放入对应操作系统和 CPU 架构的 FFmpeg，并确保支持
+H.264 (`libx264`) 和 AAC 编码。
+
+## 8. 生成离线发布包
 
 包含当前数据库和上传文件：
 
@@ -112,7 +133,7 @@ python\python.exe make_release.py --fresh-data
 ..\release\office_system_win7_offline.zip
 ```
 
-## 8. 目录维护约定
+## 9. 目录维护约定
 
 - 根目录只放运行入口、运维脚本、正式文档和核心目录。
 - `app/` 存放业务代码、模板和静态资源。
@@ -121,7 +142,7 @@ python\python.exe make_release.py --fresh-data
 - `runtime_install/` 存放 Win7 离线运行库安装器。
 - `Deprecated/` 存放已废弃或临时开发资料，不进入发布包。
 
-## 9. 故障排查
+## 10. 故障排查
 
 运行诊断：
 
