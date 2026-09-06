@@ -30,3 +30,23 @@
 127.0.0.1 - - [30/Jun/2026 10:33:55] "GET /static/js/theme.js HTTP/1.1" 200 -
 127.0.0.1 - - [30/Jun/2026 10:33:55] "GET /static/brand-icon.png HTTP/1.1" 200 -
 127.0.0.1 - - [30/Jun/2026 10:33:56] "GET /static/icons.svg HTTP/1.1" 200 -
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.21.3:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [06/Sep/2026 18:36:04] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:27] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:27] "GET /static/css/app.css HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:27] "GET /static/brand-icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:27] "GET /static/js/theme.js?v=20260820-public-theme HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:27] "GET /static/icons.svg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:27] "GET /static/favicon.png HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:32] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:32] "GET /static/css/app.css HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:32] "GET /static/js/theme.js?v=20260820-public-theme HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:32] "GET /static/brand-icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:32] "GET /static/icons.svg HTTP/1.1" 200 -
+127.0.0.1 - - [06/Sep/2026 18:36:32] "GET /static/favicon.png HTTP/1.1" 200 -
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+ * Running on http://192.168.21.3:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [06/Sep/2026 18:54:05] "GET /login HTTP/1.1" 200 -

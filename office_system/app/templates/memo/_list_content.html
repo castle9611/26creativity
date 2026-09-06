@@ -1,29 +1,4 @@
 ﻿{% from '_icon.html' import icon %}
-<!-- Stats Bar -->
-<div class="oa-stat-grid oa-memo-stat-grid">
-  <a href="{{ url_for('memo.list_memos') }}" class="oa-stat-card {% if memo_type == 'all' or memo_type == '' %}active{% endif %}" onclick="return filterMemos(this)">
-    <span class="stats-icon">{{ icon('memo') }}</span>
-    <div>
-      <div class="stat-num">{{ memo_total_count|default(private_count + public_count) }}</div>
-      <div class="stat-label">备忘总数</div>
-    </div>
-  </a>
-  <a href="{{ url_for('memo.list_memos', type='private') }}" class="oa-stat-card {% if memo_type == 'private' %}active{% endif %}" onclick="return filterMemos(this)">
-    <span class="stats-icon">{{ icon('lock') }}</span>
-    <div>
-      <div class="stat-num" style="font-weight:700;color:#8b5cf6;white-space:nowrap;">{{ private_count }}</div>
-      <div class="stat-label">私人备忘</div>
-    </div>
-  </a>
-  <a href="{{ url_for('memo.list_memos', type='public') }}" class="oa-stat-card {% if memo_type == 'public' %}active{% endif %}" onclick="return filterMemos(this)">
-    <span class="stats-icon">{{ icon('globe') }}</span>
-    <div>
-      <div class="stat-num" style="font-weight:700;color:#10b981;white-space:nowrap;">{{ public_count }}</div>
-      <div class="stat-label">公共备忘</div>
-    </div>
-  </a>
-</div>
-
 <!-- Memo Cards -->
 {% if memos %}
 <div class="memo-grid oa-card-grid">
@@ -32,18 +7,18 @@
     <div class="memo-card-header oa-record-head">
       <input type="checkbox" class="card-cb oa-record-check" value="{{ m.id }}" onchange="updateBatchBar()" onclick="event.stopPropagation();">
       <div class="memo-card-title oa-record-title">{{ m.title }}</div>
-      <span class="badge {% if memo_type=='archived' %}badge-gray{% elif m.memo_type=='public' %}badge-info{% else %}badge-gray{% endif %} memo-card-badge">
-        {% if memo_type=='archived' %}已归档{% elif m.memo_type=='public' %}公共{% else %}个人{% endif %}
+      <span class="badge {% if memo_type=='past' %}badge-gray{% elif m.memo_type=='public' %}badge-info{% else %}badge-gray{% endif %} memo-card-badge">
+        {% if memo_type=='past' %}过往{% elif m.memo_type=='public' %}公共{% else %}个人{% endif %}
       </span>
     </div>
     <div class="memo-card-preview oa-record-preview">{{ (m.content or '无内容')|strip_html }}</div>
     <div class="memo-card-footer oa-record-footer">
       <div class="oa-record-meta">
-        <div class="oa-record-meta-line">{% if m.group %}{{ m.group.name }}{% else %}未分组{% endif %}</div>
+        <div class="oa-record-meta-line">{% if m.expires_at %}到期 {{ m.expires_at.strftime('%Y-%m-%d') }}{% else %}长期有效{% endif %}</div>
         <div class="oa-record-meta-line"><span>{{ m.creator.real_name if m.creator else '' }}</span><span>{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</span></div>
       </div>
       <div class="memo-card-actions oa-record-actions" onclick="event.stopPropagation();">
-        {% if memo_type == 'archived' %}
+        {% if memo_type == 'past' %}
         <form method="post" action="{{ url_for('memo.restore_memo', memo_id=m.id) }}" style="display:inline;" onsubmit="return confirm('确认恢复该备忘？');">
           <button type="submit" class="btn oa-icon-btn">{{ icon('progress') }}</button>
         </form>
@@ -67,7 +42,7 @@
     <div class="empty-icon">{{ icon('memo') }}</div>
     <div class="empty-title">暂无备忘</div>
     <div class="empty-desc">
-      {% if memo_type == 'archived' %}
+      {% if memo_type == 'past' %}
       <a href="{{ url_for('memo.list_memos') }}" class="btn btn-primary" style="margin-top:16px;">返回备忘列表</a>
       {% else %}
       <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary" style="margin-top:16px;">创建第一条备忘</a>
@@ -86,11 +61,11 @@
 <div class="oa-pagination">
   {% include '_page_size.html' %}
   {% if has_prev %}
-  <a href="{% if memo_type == 'archived' %}{{ url_for('memo.archived', page=page-1, per_page=request.args.get('per_page', 10)) }}{% else %}{{ url_for('memo.list_memos', page=page-1, per_page=request.args.get('per_page', 10), type=memo_type, keyword=keyword, group_id=group_id) }}{% endif %}" class="btn" {% if memo_type != 'archived' %}onclick="return filterMemos(this)"{% endif %}>上一页</a>
+  <a href="{{ url_for('memo.list_memos', page=page-1, per_page=request.args.get('per_page', 10), type=memo_type, keyword=keyword) }}" class="btn" onclick="return filterMemos(this)">上一页</a>
   {% endif %}
   <span class="badge badge-gray" style="padding:8px 16px;font-size:13px;">第 {{ page }} 页</span>
   {% if has_next %}
-  <a href="{% if memo_type == 'archived' %}{{ url_for('memo.archived', page=page+1, per_page=request.args.get('per_page', 10)) }}{% else %}{{ url_for('memo.list_memos', page=page+1, per_page=request.args.get('per_page', 10), type=memo_type, keyword=keyword, group_id=group_id) }}{% endif %}" class="btn" {% if memo_type != 'archived' %}onclick="return filterMemos(this)"{% endif %}>下一页</a>
+  <a href="{{ url_for('memo.list_memos', page=page+1, per_page=request.args.get('per_page', 10), type=memo_type, keyword=keyword) }}" class="btn" onclick="return filterMemos(this)">下一页</a>
   {% endif %}
   <span class="record-count">共 {{ total }} 条</span>
 </div>

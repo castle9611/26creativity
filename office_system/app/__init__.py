@@ -59,6 +59,30 @@ def ensure_runtime_tables(app):
             db.session.execute(db.text('ALTER TABLE files ADD COLUMN category_id INTEGER'))
             db.session.execute(db.text('CREATE INDEX IF NOT EXISTS ix_files_category_id ON files(category_id)'))
             db.session.commit()
+        if 'column_id' not in file_columns:
+            db.session.execute(db.text('ALTER TABLE files ADD COLUMN column_id INTEGER'))
+            db.session.execute(db.text('CREATE INDEX IF NOT EXISTS ix_files_column_id ON files(column_id)'))
+            db.session.commit()
+        runtime_columns = (
+            ('tasks', 'column_id', 'INTEGER REFERENCES columns(id) ON DELETE SET NULL'),
+            ('memos', 'category_id', 'INTEGER REFERENCES bulletin_categories(id)'),
+            ('memos', 'column_id', 'INTEGER REFERENCES columns(id) ON DELETE SET NULL'),
+            ('tasks', 'nextcloud_url', "VARCHAR(2000) DEFAULT ''"),
+            ('bulletins', 'nextcloud_url', "VARCHAR(2000) DEFAULT ''"),
+            ('memos', 'nextcloud_url', "VARCHAR(2000) DEFAULT ''"),
+            ('bulletin_attachments', 'category_id', 'INTEGER'),
+            ('bulletin_attachments', 'column_id', 'INTEGER'),
+        )
+        table_names = inspector.get_table_names()
+        for table_name, column_name, column_sql in runtime_columns:
+            if table_name not in table_names:
+                continue
+            column_names = [col['name'] for col in db.inspect(db.engine).get_columns(table_name)]
+            if column_name not in column_names:
+                db.session.execute(db.text(
+                    'ALTER TABLE %s ADD COLUMN %s %s' % (table_name, column_name, column_sql)
+                ))
+                db.session.commit()
         changed = False
         legacy_tasks = Task.query.filter(Task.assignee_id.isnot(None)).all()
         for task in legacy_tasks:
@@ -91,7 +115,7 @@ def ensure_runtime_tables(app):
 
 
 def register_theme_injector(app):
-    """Inject the fixed default theme script into HTML pages that use the main CSS."""
+    """Inject the persistent theme script into HTML pages that use the main CSS."""
 
     @app.after_request
     def inject_theme_script(response):
@@ -104,7 +128,7 @@ def register_theme_injector(app):
             return response
         if 'css/app.css' not in html_text or 'js/theme.js' in html_text or '</head>' not in html_text:
             return response
-        script = '<script src="/static/js/theme.js"></script>\n'
+        script = '<script src="/static/js/theme.js?v=20260820-auto-filter"></script>\n'
         html_text = html_text.replace('</head>', script + '</head>', 1)
         response.set_data(html_text)
         response.headers['Content-Length'] = str(len(response.get_data()))

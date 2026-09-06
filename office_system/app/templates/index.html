@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20260820-skins') }}">
 <style>
 body { background: #f1f5f9; margin: 0; padding: 0; }
 .app-wrapper { display: flex; min-height: 100vh; }
@@ -1751,10 +1751,257 @@ body:not(.sidebar-collapsed) .header-right {
         grid-template-columns: 1fr !important;
     }
 }
+
+/* Compact dashboard: maximize usable information above the fold. */
+body.embedded-workbench .main-content {
+    padding: 5px !important;
+}
+body.embedded-workbench .toolbar {
+    margin: 0 0 4px !important;
+    padding: 6px 8px !important;
+}
+body.embedded-workbench .stats-grid {
+    gap: 4px !important;
+    margin: 0 0 4px !important;
+}
+body.embedded-workbench .stat-card {
+    min-height: 58px !important;
+    padding: 7px 10px !important;
+}
+body.embedded-workbench .dashboard-grid {
+    gap: 4px !important;
+    margin: 0 !important;
+}
+body.embedded-workbench .card {
+    margin: 0 !important;
+    padding: 10px 12px !important;
+}
+body.embedded-workbench .card-header {
+    height: 40px !important;
+    margin-bottom: 6px !important;
+    padding: 0 10px !important;
+}
+body.embedded-workbench .activity-item {
+    min-height: 42px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+}
+body.embedded-workbench .web-link-panel {
+    margin-top: 4px !important;
+}
+body.embedded-workbench .quick-actions {
+    gap: 4px !important;
+}
+body.embedded-workbench .quick-action {
+    min-height: 34px !important;
+    padding: 4px 8px !important;
+}
+.dashboard-charts {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    margin-top: 4px;
+    border-spacing: 4px 0;
+}
+.dashboard-chart {
+    display: table-cell;
+    padding: 10px 12px;
+    vertical-align: top;
+    background: #fff;
+    border: 1px solid #dbe5f2;
+}
+.dashboard-chart-title {
+    margin-bottom: 8px;
+    color: #172033;
+    font-size: 14px;
+    font-weight: 800;
+}
+.chart-line {
+    display: table;
+    width: 100%;
+    margin-bottom: 7px;
+    table-layout: fixed;
+}
+.chart-label,
+.chart-track,
+.chart-value {
+    display: table-cell;
+    vertical-align: middle;
+}
+.chart-label {
+    width: 68px;
+    color: #607089;
+    font-size: 12px;
+}
+.chart-value {
+    width: 34px;
+    color: #172033;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: right;
+}
+.chart-track {
+    height: 8px;
+    overflow: hidden;
+    background: #edf2f8;
+}
+.chart-bar {
+    height: 8px;
+    min-width: 2px;
+    background: #2563eb;
+}
+.chart-bar.green { background: #10b981; }
+.chart-bar.orange { background: #f59e0b; }
+.chart-bar.red { background: #ef4444; }
+.chart-bar.purple { background: #8b5cf6; }
+.chart-summary {
+    padding: 6px 8px;
+    color: #52627a;
+    background: #f7f9fc;
+    font-size: 12px;
+    line-height: 20px;
+}
+@media (max-width: 1200px) {
+    .dashboard-charts,
+    .dashboard-chart { display: block; }
+    .dashboard-chart { margin-bottom: 4px; }
+}
+
+/* Final dashboard layout: continuous containers with shared borders. */
+body.embedded-workbench .main-content {
+    padding: 0 !important;
+}
+body.embedded-workbench .toolbar,
+body.embedded-workbench .stats-grid,
+body.embedded-workbench .dashboard-grid,
+body.embedded-workbench .card,
+body.embedded-workbench .web-link-panel,
+body.embedded-workbench .dashboard-charts {
+    margin: 0 !important;
+    gap: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+body.embedded-workbench .main-content > * + * {
+    border-top-width: 0 !important;
+}
+body.embedded-workbench .stat-card,
+body.embedded-workbench .quick-action,
+body.embedded-workbench .web-link-card,
+body.embedded-workbench .dashboard-chart {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+body.embedded-workbench .stats-grid > * + *,
+body.embedded-workbench .quick-actions > * + *,
+body.embedded-workbench .web-link-grid > * + *,
+body.embedded-workbench .dashboard-chart + .dashboard-chart {
+    border-left-width: 0 !important;
+}
+body.embedded-workbench .dashboard-charts {
+    border-spacing: 0 !important;
+}
+body.embedded-workbench .stat-label,
+body.embedded-workbench .activity-title,
+body.embedded-workbench .quick-action span:last-child,
+body.embedded-workbench .web-link-name,
+body.embedded-workbench .card-title {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-break: break-word;
+}
+body.embedded-workbench .stat-icon,
+body.embedded-workbench .quick-action-icon,
+body.embedded-workbench .web-link-icon {
+    color: var(--primary) !important;
+    background: var(--primary-bg) !important;
+}
+body.embedded-workbench .stat-icon.red,
+body.embedded-workbench .stat-icon.orange,
+body.embedded-workbench .stat-icon.green,
+body.embedded-workbench .stat-icon.purple,
+body.embedded-workbench .quick-action:nth-child(even) .quick-action-icon {
+    color: var(--accent) !important;
+    background: var(--accent-bg) !important;
+}
+body.embedded-workbench .chart-bar,
+body.embedded-workbench .chart-bar.green,
+body.embedded-workbench .chart-bar.purple {
+    background: var(--primary) !important;
+}
+body.embedded-workbench .chart-bar.orange,
+body.embedded-workbench .chart-bar.red {
+    background: var(--accent) !important;
+}
+body.embedded-workbench .dashboard-chart,
+body.embedded-workbench .chart-summary,
+body.embedded-workbench .chart-track {
+    border-color: var(--border) !important;
+}
+body.embedded-workbench .toolbar,
+body.embedded-workbench .stat-card,
+body.embedded-workbench .card,
+body.embedded-workbench .quick-action,
+body.embedded-workbench .web-link-card,
+body.embedded-workbench .dashboard-chart {
+    color: var(--text-primary) !important;
+    background: var(--bg-card) !important;
+    border-color: var(--border) !important;
+}
+body.embedded-workbench .stat-label,
+body.embedded-workbench .activity-meta,
+body.embedded-workbench .chart-label {
+    color: var(--text-secondary) !important;
+}
+/* Homepage link strip: keep labels and glyphs legible in every light theme. */
+body.embedded-workbench .web-link-panel .web-link-card,
+body.embedded-workbench .web-link-panel .web-link-manage {
+    color: var(--primary) !important;
+    background: var(--bg-card) !important;
+    border-color: var(--border) !important;
+    font-weight: 800 !important;
+}
+body.embedded-workbench .web-link-panel .web-link-card:hover,
+body.embedded-workbench .web-link-panel .web-link-manage:hover {
+    color: var(--primary-dark) !important;
+    background: var(--primary-bg) !important;
+    border-color: var(--primary) !important;
+}
+body.embedded-workbench .web-link-panel .web-link-name {
+    color: inherit !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.4 !important;
+}
+body.embedded-workbench .web-link-panel .web-link-icon {
+    display: inline-flex !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+    height: 28px !important;
+    flex: 0 0 28px !important;
+    color: var(--primary) !important;
+    background: var(--primary-bg) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px !important;
+    opacity: 1 !important;
+}
+body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
+    width: 17px !important;
+    height: 17px !important;
+    color: inherit !important;
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+    opacity: 1 !important;
+}
 </style>
 </head>
-<body>
+<body class="embedded-workbench">
 
+{% if request.endpoint != 'index_bp.workbench_dashboard' %}
 <!-- Header with User Switcher -->
 <div class="header">
   <div class="logo">
@@ -1854,13 +2101,9 @@ body:not(.sidebar-collapsed) .header-right {
 
   <div class="nav-section">
     <div class="nav-section-title">协同工具</div>
-    <a href="{{ url_for('docs.list_docs') }}" class="nav-item" title="在线文档">
+    <a href="{{ url_for('cloud.index') }}" class="nav-item" title="云盘 + ONLYOFFICE 云文档中心">
       <span class="nav-icon">{{ icon('file') }}</span>
-      <span>在线文档</span>
-    </a>
-    <a href="{{ url_for('sheets.list_sheets') }}" class="nav-item" title="在线表格">
-      <span class="nav-icon">{{ icon('memo') }}</span>
-      <span>在线表格</span>
+      <span>云文档中心</span>
     </a>
     <a href="{{ url_for('stats.story') }}" class="nav-item" title="数据故事">
       <span class="nav-icon">{{ icon('chart') }}</span>
@@ -1900,10 +2143,11 @@ body:not(.sidebar-collapsed) .header-right {
 </div>
 
 <!-- Main Content -->
-<div class="main-content">
+{% endif %}
+<div class="main-content" style="margin:0!important;min-height:100vh;">
   <div class="toolbar" style="margin-bottom:12px;">
     <form method="get" action="{{ url_for('index_bp.dashboard_search') }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <input type="text" name="q" value="{{ search or '' }}" class="form-input" style="width:320px;" placeholder="搜索任务、公示、备忘">
+      <input type="text" name="q" value="{{ search or '' }}" class="form-input" style="width:320px;" placeholder="搜索任务、公示、备忘和文件">
       <select name="scope" class="form-select" style="width:130px;">
         <option value="title">仅标题</option>
         <option value="all" selected>标题+内容</option>
@@ -2086,23 +2330,22 @@ body:not(.sidebar-collapsed) .header-right {
     <!-- Left Column: Activity List -->
     <div class="card">
       <div class="card-header">
-        <div class="card-title">最新公示</div>
-        <a href="{{ url_for('bulletin.index') }}" class="btn" style="padding:4px 12px;font-size:12px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:6px;">更多</a>
+        <div class="card-title">待处理任务</div>
+        <a href="{{ url_for('tasks.list_tasks') }}" class="btn" style="padding:4px 12px;font-size:12px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:6px;">更多</a>
       </div>
       <div class="card-body">
-        {% if latest_bulletins %}
+        {% if work_queue %}
         <div class="activity-list">
-          {% for b in latest_bulletins %}
+          {% for t in work_queue[:5] %}
           <div class="activity-item">
-            <div class="activity-icon">{{ icon('bulletin') }}</div>
+            <div class="activity-icon">{{ icon('task') }}</div>
             <div class="activity-content" style="display:flex;align-items:center;justify-content:space-between;flex:1;min-width:0;">
               <div class="activity-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                {% if b.is_pinned %}<span class="pinned" style="margin-right:6px;">{{ icon('pin') }}</span>{% endif %}
-                <a href="{{ url_for('bulletin.detail', bulletin_id=b.id) }}">{{ b.title }}</a>
+                <a href="{{ url_for('tasks.detail_task', task_id=t.id) }}">{{ t.title }}</a>
               </div>
               <div class="activity-meta" style="flex-shrink:0;margin-left:12px;font-size:12px;color:#94a3b8;white-space:nowrap;">
-                {% if b.category %}<span style="margin-right:8px;">{{ b.category.name }}</span>{% endif %}
-                <span>{{ b.created_at.strftime('%Y-%m-%d %H:%M') if b.created_at else '' }}</span>
+                <span style="margin-right:8px;">{{ t.department or '未设置部门' }}</span>
+                {% if t.deadline %}<span>{{ t.deadline.strftime('%Y-%m-%d') }}</span>{% else %}<span>未设截止日期</span>{% endif %}
               </div>
             </div>
           </div>
@@ -2110,8 +2353,8 @@ body:not(.sidebar-collapsed) .header-right {
         </div>
         {% else %}
         <div class="empty-state">
-          <div class="empty-icon">{{ icon('bulletin') }}</div>
-          <div class="empty-text">暂无公示信息</div>
+          <div class="empty-icon">{{ icon('check') }}</div>
+          <div class="empty-text">当前没有待处理任务</div>
         </div>
         {% endif %}
       </div>
@@ -2142,13 +2385,9 @@ body:not(.sidebar-collapsed) .header-right {
             <span class="quick-action-icon">{{ icon('folder') }}</span>
             <span>文件管理</span>
           </a>
-          <a href="{{ url_for('docs.list_docs') }}" class="quick-action">
+          <a href="{{ url_for('cloud.index') }}" class="quick-action">
             <span class="quick-action-icon">{{ icon('file') }}</span>
-            <span>在线文档</span>
-          </a>
-          <a href="{{ url_for('sheets.list_sheets') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('memo') }}</span>
-            <span>在线表格</span>
+            <span>云文档/表格/演示</span>
           </a>
           {% if session.get('role') in ('super_admin','dept_admin') %}
           <a href="{{ url_for('settings.task_categories') }}" class="quick-action">
@@ -2175,41 +2414,6 @@ body:not(.sidebar-collapsed) .header-right {
     </div>
   </div>
 
-  <div class="card" style="margin-top:16px;">
-    <div class="card-header">
-      <div>
-        <div class="card-title">我的待处理</div>
-        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">逾期和临期事项优先显示</div>
-      </div>
-      <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-sm">查看全部</a>
-    </div>
-    <div class="card-body" style="padding:2px 16px 8px;">
-      {% for t in work_queue %}
-      <div class="work-queue-item">
-        <div class="work-queue-main">
-          <a class="work-queue-title" href="{{ url_for('tasks.detail_task', task_id=t.id) }}">{{ t.title }}</a>
-          <div class="work-queue-meta">{{ t.department or '未设置部门' }} · {{ t.status|status_label }} · {{ t.assignee_names }}</div>
-        </div>
-        <div class="work-queue-side">
-          {% if t.deadline %}
-            {% set days = (t.deadline - today).days %}
-            {% if days < 0 %}<span class="badge badge-danger">逾期 {{ -days }} 天</span>
-            {% elif days == 0 %}<span class="badge badge-warning">今天到期</span>
-            {% elif days <= 3 %}<span class="badge badge-info">还剩 {{ days }} 天</span>
-            {% else %}<span style="font-size:12px;color:#64748b;">{{ t.deadline.strftime('%Y-%m-%d') }}</span>{% endif %}
-          {% else %}<span style="font-size:12px;color:#94a3b8;">未设截止日期</span>{% endif %}
-          <a href="{{ url_for('tasks.detail_task', task_id=t.id) }}" class="btn btn-sm" style="margin-left:6px;">处理</a>
-        </div>
-      </div>
-      {% else %}
-      <div class="empty-state" style="padding:32px 0;">
-        <div class="empty-icon">{{ icon('check') }}</div>
-        <div class="empty-text">当前没有待处理事项</div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
   <div class="card web-link-panel">
     <div class="card-body" style="padding:10px 14px 12px;">
       {% if quick_links %}
@@ -2231,6 +2435,34 @@ body:not(.sidebar-collapsed) .header-right {
         <a href="{{ url_for('index_bp.quick_links') }}" class="btn btn-primary" style="padding:5px 12px;font-size:12px;">添加链接</a>
       </div>
       {% endif %}
+    </div>
+  </div>
+
+  {% set task_chart_total = pending_count + processing_count + completed_count + overdue_count %}
+  {% set task_chart_base = task_chart_total if task_chart_total > 0 else 1 %}
+  {% set asset_chart_max = [total_bulletins, total_files, total_docs, total_sheets, my_memos, public_memos]|max %}
+  {% set asset_chart_base = asset_chart_max if asset_chart_max > 0 else 1 %}
+  <div class="dashboard-charts">
+    <div class="dashboard-chart">
+      <div class="dashboard-chart-title">任务状态分布</div>
+      <div class="chart-line"><span class="chart-label">待处理</span><span class="chart-track"><span class="chart-bar orange" style="display:block;width:{{ (pending_count * 100 / task_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ pending_count }}</span></div>
+      <div class="chart-line"><span class="chart-label">进行中</span><span class="chart-track"><span class="chart-bar" style="display:block;width:{{ (processing_count * 100 / task_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ processing_count }}</span></div>
+      <div class="chart-line"><span class="chart-label">已完成</span><span class="chart-track"><span class="chart-bar green" style="display:block;width:{{ (completed_count * 100 / task_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ completed_count }}</span></div>
+      <div class="chart-line"><span class="chart-label">已超时</span><span class="chart-track"><span class="chart-bar red" style="display:block;width:{{ (overdue_count * 100 / task_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ overdue_count }}</span></div>
+    </div>
+    <div class="dashboard-chart">
+      <div class="dashboard-chart-title">内容与文件概览</div>
+      <div class="chart-line"><span class="chart-label">公示</span><span class="chart-track"><span class="chart-bar" style="display:block;width:{{ (total_bulletins * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ total_bulletins }}</span></div>
+      <div class="chart-line"><span class="chart-label">文件</span><span class="chart-track"><span class="chart-bar green" style="display:block;width:{{ (total_files * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ total_files }}</span></div>
+      <div class="chart-line"><span class="chart-label">在线文档</span><span class="chart-track"><span class="chart-bar purple" style="display:block;width:{{ (total_docs * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ total_docs }}</span></div>
+      <div class="chart-line"><span class="chart-label">在线表格</span><span class="chart-track"><span class="chart-bar orange" style="display:block;width:{{ (total_sheets * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ total_sheets }}</span></div>
+    </div>
+    <div class="dashboard-chart">
+      <div class="dashboard-chart-title">工作效率概览</div>
+      <div class="chart-summary">任务完成率：<strong>{{ ((completed_count * 100 / task_chart_total)|round(1)) if task_chart_total > 0 else 0 }}%</strong></div>
+      <div class="chart-line" style="margin-top:8px;"><span class="chart-label">本周新增</span><span class="chart-track"><span class="chart-bar" style="display:block;width:{{ (week_new_tasks * 100 / task_chart_base)|round(1) if task_chart_base else 0 }}%;"></span></span><span class="chart-value">{{ week_new_tasks }}</span></div>
+      <div class="chart-line"><span class="chart-label">我的备忘</span><span class="chart-track"><span class="chart-bar green" style="display:block;width:{{ (my_memos * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ my_memos }}</span></div>
+      <div class="chart-line"><span class="chart-label">公开备忘</span><span class="chart-track"><span class="chart-bar purple" style="display:block;width:{{ (public_memos * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ public_memos }}</span></div>
     </div>
   </div>
 </div>
@@ -2393,6 +2625,5 @@ function ackTaskAlerts() {
 })();
 
 </script>
-<div class="copyright-corner">&copy; {{ current_year }} Jonathan · All rights reserved.</div>
 </body>
 </html>

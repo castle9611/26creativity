@@ -1,4 +1,5 @@
 @echo off
+setlocal
 chcp 65001 >nul
 if "%1"=="--quiet" goto :stop_only
 title Stopping Services
@@ -17,12 +18,16 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr /C:":5000" ^| findstr /C:"LIS
     taskkill /F /PID %%a >nul 2>&1 && echo [OK] Killed PID %%a
 )
 
+:: WMIC is optional on newer Windows versions.
+where.exe wmic.exe >nul 2>&1
+if errorlevel 1 goto :services_stopped
+
 :: Method 2: Kill python/pythonw processes whose command line contains this project's run.py
 wmic process where "(name='python.exe' or name='pythonw.exe') and CommandLine like '%%%PROJECT_DIR%%%run.py%%'" get ProcessId /value 2>nul | findstr "ProcessId" >nul
 if not errorlevel 1 (
     for /f "skip=1 tokens=2 delims==" %%a in ('wmic process where "(name='python.exe' or name='pythonw.exe') and CommandLine like '%%%PROJECT_DIR%%%run.py%%'" get ProcessId /value 2^>nul') do (
         if not "%%a"=="" (
-            taskkill /F /PID %%a >nul 2>&1 && echo [OK] Killed PID %%a (run.py)
+            taskkill /F /PID %%a >nul 2>&1 && echo [OK] Killed PID %%a - run.py
         )
     )
 )
@@ -32,11 +37,12 @@ wmic process where "(name='python.exe' or name='pythonw.exe') and ExecutablePath
 if not errorlevel 1 (
 for /f "tokens=2 delims==" %%a in ('wmic process where "(name='python.exe' or name='pythonw.exe') and ExecutablePath like '%%%PROJECT_DIR%%%python%%python%%.exe%%'" get ProcessId /value 2^>nul') do (
     if not "%%a"=="" (
-        taskkill /F /PID %%a >nul 2>&1 && echo [OK] Killed PID %%a (bundled python)
+        taskkill /F /PID %%a >nul 2>&1 && echo [OK] Killed PID %%a - bundled python
     )
 )
 )
 
+:services_stopped
 if "%1"=="--quiet" exit /b 0
 
 echo.

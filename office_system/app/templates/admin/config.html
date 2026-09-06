@@ -81,13 +81,86 @@ body { background: #f1f5f9; }
         <label class="form-label">系统名称</label>
         <input type="text" name="config_system_name" class="form-input" value="{{ configs.get('system_name', '') }}" placeholder="内网OA办公系统">
       </div>
+      <div style="padding:12px;margin:12px 0;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
+        <span style="margin-right:18px;">已同步附件：<strong>{{ stats.cloud_synced }}</strong></span>
+        <span style="margin-right:18px;">待同步/失败：<strong style="color:{% if stats.cloud_pending %}#dc2626{% else %}#047857{% endif %};">{{ stats.cloud_pending }}</strong></span>
+        <span>文件资料：<strong>{{ stats.cloud_file_synced }}</strong> 已同步 / <strong>{{ stats.cloud_file_pending }}</strong> 待处理</span>
+      </div>
       <div class="form-group">
         <label class="form-label">联系电话</label>
         <input type="text" name="config_contact_phone" class="form-input" value="{{ configs.get('contact_phone', '') }}" placeholder="0000-00000000">
       </div>
+      <div style="margin:28px 0 16px;border-top:1px solid #e2e8f0;padding-top:22px;">
+        <div style="font-size:16px;font-weight:700;color:#0f172a;">Nextcloud + ONLYOFFICE</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px;">迁移 Nextcloud 后只需修改这里的地址，不需要修改程序或启动脚本。</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">启用云文档对接</label>
+        <select name="config_nextcloud_enabled" class="form-select">
+          <option value="1" {% if configs.get('nextcloud_enabled', '0') == '1' %}selected{% endif %}>启用</option>
+          <option value="0" {% if configs.get('nextcloud_enabled', '0') != '1' %}selected{% endif %}>停用</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nextcloud 地址</label>
+        <input type="text" name="config_nextcloud_url" class="form-input" value="{{ configs.get('nextcloud_url', 'http://192.168.21.85:8091') }}" placeholder="http://192.168.21.85:8091">
+        <div class="form-help">可填写域名、IP 地址和端口；保存时会自动去除末尾斜杠。</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nextcloud 专用账号</label>
+        <input type="text" name="config_nextcloud_username" class="form-input" value="{{ configs.get('nextcloud_username', '') }}" autocomplete="off" placeholder="oa_service">
+      </div>
+      <div class="form-group">
+        <label class="form-label">应用密码</label>
+        <input type="password" name="config_nextcloud_app_password" class="form-input" value="" autocomplete="new-password" placeholder="{% if configs.get('nextcloud_app_password') %}已保存，留空表示不修改{% else %}请填写 Nextcloud 生成的应用密码{% endif %}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">限定搜索目录</label>
+        <input type="text" name="config_nextcloud_root_path" class="form-input" value="{{ configs.get('nextcloud_root_path', '') }}" placeholder="例如 OA；留空表示整个账号目录">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分类/栏目自动分享分组（可多选）</label>
+        <select name="config_nextcloud_share_groups" class="form-select" multiple size="{% if nextcloud_groups|length > 6 %}6{% elif nextcloud_groups|length > 2 %}{{ nextcloud_groups|length }}{% else %}3{% endif %}">
+          {% for group_id in nextcloud_groups %}
+          <option value="{{ group_id }}" {% if group_id in selected_share_groups %}selected{% endif %}>{{ group_id }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-help">按住 Ctrl 可多选。同步时只新增分类父目录的分组分享，栏目自动继承；取消选择不会撤销已有分享。</div>
+        {% if nextcloud_groups_error %}<div class="form-help" style="color:#b45309;">{{ nextcloud_groups_error }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">文件资料同步分享分组（可多选）</label>
+        <select name="config_nextcloud_file_share_groups" class="form-select" multiple size="{% if nextcloud_groups|length > 6 %}6{% elif nextcloud_groups|length > 2 %}{{ nextcloud_groups|length }}{% else %}3{% endif %}">
+          {% for group_id in nextcloud_groups %}
+          <option value="{{ group_id }}" {% if group_id in selected_file_share_groups %}selected{% endif %}>{{ group_id }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-help">用于“同步文件资料”，可与上面的分类/栏目分享分组不同。取消选择不会撤销已有分享。</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">验证 HTTPS 证书</label>
+        <select name="config_nextcloud_verify_ssl" class="form-select">
+          <option value="1" {% if configs.get('nextcloud_verify_ssl', '1') == '1' %}selected{% endif %}>验证（推荐）</option>
+          <option value="0" {% if configs.get('nextcloud_verify_ssl', '1') == '0' %}selected{% endif %}>不验证（仅限自签名证书排障）</option>
+        </select>
+      </div>
       <div style="display:flex;gap:12px;margin-top:24px;">
         <button type="submit" class="btn btn-primary btn-lg">{{ icon('save') }} 保存配置</button>
       </div>
+    </form>
+    <form method="post" action="{{ url_for('admin.retry_nextcloud_attachments') }}" style="margin-top:10px;">
+      <button type="submit" class="btn" {% if not stats.cloud_pending %}disabled{% endif %}>重试待同步附件</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.queue_nextcloud_history') }}" style="margin-top:10px;" onsubmit="return confirm('确认扫描任务、公示、备忘的历史附件并加入同步队列？');">
+      <button type="submit" class="btn">扫描历史附件</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.sync_nextcloud_folders') }}" style="margin-top:10px;">
+      <button type="submit" class="btn">补齐分类/栏目目录</button>
+      <span style="font-size:12px;color:#64748b;margin-left:8px;">创建缺失目录，并为未完成分享的目录补齐选定分组</span>
+    </form>
+    <form method="post" action="{{ url_for('admin.sync_nextcloud_files') }}" style="margin-top:10px;" onsubmit="return confirm('确认扫描文件管理中的全部有效文件并同步到 Nextcloud？每次处理最多 20 个，可重复点击继续。');">
+      <button type="submit" class="btn">同步文件资料</button>
+      <span style="font-size:12px;color:#64748b;margin-left:8px;">先补齐全部选定分组分享，再同步文档、图片、音视频及未分类文件</span>
     </form>
   </div>
 </div>

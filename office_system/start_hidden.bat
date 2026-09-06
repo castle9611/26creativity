@@ -5,6 +5,7 @@ title Prison OA System - Background Start
 
 set "PROJECT_DIR=%~dp0"
 cd /d "%PROJECT_DIR%"
+if exist "%PROJECT_DIR%nextcloud_config.bat" call "%PROJECT_DIR%nextcloud_config.bat"
 
 set "PYTHON_EXE=%PROJECT_DIR%python\python.exe"
 set "PYTHONW_EXE=%PROJECT_DIR%python\pythonw.exe"

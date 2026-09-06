@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"><title>任务列表</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20260820-auto-filter') }}">
 <style>
 body { background: var(--bg-page); }
 .task-page {
@@ -217,23 +217,50 @@ body { background: var(--bg-page); }
   </form>
 </div>
 
-<div id="task-list-container">
+<div id="task-list-container" class="ajax-stable-region">
   {% include 'tasks/_list_content.html' %}
 </div>
 </div>
 
 <script>
+function applyTaskListResponse(container, html) {
+    var parser = new DOMParser();
+    var nextDocument = parser.parseFromString('<div id="nextTaskList">' + html + '</div>', 'text/html');
+    var nextRoot = nextDocument.getElementById('nextTaskList');
+    var currentCards = container.querySelectorAll('.oa-stat-card');
+    var nextCards = nextRoot.querySelectorAll('.oa-stat-card');
+    for (var i = 0; i < currentCards.length && i < nextCards.length; i++) {
+        var currentNumber = currentCards[i].querySelector('.stats-num, .stat-num');
+        var nextNumber = nextCards[i].querySelector('.stats-num, .stat-num');
+        if (currentNumber && nextNumber) currentNumber.textContent = nextNumber.textContent;
+        currentCards[i].classList.toggle('active', nextCards[i].classList.contains('active'));
+    }
+    var currentPanel = container.querySelector('.oa-data-panel');
+    var nextPanel = nextRoot.querySelector('.oa-data-panel');
+    if (currentPanel && nextPanel) currentPanel.innerHTML = nextPanel.innerHTML;
+    var currentPagination = container.querySelector('.oa-pagination');
+    var nextPagination = nextRoot.querySelector('.oa-pagination');
+    if (currentPagination && nextPagination) {
+        currentPagination.innerHTML = nextPagination.innerHTML;
+    } else if (currentPagination && !nextPagination) {
+        currentPagination.parentNode.removeChild(currentPagination);
+    } else if (!currentPagination && nextPagination && currentPanel) {
+        currentPanel.insertAdjacentHTML('afterend', nextPagination.outerHTML);
+    }
+}
+
 /* AJAX filter — load partial content without page reload */
 function filterTasks(link) {
     var url = link.href + (link.href.indexOf('?') > -1 ? '&' : '?') + 'partial=1';
     var container = document.getElementById('task-list-container');
     if (!container) return true;
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">加载中...</div>';
+    container.classList.add('is-loading');
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function() {
         if (xhr.status === 200) {
-            container.innerHTML = xhr.responseText;
+            applyTaskListResponse(container, xhr.responseText);
+            container.classList.remove('is-loading');
             if (window.history && window.history.pushState) {
                 window.history.pushState(null, '', link.href);
             }
@@ -246,11 +273,13 @@ function filterTasks(link) {
             var sa = document.getElementById('selectAllTop');
             if (sa) sa.onchange = function(){ toggleSelectAll(this); };
         } else {
-            container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">加载失败</div>';
+            container.classList.remove('is-loading');
+            alert('加载失败');
         }
     };
     xhr.onerror = function() {
-        container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">网络错误</div>';
+        container.classList.remove('is-loading');
+        alert('网络错误');
     };
     xhr.send();
     return false;
@@ -271,21 +300,22 @@ function filterTasks(link) {
             var url = pageUrl + (pageUrl.indexOf('?') > -1 ? '&' : '?') + 'partial=1';
             var container = document.getElementById('task-list-container');
             if (!container) return;
-            container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">加载中...</div>';
+            container.classList.add('is-loading');
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function() {
                 if (xhr.status === 200) {
-                    container.innerHTML = xhr.responseText;
+                    applyTaskListResponse(container, xhr.responseText);
+                    container.classList.remove('is-loading');
                     if (window.history && window.history.pushState) {
                         window.history.pushState(null, '', pageUrl);
                     }
                     var sa = document.getElementById('selectAllTop');
                     if (sa) sa.onchange = function(){ toggleSelectAll(this); };
                 }
-                else { container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">加载失败</div>'; }
+                else { container.classList.remove('is-loading'); alert('加载失败'); }
             };
-            xhr.onerror = function() { container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">网络错误</div>'; };
+            xhr.onerror = function() { container.classList.remove('is-loading'); alert('网络错误'); };
             xhr.send();
         });
     }

@@ -5,7 +5,7 @@
 <meta charset="utf-8"><title>工作备忘</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20260820-auto-filter') }}">
 <style>
 body { background: #f1f5f9; }
 .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: #64748b; margin-bottom: 16px; }
@@ -253,6 +253,17 @@ body { background: #f1f5f9; }
 .group-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
 @media (max-width: 1280px) { .memo-card { width: calc(50% - 12px); } }
 @media (max-width: 768px) { .memo-card { float: none; width: 100%; margin-right: 0; } }
+body.oa-list-page .oa-list-head { min-height: 58px; padding-top: 8px; padding-bottom: 8px; }
+body.oa-list-page .oa-filter-panel { padding: 6px; }
+body.oa-list-page .oa-memo-stat-grid .oa-stat-card { min-height: 56px; padding: 8px 12px; }
+body.oa-list-page .memo-grid { display: block !important; overflow: hidden !important; }
+body.oa-list-page .memo-card { float: left !important; width: 33.333333% !important; min-height: 132px; box-sizing: border-box; }
+body.oa-list-page .memo-card-header,
+body.oa-list-page .memo-card-preview,
+body.oa-list-page .memo-card-footer { padding: 10px 12px; }
+body.oa-list-page .memo-card-preview { min-height: 42px; max-height: 58px; }
+@media (max-width: 1280px) { body.oa-list-page .memo-card { width: 50% !important; } }
+@media (max-width: 768px) { body.oa-list-page .memo-card { float: none !important; width: 100% !important; } }
 </style>
 </head>
 <body class="oa-list-page">
@@ -276,67 +287,36 @@ body { background: #f1f5f9; }
       <span class="oa-list-title-icon">{{ icon('memo') }}</span>
       <div class="oa-list-title-text">
         <h2>工作备忘</h2>
-        <p>记录重要事项，按类型和分组快速查看</p>
+        <p>管理个人备忘、公共备忘和过往备忘</p>
       </div>
     </div>
   </div>
   <div class="oa-list-actions">
-    <a href="{{ url_for('memo.archived') }}" class="btn {% if memo_type=='archived' %}btn-primary{% endif %}">{{ icon('archive') }} 已归档</a>
     <a href="{{ url_for('memo.create_memo') }}" class="btn btn-primary">{{ icon('add') }} 新建备忘</a>
   </div>
 </div>
 
-{% if memo_type != 'archived' %}
 <!-- Filters -->
 <div class="oa-filter-panel">
   <div class="oa-filter-row">
     <!-- Type Toggle Buttons -->
     <div class="type-toggle">
-      <a href="{{ url_for('memo.list_memos', type='all', keyword=keyword, group_id=group_id) }}" class="btn {% if memo_type=='all' %}btn-primary{% endif %}">全部</a>
-      <a href="{{ url_for('memo.list_memos', type='private', keyword=keyword, group_id=group_id) }}" class="btn {% if memo_type=='private' %}btn-primary{% endif %}">{{ icon('lock') }} 个人</a>
-      <a href="{{ url_for('memo.list_memos', type='public', keyword=keyword, group_id=group_id) }}" class="btn {% if memo_type=='public' %}btn-primary{% endif %}">{{ icon('globe') }} 公共</a>
+      <a href="{{ url_for('memo.list_memos', type='private', keyword=keyword) }}" class="btn {% if memo_type=='private' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('lock') }} 个人备忘</a>
+      <a href="{{ url_for('memo.list_memos', type='public', keyword=keyword) }}" class="btn {% if memo_type=='public' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('globe') }} 公共备忘</a>
+      <a href="{{ url_for('memo.list_memos', type='past', keyword=keyword) }}" class="btn {% if memo_type=='past' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('archive') }} 过往备忘</a>
     </div>
     <!-- Search -->
     <form method="get" class="oa-filter-row">
       <input type="hidden" name="per_page" value="{{ request.args.get('per_page', 10) }}">
       <input type="hidden" name="type" value="{{ memo_type }}">
-      <input type="hidden" name="group_id" value="{{ group_id }}">
       <input type="text" name="keyword" placeholder="搜索标题或内容" value="{{ keyword }}" class="form-input" style="width:180px;">
       <button type="submit" class="btn btn-primary">{{ icon('search') }}</button>
       {% if keyword %}
-      <a href="{{ url_for('memo.list_memos', type=memo_type, group_id=group_id) }}" class="btn">重置</a>
+      <a href="{{ url_for('memo.list_memos', type=memo_type) }}" class="btn">重置</a>
       {% endif %}
     </form>
   </div>
 </div>
-
-<div class="group-panel oa-group-panel">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-    <div style="font-size:14px;font-weight:700;color:#0f172a;">备忘分组</div>
-    <a href="{{ url_for('memo.list_memos', type=memo_type, keyword=keyword) }}" class="group-chip oa-chip {% if not group_id %}active{% endif %}">全部分组</a>
-  </div>
-  <div style="margin-top:8px;">
-    {% for g in groups %}
-    <a href="{{ url_for('memo.list_memos', type=memo_type, keyword=keyword, group_id=g.id) }}" class="group-chip oa-chip {% if group_id == g.id %}active{% endif %}">
-      {% if g.memo_type == 'public' %}公共{% else %}个人{% endif %} · {{ g.name }}
-    </a>
-    {% endfor %}
-    {% if not groups %}
-    <span style="font-size:13px;color:#94a3b8;">暂无分组，可以先创建一个。</span>
-    {% endif %}
-  </div>
-  <form method="post" action="{{ url_for('memo.add_group') }}" class="group-form oa-filter-row">
-    <input type="text" name="name" class="form-input" placeholder="新分组名称" required style="width:180px;">
-    <select name="memo_type" class="form-select" style="width:130px;">
-      <option value="private">个人分组</option>
-      {% if session.get('role') in ('super_admin','dept_admin') %}
-      <option value="public">公共分组</option>
-      {% endif %}
-    </select>
-    <button type="submit" class="btn">新增分组</button>
-  </form>
-</div>
-{% endif %}
 
 <!-- Batch Actions Bar -->
 <div id="batchBar" class="oa-batch-bar">
@@ -347,7 +327,7 @@ body { background: #f1f5f9; }
     </label>
   </div>
   <div style="display:flex;gap:8px;">
-    {% if memo_type == 'archived' %}
+    {% if memo_type == 'past' %}
     <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('restore')">{{ icon('progress') }} 批量恢复</button>
     {% else %}
     <button type="button" class="btn-sm" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 12px;font-size:12px;border-radius:6px;cursor:pointer;" onclick="batchOp('archive')">{{ icon('archive') }} 批量归档</button>
@@ -357,7 +337,7 @@ body { background: #f1f5f9; }
   </div>
 </div>
 
-<div id="memo-list-container">
+<div id="memo-list-container" class="ajax-stable-region">
   {% include 'memo/_list_content.html' %}
 </div>
 </div>
@@ -389,17 +369,47 @@ body { background: #f1f5f9; }
 </div>
 
 <script>
+function applyMemoListResponse(container, html) {
+    container.innerHTML = html;
+    try {
+        var memoDataEl = document.getElementById('memoData');
+        window.__memoList = memoDataEl ? JSON.parse(memoDataEl.textContent) : [];
+    } catch (e) {
+        window.__memoList = [];
+    }
+}
+
 /* AJAX filter — load partial content without page reload */
+function memoTypeFromUrl(url) {
+    var match = String(url || '').match(/[?&]type=([^&#]*)/);
+    return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : 'private';
+}
+
+function syncMemoFilterState(type, href) {
+    var links = document.querySelectorAll('.type-toggle a');
+    for (var i = 0; i < links.length; i++) {
+        if (memoTypeFromUrl(links[i].href) === type) links[i].classList.add('btn-primary');
+        else links[i].classList.remove('btn-primary');
+    }
+    var typeInput = document.querySelector('.oa-filter-panel input[name="type"]');
+    if (typeInput) typeInput.value = type;
+    if (href && window.history && window.history.pushState) window.history.pushState(null, '', href);
+}
+
 function filterMemos(link) {
-    var url = link.href + (link.href.indexOf('?') > -1 ? '&' : '?') + 'partial=1';
+    var pageUrl = link.href;
+    var selectedType = memoTypeFromUrl(pageUrl);
+    var url = pageUrl + (pageUrl.indexOf('?') > -1 ? '&' : '?') + 'partial=1';
     var container = document.getElementById('memo-list-container');
     if (!container) return true;
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">加载中...</div>';
+    container.classList.add('is-loading');
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
     xhr.onload = function() {
         if (xhr.status === 200) {
-            container.innerHTML = xhr.responseText;
+            applyMemoListResponse(container, xhr.responseText);
+            syncMemoFilterState(selectedType, pageUrl);
+            container.classList.remove('is-loading');
             // Re-parse memo data for modal
             try {
                 var memoDataEl = document.getElementById('memoData');
@@ -408,25 +418,21 @@ function filterMemos(link) {
                 }
             } catch(e) {}
         } else {
-            container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">加载失败</div>';
+            container.classList.remove('is-loading');
+            alert('加载失败');
         }
     };
     xhr.onerror = function() {
-        container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">网络错误</div>';
+        container.classList.remove('is-loading');
+        alert('网络错误');
     };
     xhr.send();
     return false;
 }
 
-// Wire type-toggle links and search form for AJAX
+// Wire search form for AJAX. Type buttons use explicit onclick handlers so
+// imported partial content and initial content behave identically.
 (function() {
-    var toggleLinks = document.querySelectorAll('.type-toggle a');
-    for (var i = 0; i < toggleLinks.length; i++) {
-        toggleLinks[i].addEventListener('click', function(e) {
-            e.preventDefault();
-            filterMemos(this);
-        });
-    }
     var searchForm = document.querySelector('.oa-filter-panel form');
     if (searchForm) {
         searchForm.addEventListener('submit', function(e) {
@@ -434,14 +440,14 @@ function filterMemos(link) {
             var url = this.action + '?' + new URLSearchParams(new FormData(this)).toString() + '&partial=1';
             var container = document.getElementById('memo-list-container');
             if (!container) return;
-            container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">加载中...</div>';
+            container.classList.add('is-loading');
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.onload = function() {
-                if (xhr.status === 200) { container.innerHTML = xhr.responseText; }
-                else { container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">加载失败</div>'; }
+                if (xhr.status === 200) { applyMemoListResponse(container, xhr.responseText); container.classList.remove('is-loading'); }
+                else { container.classList.remove('is-loading'); alert('加载失败'); }
             };
-            xhr.onerror = function() { container.innerHTML = '<div style="text-align:center;padding:40px;color:#dc2626;">网络错误</div>'; };
+            xhr.onerror = function() { container.classList.remove('is-loading'); alert('网络错误'); };
             xhr.send();
         });
     }
@@ -471,7 +477,7 @@ function filterMemos(link) {
         document.getElementById('memoModalTitle').textContent = memo.title;
         document.getElementById('memoModalContent').innerHTML = memo.content || '<span style="color:#94a3b8;">无内容</span>';
         document.getElementById('memoModalCreator').innerHTML = '<strong>创建人：</strong>' + memo.creator;
-        document.getElementById('memoModalTime').innerHTML = '<strong>时间：</strong>' + memo.created_at + (memo.group ? ' · <strong>分组：</strong>' + memo.group : '');
+        document.getElementById('memoModalTime').innerHTML = '<strong>时间：</strong>' + memo.created_at;
         document.getElementById('memoModalType').textContent = memo.memo_type === 'public' ? '公共备忘' : '个人备忘';
         document.getElementById('memoModalType').className = 'badge ' + (memo.memo_type === 'public' ? 'badge-info' : 'badge-gray');
         document.getElementById('memoModalEdit').href = memo.edit_url;

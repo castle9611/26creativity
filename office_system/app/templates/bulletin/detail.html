@@ -141,6 +141,16 @@ body { background: #f1f5f9; }
 </div>
 {% endif %}
 
+{% if bulletin.nextcloud_url %}
+<div class="card" style="margin-top:20px;">
+  <div class="card-header"><div class="card-title">{{ icon('folder') }} 云盘 公示资料</div></div>
+  <div class="card-body" style="padding:14px 16px;display:table;width:100%;box-sizing:border-box;">
+    <div style="display:table-cell;vertical-align:middle;color:#334155;word-break:break-all;">{{ bulletin.nextcloud_url }}</div>
+    <div style="display:table-cell;width:150px;vertical-align:middle;text-align:right;"><a href="{{ bulletin.nextcloud_url }}" target="_blank" rel="noopener" class="btn btn-primary">打开资料 ↗</a></div>
+  </div>
+</div>
+{% endif %}
+
 <!-- Attachments -->
 {% set attachment_list = bulletin.files.all() %}
 {% if attachment_list %}
@@ -155,6 +165,7 @@ body { background: #f1f5f9; }
       <span style="color:#94a3b8;margin-left:4px;">({{ (f.file_size/1024)|round|int }}KB)</span>
     </a>
     {% endfor %}
+    {% include '_cloud_attachments.html' %}
   </div>
 </div>
 {% endif %}

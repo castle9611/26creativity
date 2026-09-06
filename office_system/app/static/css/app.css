@@ -60,7 +60,7 @@
     --space-xl: 24px;
 
     /* Transitions */
-    --transition: all 0.2s ease;
+    --transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 
     /* Font Sizes - unified typographic scale */
     --text-hero: 24px;    /* h1, .page-title, .login-title */
@@ -1712,7 +1712,7 @@ table.table .empty-row td {
 @media (max-width: 1200px) {
     .sidebar { width: 200px; }
     .main-container { left: 200px; }
-    .dashboard-grid { grid-template-columns: 1fr; }
+    .dashboard-grid {  }
 }
 
 @media (max-width: 768px) {
@@ -1720,9 +1720,9 @@ table.table .empty-row td {
     .main-container { left: 0; }
     .header .logo { width: 60px; padding: 0; justify-content: center; }
     .header .logo span { display: none; }
-    .stats-grid { grid-template-columns: 1fr; }
-    .quick-actions { grid-template-columns: 1fr; }
-    .columns-grid { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid {  }
+    .quick-actions {  }
+    .columns-grid {  }
     .page-header { flex-direction: column; align-items: flex-start; gap: var(--space-md); }
 }
 
@@ -2256,6 +2256,8 @@ html[data-theme="blue"] {
     --theme-sidebar-text: #405064;
     --theme-sidebar-hover: #eef4ff;
     --theme-shell: #13213a;
+    --accent: #0f766e;
+    --accent-bg: #e8f5f3;
 }
 
 html[data-theme="forest"] {
@@ -2263,11 +2265,11 @@ html[data-theme="forest"] {
     --primary-dark: #065f46;
     --primary-light: #10b981;
     --primary-bg: #e9f8f2;
-    --bg-page: #f2f6f1;
-    --bg-card: #ffffff;
-    --bg-sidebar: #fbfdf9;
-    --bg-header: #ffffff;
-    --border: #dce8dc;
+    --bg-page: #e7f1e9;
+    --bg-card: #f9fcf9;
+    --bg-sidebar: #f1f8f2;
+    --bg-header: #f9fcf9;
+    --border: #c9ddcd;
     --border-light: #ecf4ec;
     --text-primary: #12231d;
     --text-secondary: #52665d;
@@ -2275,6 +2277,8 @@ html[data-theme="forest"] {
     --theme-sidebar-text: #39554a;
     --theme-sidebar-hover: #e9f8f2;
     --theme-shell: #0f2f25;
+    --accent: #a16207;
+    --accent-bg: #faf2dc;
 }
 
 html[data-theme="sepia"] {
@@ -2282,11 +2286,11 @@ html[data-theme="sepia"] {
     --primary-dark: #92400e;
     --primary-light: #d97706;
     --primary-bg: #fff3df;
-    --bg-page: #f6f1e8;
-    --bg-card: #fffdf8;
-    --bg-sidebar: #fffaf0;
-    --bg-header: #fffdf8;
-    --border: #e8dcc8;
+    --bg-page: #eee1cd;
+    --bg-card: #fffaf0;
+    --bg-sidebar: #f8edda;
+    --bg-header: #fffaf0;
+    --border: #dcc7a7;
     --border-light: #f2eadc;
     --text-primary: #2b2118;
     --text-secondary: #705f4d;
@@ -2294,6 +2298,8 @@ html[data-theme="sepia"] {
     --theme-sidebar-text: #66513d;
     --theme-sidebar-hover: #fff3df;
     --theme-shell: #3a2819;
+    --accent: #9f3f2f;
+    --accent-bg: #f8e9e3;
 }
 
 html[data-theme="night"] {
@@ -2313,6 +2319,8 @@ html[data-theme="night"] {
     --theme-sidebar-text: #c3d0df;
     --theme-sidebar-hover: #1f334c;
     --theme-shell: #07111f;
+    --accent: #a5b4fc;
+    --accent-bg: #252e49;
     color-scheme: dark;
 }
 
@@ -2684,7 +2692,7 @@ html[data-theme="night"] .editor-content li {
 
 /* ==================== Modern Interface Refresh ==================== */
 :root {
-    --modern-sidebar-width: 272px;
+    --modern-sidebar-width: 220px;
     --modern-radius: 8px;
     --modern-card-shadow: 0 10px 28px rgba(15, 23, 42, 0.055);
     --modern-card-shadow-hover: 0 14px 34px rgba(15, 23, 42, 0.085);
@@ -2932,6 +2940,212 @@ body.sidebar-collapsed .main-container,
 body.sidebar-collapsed .main-content {
     left: 72px !important;
     margin-left: 72px !important;
+}
+
+.sidebar-toggle {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 30px;
+}
+
+.sidebar-toggle:hover {
+    background: var(--theme-sidebar-hover);
+    color: var(--primary);
+}
+
+body.sidebar-collapsed .header .logo-title,
+body.sidebar-collapsed .sidebar .nav-section-title,
+body.sidebar-collapsed .sidebar .nav-subsection-title,
+body.sidebar-collapsed .sidebar .nav-item span:last-child {
+    display: none !important;
+}
+
+body.sidebar-collapsed .header .logo {
+    gap: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+body.sidebar-collapsed .sidebar .nav-item {
+    width: 52px;
+    margin: 3px 10px !important;
+    padding: 0 !important;
+    justify-content: center;
+}
+
+/* The dashboard is hosted inside the persistent workbench shell. */
+body.embedded-workbench .header,
+body.embedded-workbench .sidebar,
+body.embedded-workbench .copyright-corner {
+    display: none !important;
+}
+
+body.embedded-workbench .main-content {
+    margin-left: 0 !important;
+    min-height: 100vh;
+}
+
+body.workbench-shell .main-container {
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+body.workbench-shell .tab-body {
+    top: 0 !important;
+    bottom: 0 !important;
+}
+
+body.workbench-shell .header {
+    height: 56px;
+    padding-right: 8px;
+}
+
+body.workbench-shell {
+    --workbench-sidebar-width: 220px;
+}
+
+body.workbench-shell .header .logo {
+    width: var(--workbench-sidebar-width) !important;
+    min-width: var(--workbench-sidebar-width) !important;
+    padding-left: 5px !important;
+    padding-right: 6px !important;
+    gap: 8px !important;
+}
+
+body.workbench-shell .header .logo-title {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+body.workbench-shell .sidebar {
+    width: var(--workbench-sidebar-width) !important;
+}
+
+body.workbench-shell .main-container {
+    left: var(--workbench-sidebar-width) !important;
+}
+
+body.workbench-shell.sidebar-collapsed .header .logo,
+body.workbench-shell.sidebar-collapsed .sidebar {
+    width: 72px !important;
+    min-width: 72px !important;
+}
+
+body.workbench-shell.sidebar-collapsed .main-container {
+    left: 72px !important;
+    margin-left: 0 !important;
+}
+
+body.workbench-shell .sidebar,
+body.workbench-shell .main-container {
+    top: 56px;
+}
+
+body.workbench-shell .sidebar {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+body.workbench-shell .sidebar .nav-section {
+    margin-bottom: 6px;
+}
+
+body.workbench-shell .sidebar .nav-section-title {
+    padding-top: 7px !important;
+    padding-bottom: 4px !important;
+}
+
+body.workbench-shell .sidebar .nav-item {
+    min-height: 36px;
+    margin-top: 1px !important;
+    margin-bottom: 1px !important;
+}
+
+body.workbench-shell #mainFrame {
+    background: var(--bg-page);
+}
+
+body.workbench-shell .header-center {
+    gap: 6px;
+    padding-left: 8px;
+}
+
+body.workbench-shell .breadcrumb {
+    min-height: 30px;
+    padding: 0 8px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+body.workbench-shell .header-back {
+    height: 30px;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+}
+
+body.workbench-shell .header-back:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+body.workbench-shell .header-back .svg-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 3px;
+    vertical-align: -2px;
+}
+
+body.workbench-shell .header-right {
+    gap: 3px;
+}
+
+body.workbench-shell .header-right .btn {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 9px;
+    font-size: 12px;
+}
+
+body.workbench-shell .user-switcher-select {
+    height: 30px;
+    min-width: 116px;
+    font-size: 12px;
+}
+
+body.workbench-shell .header-right .avatar,
+body.workbench-shell .header-right .avatar img {
+    width: 30px !important;
+    height: 30px !important;
+}
+
+body.workbench-shell .header-right .user-info {
+    margin: 0 3px;
+}
+
+body.embedded-workbench {
+    min-width: 980px;
+    background: var(--bg-page);
+}
+
+body.embedded-workbench .main-content {
+    padding: 14px 18px 20px !important;
+}
+
+body.workbench-shell .sidebar .nav-item[title] {
+    cursor: pointer;
 }
 
 @media (max-width: 900px) {
@@ -3211,8 +3425,8 @@ body.sidebar-collapsed .main-content {
 }
 
 .oa-stat-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)) !important;
+    display: block !important;
+
     gap: 10px !important;
     margin: 0 !important;
 }
@@ -3369,8 +3583,8 @@ body.sidebar-collapsed .main-content {
 }
 
 .oa-card-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    display: block !important;
+
     gap: 12px !important;
 }
 
@@ -3441,8 +3655,8 @@ body.sidebar-collapsed .main-content {
 }
 
 .oa-record-footer {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto !important;
+    display: block !important;
+
     gap: 10px !important;
     align-items: end !important;
     padding: 10px 0 0 !important;
@@ -3452,7 +3666,7 @@ body.sidebar-collapsed .main-content {
 
 .oa-record-meta {
     min-width: 0;
-    display: grid;
+    display: block;
     gap: 4px;
     color: #7b8ca3;
     font-size: var(--text-xs);
@@ -3565,7 +3779,7 @@ body.sidebar-collapsed .main-content {
         justify-content: flex-start;
     }
     .oa-record-footer {
-        grid-template-columns: 1fr;
+
     }
     .oa-record-actions {
         justify-content: flex-end;
@@ -4150,8 +4364,8 @@ table.table tr:hover td,
 }
 
 .stats-bar {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)) !important;
+    display: block !important;
+
     gap: 12px !important;
     margin-bottom: 16px !important;
 }
@@ -4232,8 +4446,8 @@ table.table tr:hover td,
 
 .bulletin-grid,
 .memo-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)) !important;
+    display: block !important;
+
     gap: 14px !important;
     overflow: visible !important;
 }
@@ -4452,7 +4666,7 @@ table.table tr:hover td,
     .stats-bar,
     .bulletin-grid,
     .memo-grid {
-        grid-template-columns: 1fr !important;
+
     }
     .form-card > form {
         padding: 18px !important;
@@ -4559,3 +4773,748 @@ input[type="button"], input[type="submit"], input[type="reset"],
 
 /* Successful operations continue silently; warnings and errors stay visible. */
 .alert-success { display: none !important; }
+
+/* Compact spacing shared by business pages loaded in the workbench. */
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content {
+    padding: 6px !important;
+}
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .breadcrumb,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .oa-list-crumb,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .task-crumb {
+    margin-bottom: 4px !important;
+}
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .page-header,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .toolbar,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .stats-bar,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .card,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .form-card,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .oa-card-grid,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .memo-grid,
+html body:not(.workbench-shell):not(.embedded-workbench) .main-content > .bulletin-grid {
+    margin-top: 0 !important;
+    margin-bottom: 5px !important;
+}
+html body:not(.workbench-shell):not(.embedded-workbench) .page-header {
+    min-height: 0 !important;
+    padding: 9px 12px !important;
+}
+html body:not(.workbench-shell):not(.embedded-workbench) .toolbar {
+    padding: 7px 9px !important;
+}
+html body:not(.workbench-shell):not(.embedded-workbench) .stats-bar {
+    gap: 5px !important;
+}
+html body:not(.workbench-shell):not(.embedded-workbench) .card-header {
+    margin-bottom: 6px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+}
+html body:not(.workbench-shell):not(.embedded-workbench) .card-body {
+    padding-top: 9px !important;
+    padding-bottom: 9px !important;
+}
+
+/* Dense list-page header and joined status switcher. */
+html body.oa-list-page {
+    padding: 5px !important;
+}
+html body.oa-list-page .oa-list-shell {
+    gap: 4px !important;
+}
+html body.oa-list-page .oa-list-head {
+    min-height: 42px !important;
+    padding: 5px 8px !important;
+    gap: 6px !important;
+    border-radius: 5px !important;
+    box-shadow: none !important;
+}
+html body.oa-list-page .oa-list-head-main {
+    display: block !important;
+}
+html body.oa-list-page .oa-list-crumb {
+    display: none !important;
+}
+html body.oa-list-page .oa-list-title {
+    display: table !important;
+}
+html body.oa-list-page .oa-list-title-icon,
+html body.oa-list-page .oa-list-title-text {
+    display: table-cell !important;
+    vertical-align: middle !important;
+}
+html body.oa-list-page .oa-list-title-icon {
+    width: 30px !important;
+    height: 30px !important;
+}
+html body.oa-list-page .oa-list-title-text {
+    padding-left: 7px;
+}
+html body.oa-list-page .oa-list-title-text h2 {
+    display: inline;
+    font-size: 16px !important;
+}
+html body.oa-list-page .oa-list-title-text p {
+    display: inline;
+    margin-left: 8px !important;
+    font-size: 12px !important;
+}
+html body.oa-list-page .oa-list-actions {
+    gap: 3px !important;
+}
+html body.oa-list-page .oa-list-actions .btn {
+    min-height: 30px !important;
+    padding: 4px 9px !important;
+}
+html body.oa-list-page .oa-filter-panel,
+html body.oa-list-page .oa-category-panel,
+html body.oa-list-page .oa-group-panel {
+    padding: 5px 6px !important;
+    border-radius: 5px !important;
+    box-shadow: none !important;
+}
+html body.oa-list-page .oa-filter-row {
+    gap: 3px !important;
+}
+html body.oa-list-page .oa-filter-row .form-input,
+html body.oa-list-page .oa-filter-row .form-select,
+html body.oa-list-page .oa-filter-row .btn {
+    height: 32px !important;
+}
+html body.oa-list-page .oa-stat-grid {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed;
+    border-spacing: 0 !important;
+    border: 1px solid #d9e5f4;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #fff;
+    margin: 0 !important;
+}
+html body.oa-list-page .oa-stat-card {
+    display: table-cell !important;
+    min-height: 0 !important;
+    height: 44px !important;
+    padding: 5px 7px !important;
+    vertical-align: middle !important;
+    border-width: 0 1px 0 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    white-space: nowrap;
+}
+html body.oa-list-page .oa-stat-card:last-child {
+    border-right: 0 !important;
+}
+html body.oa-list-page .oa-stat-card .stats-icon,
+html body.oa-list-page .oa-stat-card > span:first-child {
+    display: inline-block !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 3px;
+    vertical-align: middle;
+}
+html body.oa-list-page .oa-stat-card > div {
+    display: inline-block;
+    vertical-align: middle;
+}
+html body.oa-list-page .oa-stat-card .stats-num,
+html body.oa-list-page .oa-stat-card .stat-num {
+    display: inline;
+    font-size: 15px !important;
+}
+html body.oa-list-page .oa-stat-card .stats-label,
+html body.oa-list-page .oa-stat-card .stat-label {
+    display: inline;
+    margin: 0 0 0 3px !important;
+    font-size: 12px !important;
+}
+html body.oa-list-page .oa-data-panel {
+    border-radius: 5px !important;
+    box-shadow: none !important;
+}
+
+/* ==================== Continuous Compact Workbench ==================== */
+html body:not(.workbench-shell) {
+    padding: 0 !important;
+    background: var(--bg-page) !important;
+}
+
+html body:not(.workbench-shell) .main-content,
+html body.oa-list-page,
+html body.oa-list-page .oa-list-shell {
+    padding: 0 !important;
+    gap: 0 !important;
+}
+
+html body:not(.workbench-shell) .page-header,
+html body:not(.workbench-shell) .toolbar,
+html body:not(.workbench-shell) .stats-bar,
+html body:not(.workbench-shell) .stats-grid,
+html body:not(.workbench-shell) .dashboard-grid,
+html body:not(.workbench-shell) .card,
+html body:not(.workbench-shell) .form-card,
+html body:not(.workbench-shell) .oa-list-head,
+html body:not(.workbench-shell) .oa-filter-panel,
+html body:not(.workbench-shell) .oa-category-panel,
+html body:not(.workbench-shell) .oa-group-panel,
+html body:not(.workbench-shell) .oa-stat-grid,
+html body:not(.workbench-shell) .oa-data-panel,
+html body:not(.workbench-shell) .oa-card-grid,
+html body:not(.workbench-shell) .memo-grid,
+html body:not(.workbench-shell) .bulletin-grid,
+html body:not(.workbench-shell) .web-link-panel,
+html body:not(.workbench-shell) .dashboard-charts {
+    margin: 0 !important;
+    gap: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+html body:not(.workbench-shell) .main-content > .page-header,
+html body:not(.workbench-shell) .main-content > .toolbar,
+html body:not(.workbench-shell) .main-content > .stats-bar,
+html body:not(.workbench-shell) .main-content > .stats-grid,
+html body:not(.workbench-shell) .main-content > .dashboard-grid,
+html body:not(.workbench-shell) .main-content > .card,
+html body:not(.workbench-shell) .main-content > .form-card,
+html body:not(.workbench-shell) .oa-list-shell > .oa-list-head,
+html body:not(.workbench-shell) .oa-list-shell > .oa-filter-panel,
+html body:not(.workbench-shell) .oa-list-shell > .oa-category-panel,
+html body:not(.workbench-shell) .oa-list-shell > .oa-group-panel,
+html body:not(.workbench-shell) .oa-list-shell > .oa-stat-grid,
+html body:not(.workbench-shell) .oa-list-shell > .oa-data-panel,
+html body:not(.workbench-shell) .oa-list-shell > div {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+html body:not(.workbench-shell) .main-content > * + *,
+html body:not(.workbench-shell) .oa-list-shell > * + * {
+    border-top-width: 0 !important;
+}
+
+html body:not(.workbench-shell) .stats-grid,
+html body:not(.workbench-shell) .dashboard-grid,
+html body:not(.workbench-shell) .quick-actions,
+html body:not(.workbench-shell) .web-link-grid,
+html body:not(.workbench-shell) .oa-card-grid,
+html body:not(.workbench-shell) .memo-grid,
+html body:not(.workbench-shell) .bulletin-grid {
+    gap: 0 !important;
+}
+
+html body:not(.workbench-shell) .stat-card,
+html body:not(.workbench-shell) .quick-action,
+html body:not(.workbench-shell) .web-link-card,
+html body:not(.workbench-shell) .memo-card,
+html body:not(.workbench-shell) .bulletin-card,
+html body:not(.workbench-shell) .settings-card,
+html body:not(.workbench-shell) .category-card,
+html body:not(.workbench-shell) .contact-card,
+html body:not(.workbench-shell) .doc-card,
+html body:not(.workbench-shell) .dashboard-chart {
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+html body:not(.workbench-shell) .stats-grid > * + *,
+html body:not(.workbench-shell) .quick-actions > * + *,
+html body:not(.workbench-shell) .web-link-grid > * + *,
+html body:not(.workbench-shell) .dashboard-chart + .dashboard-chart {
+    border-left-width: 0 !important;
+}
+
+html body:not(.workbench-shell) .dashboard-charts {
+    border-spacing: 0 !important;
+}
+
+html body:not(.workbench-shell) .form-input,
+html body:not(.workbench-shell) .form-select,
+html body:not(.workbench-shell) .form-textarea,
+html body:not(.workbench-shell) .btn,
+html body:not(.workbench-shell) button,
+html body:not(.workbench-shell) .pagination a {
+    border-radius: 0 !important;
+}
+
+html body:not(.workbench-shell) .oa-filter-row > * + *,
+html body:not(.workbench-shell) .toolbar > * + * {
+    margin-left: -1px !important;
+}
+
+html body:not(.workbench-shell) .page-title,
+html body:not(.workbench-shell) .page-subtitle,
+html body:not(.workbench-shell) .oa-list-title-text,
+html body:not(.workbench-shell) .oa-list-title-text h2,
+html body:not(.workbench-shell) .oa-list-title-text p,
+html body:not(.workbench-shell) .card-title,
+html body:not(.workbench-shell) .memo-card-title,
+html body:not(.workbench-shell) .bulletin-title,
+html body:not(.workbench-shell) .stat-label,
+html body:not(.workbench-shell) .stats-label,
+html body:not(.workbench-shell) .nav-item span:last-child,
+html body:not(.workbench-shell) td,
+html body:not(.workbench-shell) th {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-break: break-word;
+}
+
+html body:not(.workbench-shell) .oa-data-panel,
+html body:not(.workbench-shell) .table-wrap,
+html body:not(.workbench-shell) .table-responsive {
+    overflow-x: auto !important;
+}
+
+/* Restrained four-color skins: primary, accent, surface and border. */
+.theme-select {
+    height: 30px;
+    padding: 0 24px 0 8px;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    font-size: 12px;
+}
+
+.btn-primary,
+.oa-stat-card.active,
+.sidebar .nav-item.active,
+.read-toggle.active,
+.pagination a.active {
+    color: #fff !important;
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+.stat-icon,
+.quick-action-icon,
+.web-link-icon,
+.oa-list-title-icon,
+.oa-stat-card .stats-icon,
+.oa-stat-card > span:first-child {
+    color: var(--primary) !important;
+    background: var(--primary-bg) !important;
+}
+
+.stat-icon.red,
+.stat-icon.orange,
+.stat-icon.green,
+.stat-icon.purple,
+.quick-action:nth-child(even) .quick-action-icon,
+.badge-warning,
+.badge-danger,
+.badge-success {
+    color: var(--accent) !important;
+    background: var(--accent-bg) !important;
+}
+
+.badge-info,
+.badge-primary,
+.read-badge,
+.priority-badge,
+.category-badge {
+    color: var(--primary) !important;
+    background: var(--primary-bg) !important;
+}
+
+.card,
+.stat-card,
+.quick-action,
+.web-link-card,
+.dashboard-chart,
+.oa-data-panel,
+.oa-filter-panel,
+.oa-stat-grid,
+.oa-stat-card {
+    background: var(--bg-card) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="night"] .theme-select {
+    color: var(--text-primary);
+    background: var(--bg-card);
+}
+
+/* Keep filterable list regions stable while their contents update. */
+html {
+    overflow-y: scroll;
+}
+
+.ajax-stable-region {
+    position: relative;
+    min-height: calc(100vh - 132px);
+}
+
+.ajax-stable-region.is-loading {
+    pointer-events: none;
+}
+
+.ajax-stable-region.is-loading:before {
+    display: none;
+}
+
+body.oa-list-page .oa-list-head {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+}
+
+body.oa-list-page .oa-category-panel,
+body.oa-list-page .oa-filter-panel {
+    position: sticky;
+    top: 42px;
+    z-index: 70;
+}
+
+/* Stable, high-contrast list controls and complete table text. */
+html body.oa-list-page .oa-stat-card:not(.active) {
+    color: var(--text-primary) !important;
+    background: var(--bg-card) !important;
+    transition: none !important;
+}
+
+html body.oa-list-page .oa-stat-card:not(.active) .stat-label,
+html body.oa-list-page .oa-stat-card:not(.active) .stats-label {
+    color: var(--text-secondary) !important;
+    font-weight: 700 !important;
+}
+
+html body.oa-list-page .oa-stat-card:not(.active) .stat-num,
+html body.oa-list-page .oa-stat-card:not(.active) .stats-num {
+    color: var(--primary) !important;
+    font-weight: 800 !important;
+}
+
+html body.oa-list-page .oa-stat-card.active,
+html body.oa-list-page .oa-stat-card.active * {
+    color: #fff !important;
+}
+
+html body.oa-list-page .oa-data-table {
+    width: 100%;
+    min-width: 1180px;
+    table-layout: auto !important;
+}
+
+html body.oa-list-page .cat-tab,
+html body.oa-list-page .type-toggle a,
+html body.oa-list-page .oa-stat-card {
+    transition: none !important;
+}
+
+html body.oa-list-page .oa-data-table th,
+html body.oa-list-page .oa-data-table td {
+    color: var(--text-primary);
+    white-space: nowrap !important;
+    vertical-align: middle;
+}
+
+html body.oa-list-page .oa-data-table th:nth-child(3),
+html body.oa-list-page .oa-data-table td:nth-child(3) {
+    min-width: 260px;
+    white-space: normal !important;
+}
+
+html body.oa-list-page .oa-data-table th:nth-child(2),
+html body.oa-list-page .oa-data-table td:nth-child(2),
+html body.oa-list-page .oa-data-table th:last-child,
+html body.oa-list-page .oa-data-table td:last-child {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+}
+
+html body.oa-list-page .oa-title-link {
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+
+html body.oa-list-page .badge,
+html body.oa-list-page .read-badge {
+    color: var(--primary) !important;
+    background: var(--primary-bg) !important;
+    border-radius: 0 !important;
+}
+
+html body.oa-list-page .badge-danger,
+html body.oa-list-page .badge-warning,
+html body.oa-list-page .read-badge.unread,
+html body.oa-list-page .deadline-hint {
+    color: var(--accent) !important;
+    background: var(--accent-bg) !important;
+}
+
+html body.oa-list-page .oa-action-group .btn {
+    color: var(--text-primary) !important;
+    background: var(--bg-card) !important;
+    border-color: var(--border) !important;
+    font-weight: 700;
+}
+
+.ajax-stable-region.is-loading > * {
+    visibility: visible;
+}
+
+/* Complete filter text and comfortable native select rendering. */
+html body:not(.workbench-shell) .oa-filter-panel .form-select {
+    height: 36px !important;
+    min-width: 140px !important;
+    padding: 0 30px 0 12px !important;
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 34px !important;
+    text-indent: 0;
+    vertical-align: middle;
+}
+
+html body:not(.workbench-shell) .oa-filter-panel select[name="category_id"],
+html body:not(.workbench-shell) .oa-filter-panel select[name="department"] {
+    min-width: 190px !important;
+}
+
+html body:not(.workbench-shell) .oa-filter-panel select[name="search_scope"] {
+    min-width: 130px !important;
+}
+
+html body:not(.workbench-shell) .oa-filter-panel .form-select option {
+    color: #172033;
+    background: #fff;
+    font-weight: 500;
+}
+
+/* File and memo pages follow the same dense list-page rhythm. */
+html body.oa-list-page .memo-grid {
+    display: block !important;
+    overflow: hidden;
+}
+
+html body.oa-list-page .memo-card {
+    width: 33.333333% !important;
+    min-height: 150px !important;
+    margin: 0 !important;
+    border-width: 0 1px 1px 0 !important;
+}
+
+html body.oa-list-page .memo-card-header,
+html body.oa-list-page .memo-card-preview,
+html body.oa-list-page .memo-card-footer {
+    padding: 8px 10px !important;
+}
+
+html body.oa-list-page .memo-card-preview {
+    line-height: 1.45 !important;
+}
+
+html body.oa-list-page .oa-group-panel {
+    padding: 5px 6px !important;
+}
+
+html body.oa-list-page .oa-group-panel > div,
+html body.oa-list-page .group-form {
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+}
+
+html body.oa-list-page .group-chip {
+    margin: 0 -1px 0 0 !important;
+    border-radius: 0 !important;
+}
+
+html body.oa-list-page input[type="file"] {
+    min-height: 36px;
+    padding: 6px 8px !important;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+html body.oa-list-page .relation-picker,
+html body.oa-list-page #upload-category-select,
+html body.oa-list-page #upload-column-select {
+    margin-left: -1px;
+}
+
+/* Global three-skin coverage for standalone pages loaded in the workbench iframe. */
+html[data-theme="blue"] body:not(.workbench-shell),
+html[data-theme="forest"] body:not(.workbench-shell),
+html[data-theme="sepia"] body:not(.workbench-shell) {
+    color: var(--text-primary) !important;
+    background: var(--bg-page) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .page-header,
+html[data-theme] body:not(.workbench-shell) .toolbar,
+html[data-theme] body:not(.workbench-shell) .card,
+html[data-theme] body:not(.workbench-shell) .card-header,
+html[data-theme] body:not(.workbench-shell) .card-body,
+html[data-theme] body:not(.workbench-shell) .oa-list-head,
+html[data-theme] body:not(.workbench-shell) .oa-filter-panel,
+html[data-theme] body:not(.workbench-shell) .oa-data-panel,
+html[data-theme] body:not(.workbench-shell) .oa-stat-card,
+html[data-theme] body:not(.workbench-shell) .memo-card,
+html[data-theme] body:not(.workbench-shell) .bulletin-card,
+html[data-theme] body:not(.workbench-shell) .settings-card,
+html[data-theme] body:not(.workbench-shell) .form-card,
+html[data-theme] body:not(.workbench-shell) .detail-header,
+html[data-theme] body:not(.workbench-shell) .detail-content,
+html[data-theme] body:not(.workbench-shell) .cloud-homebar,
+html[data-theme] body:not(.workbench-shell) .cloud-search,
+html[data-theme] body:not(.workbench-shell) .cloud-results {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) [style*="background:white"],
+html[data-theme] body:not(.workbench-shell) [style*="background: white"],
+html[data-theme] body:not(.workbench-shell) [style*="background:#fff"],
+html[data-theme] body:not(.workbench-shell) [style*="background: #fff"] {
+    background-color: var(--bg-card) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .table,
+html[data-theme] body:not(.workbench-shell) .oa-data-table,
+html[data-theme] body:not(.workbench-shell) .stat-table {
+    color: var(--text-primary) !important;
+    background: var(--bg-card) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .table th,
+html[data-theme] body:not(.workbench-shell) .oa-data-table th,
+html[data-theme] body:not(.workbench-shell) .stat-table th,
+html[data-theme] body:not(.workbench-shell) .link-row:first-child {
+    color: var(--text-primary) !important;
+    background: var(--primary-bg) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .table td,
+html[data-theme] body:not(.workbench-shell) .oa-data-table td,
+html[data-theme] body:not(.workbench-shell) .stat-table td,
+html[data-theme] body:not(.workbench-shell) .link-row {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-light) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .form-input,
+html[data-theme] body:not(.workbench-shell) .form-select,
+html[data-theme] body:not(.workbench-shell) textarea,
+html[data-theme] body:not(.workbench-shell) input[type="text"],
+html[data-theme] body:not(.workbench-shell) input[type="password"],
+html[data-theme] body:not(.workbench-shell) input[type="number"],
+html[data-theme] body:not(.workbench-shell) input[type="date"],
+html[data-theme] body:not(.workbench-shell) select {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .page-title,
+html[data-theme] body:not(.workbench-shell) .card-title,
+html[data-theme] body:not(.workbench-shell) h1,
+html[data-theme] body:not(.workbench-shell) h2,
+html[data-theme] body:not(.workbench-shell) h3 {
+    color: var(--text-primary) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .page-subtitle,
+html[data-theme] body:not(.workbench-shell) .breadcrumb,
+html[data-theme] body:not(.workbench-shell) .stat-label,
+html[data-theme] body:not(.workbench-shell) .cloud-meta {
+    color: var(--text-secondary) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .btn-primary,
+html[data-theme] body:not(.workbench-shell) .oa-stat-card.active,
+html[data-theme] body:not(.workbench-shell) .type-toggle .btn-primary,
+html[data-theme] body:not(.workbench-shell) .cat-tab.active {
+    color: #fff !important;
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .btn:not(.btn-primary):not(.btn-danger):not(.btn-warning):not(.btn-success) {
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    border-color: var(--border);
+}
+
+html[data-theme] body:not(.workbench-shell) .badge-gray,
+html[data-theme] body:not(.workbench-shell) .badge-info,
+html[data-theme] body:not(.workbench-shell) .stats-icon,
+html[data-theme] body:not(.workbench-shell) .oa-list-title-icon {
+    color: var(--primary) !important;
+    background: var(--primary-bg) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .stats-bar > a {
+    color: var(--text-primary) !important;
+    background: var(--bg-card) !important;
+    border-color: var(--border) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .stats-bar > a[style*="box-shadow"] {
+    color: #fff !important;
+    background: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+html[data-theme] body:not(.workbench-shell) .stats-bar > a[style*="box-shadow"] .stat-num,
+html[data-theme] body:not(.workbench-shell) .stats-bar > a[style*="box-shadow"] .stat-label,
+html[data-theme] body:not(.workbench-shell) .stats-bar > a[style*="box-shadow"] .svg-icon {
+    color: #fff !important;
+}
+
+/* Accessible controls and legacy-browser layouts. */
+.btn, .badge, .page-size-control { display: inline-block !important; vertical-align: middle; }
+.btn .svg-icon, .badge .svg-icon { vertical-align: middle; margin-right: 4px; }
+.page-header, .oa-list-head { display: table !important; width: 100%; table-layout: fixed; }
+.page-header > div, .oa-list-head > div { display: table-cell; vertical-align: middle; }
+.page-header > .page-actions { text-align: right; }
+.oa-list-shell, .toolbar-filters, .oa-filter-row, .card-header { display: block !important; }
+.toolbar-filters > *, .oa-filter-row > * { display: inline-block; vertical-align: middle; margin: 4px 8px 4px 0; max-width: 100%; }
+.form-card > h3 { display: block !important; padding-top: 24px !important; padding-bottom: 24px !important; }
+a:focus, button:focus, input:focus, select:focus, textarea:focus,
+.breadcrumb a:focus, .oa-list-crumb a:focus, .task-crumb a:focus,
+.breadcrumb > a:first-child:focus, .oa-list-crumb > a:first-child:focus,
+.task-crumb > a:first-child:focus, .nav-text-link[href*="workbench"]:focus,
+.nav-text-link:focus, .public-home-link:focus {
+    outline: 2px solid #1266f3 !important;
+    outline-offset: 3px !important;
+}
+.skip-link { position: fixed; left: 12px; top: -100px; z-index: 20000; padding: 12px; background: #fff; color: #123d79; }
+.skip-link:focus { top: 12px; }
+.oa-dialog { overflow-y: auto; padding: 32px 16px; }
+.oa-dialog > div { margin: 0 auto; max-width: 100% !important; }
+.oa-dialog button { margin: 6px 8px 0 0; }
+#batchFeedback:empty { display: none; }
+#batchFeedback { padding: 10px; color: #923c16; background: #fff5e6; }
+.attachment-picker { padding: 20px; border: 2px dashed #aabbd0; text-align: center; background: #fafafa; }
+.attachment-picker p { margin: 10px 0; color: #475569; }
+.attachment-picker input { max-width: 100%; }
+.attachment-row { padding: 8px 12px; margin: 8px 0; border: 1px solid #dbe3ed; background: #fff; }
+.attachment-name { word-wrap: break-word; }
+.attachment-remove { min-width: 44px; min-height: 44px; margin-left: 8px; }
+.oa-stat-grid, .oa-card-grid, .stats-bar, .bulletin-grid, .memo-grid { display: block !important; }
+.oa-stat-grid > *, .stats-bar > a { display: inline-block !important; width: 23% !important; margin: 0 1% 12px 0 !important; vertical-align: top; word-wrap: break-word; }
+.oa-card-grid > *, .bulletin-grid > .bulletin-card, .memo-grid > .memo-card { display: inline-block !important; width: 48% !important; margin: 0 1% 14px 0 !important; vertical-align: top; float: none !important; word-wrap: break-word; }
+.user-management-page .stats-bar > a > *, #batchActionsBar > div, #batchActionsBar label { display: inline-block; vertical-align: middle; margin-right: 10px; }
+#batchActionsBar button { margin: 4px 8px 4px 0; }
+.form-card form .btn, .relation-badges > * { margin: 4px 8px 4px 0; }
+@media (max-width: 780px) {
+    .page-header, .page-header > div, .oa-list-head, .oa-list-head > div { display: block !important; width: 100%; }
+    .page-header > .page-actions { text-align: left; margin-top: 12px; }
+    .oa-stat-grid > *, .stats-bar > a { width: 48% !important; }
+    .oa-card-grid > *, .bulletin-grid > .bulletin-card, .memo-grid > .memo-card { width: 100% !important; margin-right: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

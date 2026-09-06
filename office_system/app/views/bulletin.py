@@ -6,6 +6,7 @@ pinned + expiration / role visibility / multi-filter search.
 """
 import json
 from datetime import datetime, date
+from urllib.parse import urlsplit
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, flash, session)
 from app.extensions import db
@@ -15,6 +16,23 @@ from app.decorators import login_required, require_role
 from app.utils import add_log, get_pagination, check_visible
 
 bulletin_bp = Blueprint('bulletin', __name__)
+
+
+def _optional_nextcloud_url():
+    value = request.form.get('nextcloud_url', '').strip()[:2000]
+    if not value:
+        return ''
+    parsed = urlsplit(value)
+    return value if parsed.scheme in ('http', 'https') and parsed.netloc else ''
+
+
+def _attachment_classification():
+    category_id = request.form.get('attachment_category_id', 0, type=int)
+    column_id = request.form.get('attachment_column_id', 0, type=int)
+    column = Column.query.filter_by(id=column_id, is_active=1).first() if column_id else None
+    if column:
+        return column.category_id or category_id or None, column.id
+    return category_id or None, None
 
 
 def _mark_read(target_id):
@@ -229,13 +247,15 @@ def detail(bulletin_id):
         read_users, unread_users = _read_status_users(bulletin_id)
 
     # Related online documents and spreadsheets
-    from app.models import OnlineDocument, Spreadsheet
+    from app.models import OnlineDocument, Spreadsheet, CloudAttachment
     related_docs = OnlineDocument.query.filter_by(
         related_type='bulletin', related_id=bulletin_id, is_active=1
     ).order_by(OnlineDocument.updated_at.desc()).all()
     related_sheets = Spreadsheet.query.filter_by(
         related_type='bulletin', related_id=bulletin_id, is_active=1
     ).order_by(Spreadsheet.updated_at.desc()).all()
+    cloud_attachments = CloudAttachment.query.filter_by(
+        target_type='bulletin', target_id=bulletin_id).order_by(CloudAttachment.created_at.asc()).all()
 
     return render_template('bulletin/detail.html',
                            bulletin=bulletin,
@@ -245,7 +265,8 @@ def detail(bulletin_id):
                            read_users=read_users,
                            unread_users=unread_users,
                            related_docs=related_docs,
-                           related_sheets=related_sheets)
+                           related_sheets=related_sheets,
+                           cloud_attachments=cloud_attachments)
 
 
 @bulletin_bp.route('/<int:bulletin_id>/comments', methods=['POST'])
@@ -352,6 +373,8 @@ def create():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
+        nextcloud_url = _optional_nextcloud_url()
+        attachment_category_id, attachment_column_id = _attachment_classification()
         is_pinned = int(request.form.get('is_pinned', 0))
         expire_date = request.form.get('expire_date', '').strip()
         quick_expire = request.form.get('quick_expire', '').strip()
@@ -393,6 +416,7 @@ def create():
             column_id=column_id if column_id > 0 else None,
             title=title,
             content=content,
+            nextcloud_url=nextcloud_url,
             is_pinned=is_pinned,
             expire_date=expire_date_obj,
             status='published',
@@ -420,9 +444,14 @@ def create():
                     file_path=f'/static/uploads/bulletins/{bulletin.id}/{safe_name}',
                     file_size=os.path.getsize(file_path),
                     file_type=filename.split('.')[-1].lower() if '.' in filename else '',
+                    category_id=attachment_category_id,
+                    column_id=attachment_column_id,
                     uploaded_by=user_id
                 )
                 db.session.add(attachment)
+                from app.nextcloud import mirror_attachment
+                mirror_attachment('bulletin', bulletin.id, file_path, filename, user_id,
+                                  category_id=attachment_category_id, column_id=attachment_column_id)
 
         # Link selected online docs/sheets to this bulletin
         from app.models import OnlineDocument, Spreadsheet
@@ -464,19 +493,16 @@ def create():
                 'color': cat.color,
             })
 
-    from app.models import OnlineDocument, Spreadsheet
     all_columns = Column.query.filter_by(is_active=1).order_by(Column.sort_order.asc()).all()
     cols_by_cat = {}
     for col in all_columns:
         cols_by_cat.setdefault(col.category_id or 0, []).append(col)
-    available_docs = OnlineDocument.query.filter_by(is_active=1).order_by(OnlineDocument.updated_at.desc()).all()
-    available_sheets = Spreadsheet.query.filter_by(is_active=1).order_by(Spreadsheet.updated_at.desc()).all()
+    from app.nextcloud import cloud_home_url
 
     return render_template('bulletin/create.html',
                            categories=visible_categories,
                            cols_by_cat=cols_by_cat,
-                           available_docs=available_docs,
-                           available_sheets=available_sheets)
+                           nextcloud_url=cloud_home_url())
 
 
 @bulletin_bp.route('/<int:bulletin_id>/edit', methods=['GET', 'POST'])
@@ -493,6 +519,8 @@ def edit(bulletin_id):
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
+        nextcloud_url = _optional_nextcloud_url()
+        attachment_category_id, attachment_column_id = _attachment_classification()
         is_pinned = int(request.form.get('is_pinned', 0))
         expire_date = request.form.get('expire_date', '').strip()
         quick_expire = request.form.get('quick_expire', '').strip()
@@ -519,6 +547,7 @@ def edit(bulletin_id):
 
         bulletin.title = title
         bulletin.content = content
+        bulletin.nextcloud_url = nextcloud_url
         bulletin.is_pinned = is_pinned
         if category_id:
             bulletin.category_id = category_id
@@ -562,9 +591,14 @@ def edit(bulletin_id):
                     file_path=f'/static/uploads/bulletins/{bulletin.id}/{safe_name}',
                     file_size=os.path.getsize(file_path),
                     file_type=filename.split('.')[-1].lower() if '.' in filename else '',
+                    category_id=attachment_category_id,
+                    column_id=attachment_column_id,
                     uploaded_by=user_id
                 )
                 db.session.add(attachment)
+                from app.nextcloud import mirror_attachment
+                mirror_attachment('bulletin', bulletin.id, file_path, filename, user_id,
+                                  category_id=attachment_category_id, column_id=attachment_column_id)
 
         # Link/update linked docs/sheets
         from app.models import OnlineDocument, Spreadsheet
@@ -610,6 +644,7 @@ def edit(bulletin_id):
     linked_doc_ids = [d.id for d in OnlineDocument.query.filter_by(related_type='bulletin', related_id=bulletin.id)]
     linked_sheet_ids = [s.id for s in Spreadsheet.query.filter_by(related_type='bulletin', related_id=bulletin.id)]
 
+    from app.nextcloud import cloud_home_url
     return render_template('bulletin/edit.html',
                            bulletin=bulletin,
                            categories=visible_categories,
@@ -617,7 +652,8 @@ def edit(bulletin_id):
                            available_docs=available_docs,
                            available_sheets=available_sheets,
                            linked_doc_ids=linked_doc_ids,
-                           linked_sheet_ids=linked_sheet_ids)
+                           linked_sheet_ids=linked_sheet_ids,
+                           nextcloud_url=cloud_home_url())
 
 
 @bulletin_bp.route('/<int:bulletin_id>/archive', methods=['POST'])

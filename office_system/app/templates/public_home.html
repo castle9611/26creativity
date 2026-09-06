@@ -9,6 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<script src="{{ url_for('static', filename='js/theme.js', v='20260820-public-theme') }}"></script>
 <style>
 body {
   min-height: 100vh;
@@ -63,6 +64,8 @@ body {
   padding: 0 14px;
   border-radius: 999px;
 }
+.public-actions { display: table; }
+.public-actions .login-entry { display: inline-block; vertical-align: middle; }
 .portal-links-bar {
   display: flex;
   align-items: center;
@@ -329,6 +332,40 @@ body {
   display: block;
   margin: 8px 0;
 }
+.portal-panel .panel-body.portal-auto-scroll {
+  height: calc(100vh - 640px);
+  min-height: 420px;
+  max-height: 760px;
+  overflow-y: hidden;
+  scroll-behavior: auto;
+}
+.portal-scroll-toolbar {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+  text-align: right;
+}
+.portal-scroll-toolbar label {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid rgba(148,163,184,.24);
+  border-radius: 999px;
+  background: rgba(255,255,255,.72);
+  cursor: pointer;
+}
+.portal-scroll-toolbar input { vertical-align: middle; margin: 0 5px 1px 0; }
+@media (max-height: 900px) and (min-width: 901px) {
+  .portal-panel .panel-body.portal-auto-scroll {
+    height: calc(100vh - 500px);
+    min-height: 300px;
+  }
+}
+@media (max-width: 900px) {
+  .portal-panel .panel-body.portal-auto-scroll {
+    height: 360px;
+    min-height: 0;
+  }
+}
 .rich-text {
   color: #40564e;
   font-size: 13px;
@@ -594,7 +631,7 @@ body {
 }
 .public-shell {
   max-width: none;
-  padding: 22px 24px 28px;
+  padding: 22px 24px 6px;
 }
 .public-top {
   min-height: 74px;
@@ -795,6 +832,29 @@ body {
 .portal-stat::after {
   display: none;
 }
+.portal-stat[data-login-tip]::before {
+  content: attr(data-login-tip);
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  z-index: 3;
+  padding: 6px 10px;
+  color: #fff;
+  background: rgba(15, 23, 42, .92);
+  border-radius: 4px;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -5px);
+}
+.portal-stat[data-login-tip]:hover::before {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
 .portal-stat .stat-mini-icon {
   position: absolute;
   right: 25px;
@@ -863,7 +923,7 @@ body {
   gap: 14px;
 }
 .portal-panel {
-  min-height: 500px;
+  min-height: 0;
   border-radius: 9px;
   border-color: #d9e5f4;
   background: #fff;
@@ -1063,6 +1123,168 @@ main.portal-grid section:nth-child(4) .item-toggle {
     white-space: nowrap;
   }
 }
+html[data-theme] body {
+  color: var(--text-primary);
+  background: linear-gradient(180deg, var(--theme-shell) 0 220px, var(--bg-page) 220px 100%) !important;
+}
+html[data-theme] .public-top {
+  margin-bottom: 8px;
+  padding: 9px 12px;
+  color: #fff;
+  background: var(--primary);
+  border: 1px solid var(--primary-dark);
+}
+html[data-theme] .public-name { color: #fff; }
+html[data-theme] .public-sub { color: #fff; opacity: 1; font-weight: 600; }
+html[data-theme] .public-logo { background: linear-gradient(135deg, var(--primary-light), var(--primary)); }
+html[data-theme] .category-tabs {
+  background: rgba(0,0,0,.15);
+  border-color: rgba(255,255,255,.18);
+}
+html[data-theme] .category-tab {
+  color: #111827;
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+html[data-theme] .category-tab.active { color: #fff; background: var(--primary); border-color: var(--primary-light); }
+html[data-theme] .portal-links-bar,
+html[data-theme] .portal-title-card,
+html[data-theme] .portal-stat,
+html[data-theme] .portal-panel,
+html[data-theme] .portal-scroll-toolbar {
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border-color: var(--border);
+  box-shadow: none;
+}
+html[data-theme] .portal-link {
+  color: var(--primary);
+  background: var(--primary-bg);
+  border-color: var(--border);
+}
+html[data-theme] .portal-kicker,
+html[data-theme] .panel-title,
+html[data-theme] .item-title-link { color: var(--primary); }
+html[data-theme] .portal-title,
+html[data-theme] .portal-stat strong { color: var(--text-primary); }
+html[data-theme] .portal-desc,
+html[data-theme] .portal-stat span,
+html[data-theme] .item-meta,
+html[data-theme] .item-summary,
+html[data-theme] .portal-scroll-toolbar { color: var(--text-secondary); font-weight: 600; }
+html[data-theme] .panel-head,
+html[data-theme] .item,
+html[data-theme] .item-full { border-color: var(--border-light); }
+html[data-theme] .portal-stat .stat-mini-icon,
+html[data-theme] .portal-stat:nth-child(2) .stat-mini-icon,
+html[data-theme] .portal-stat:nth-child(3) .stat-mini-icon,
+html[data-theme] .portal-stat:nth-child(4) .stat-mini-icon {
+  color: var(--primary);
+  background: var(--primary-bg);
+  border-color: var(--border);
+}
+html[data-theme] .login-entry.btn-primary {
+  color: var(--primary) !important;
+  background: var(--bg-card) !important;
+  border-color: var(--bg-card) !important;
+}
+html[data-theme] .portal-scroll-toolbar .theme-select {
+  height: 30px;
+  margin-left: 10px;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border-color: var(--border);
+  vertical-align: middle;
+}
+html[data-theme] .portal-scroll-toolbar .theme-select option { color: var(--text-primary); background: var(--bg-card); }
+html[data-theme] .item-toggle,
+html[data-theme] main.portal-grid section:nth-child(2) .item-toggle,
+html[data-theme] main.portal-grid section:nth-child(3) .item-toggle,
+html[data-theme] main.portal-grid section:nth-child(4) .item-toggle,
+html[data-theme] .panel-more,
+html[data-theme] .badge {
+  color: var(--primary) !important;
+  background: var(--primary-bg) !important;
+  border-color: var(--border) !important;
+}
+html[data-theme] .category-tab::before { display: none; }
+html[data-theme] .category-tab-icon,
+html[data-theme] .panel-count,
+html[data-theme] .empty .svg-icon {
+  color: var(--primary) !important;
+  background: var(--primary-bg) !important;
+  border-color: var(--border) !important;
+}
+html[data-theme] .item-title-link,
+html[data-theme] .portal-link,
+html[data-theme] .category-tab span,
+html[data-theme] .portal-stat span,
+html[data-theme] .panel-title {
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  word-break: break-word;
+}
+html[data-theme] .item-summary,
+html[data-theme] .item-meta,
+html[data-theme] .portal-desc { opacity: 1; color: var(--text-secondary) !important; }
+html[data-theme] .portal-grid,
+html[data-theme] .portal-grid .portal-panel,
+html[data-theme] .portal-grid .panel-title,
+html[data-theme] .portal-grid .panel-count,
+html[data-theme] .portal-grid .item,
+html[data-theme] .portal-grid .item-title-link,
+html[data-theme] .portal-grid .item-summary,
+html[data-theme] .portal-grid .item-meta,
+html[data-theme] .portal-grid .item-full,
+html[data-theme] .portal-grid .item-toggle,
+html[data-theme] .portal-grid .panel-more,
+html[data-theme] .portal-grid .badge,
+html[data-theme] .portal-grid p,
+html[data-theme] .portal-grid span,
+html[data-theme] .portal-grid a,
+html[data-theme] .portal-grid strong {
+  color: #111827 !important;
+  opacity: 1 !important;
+}
+.portal-grid section .item-toggle,
+.portal-grid section:nth-child(1) .item-toggle,
+.portal-grid section:nth-child(2) .item-toggle,
+.portal-grid section:nth-child(3) .item-toggle,
+.portal-grid section:nth-child(4) .item-toggle,
+.portal-grid section .item-toggle:hover,
+.portal-grid section .item-toggle:focus {
+  color: #111827 !important;
+  -webkit-text-fill-color: #111827 !important;
+  font-weight: 800 !important;
+}
+html[data-theme] .public-top .login-entry.btn-primary {
+  display: inline-block !important;
+  min-width: 132px;
+  height: 40px !important;
+  padding: 0 18px !important;
+  color: var(--primary-dark) !important;
+  -webkit-text-fill-color: var(--primary-dark) !important;
+  background: #fff !important;
+  border: 2px solid #fff !important;
+  border-radius: 6px !important;
+  box-shadow: 0 3px 0 rgba(0,0,0,.18), 0 7px 16px rgba(0,0,0,.18) !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 36px !important;
+  text-align: center;
+}
+html[data-theme] .public-top .login-entry.btn-primary:hover,
+html[data-theme] .public-top .login-entry.btn-primary:focus {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  background: var(--primary-dark) !important;
+  border-color: #fff !important;
+  transform: translateY(-1px);
+}
+.portal-stats { width: 850px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media(max-width:700px) { .portal-stats { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -1075,11 +1297,13 @@ main.portal-grid section:nth-child(4) .item-toggle {
         <div class="public-sub">分类查看任务动态、公示信息与近期提醒</div>
       </div>
     </div>
-    {% if session.get('user_id') %}
-    <a class="btn btn-primary login-entry" href="{{ url_for('index_bp.workbench') }}">{{ icon('dashboard') }} 进入工作台</a>
-    {% else %}
-    <a class="btn btn-primary login-entry" href="{{ url_for('auth.login') }}">{{ icon('lock') }} 登录</a>
-    {% endif %}
+    <div class="public-actions">
+      {% if session.get('user_id') %}
+      <a class="btn btn-primary login-entry" href="{{ url_for('index_bp.workbench') }}">{{ icon('dashboard') }} 进入工作台</a>
+      {% else %}
+      <a class="btn btn-primary login-entry" href="{{ url_for('auth.login') }}">{{ icon('lock') }} 登录</a>
+      {% endif %}
+    </div>
   </header>
 
   <nav class="category-tabs">
@@ -1136,10 +1360,9 @@ main.portal-grid section:nth-child(4) .item-toggle {
       <div class="portal-desc">无需登录即可查看公开任务概览、跟踪动态、近期提醒和文件资料。</div>
     </div>
     <div class="portal-stats">
-      <div class="portal-stat"><strong>{{ portal_stats.pending }}</strong><span>公共待处理</span><i class="stat-mini-icon">{{ icon('task') }}</i></div>
-      <div class="portal-stat"><strong>{{ portal_stats.tracking }}</strong><span>跟踪任务</span><i class="stat-mini-icon">{{ icon('gen-target') }}</i></div>
-      <div class="portal-stat"><strong>{{ portal_stats.reminders }}</strong><span>近期提醒</span><i class="stat-mini-icon">{{ icon('bell') }}</i></div>
-      <div class="portal-stat"><strong>{{ portal_stats.files }}</strong><span>文件资料</span><i class="stat-mini-icon">{{ icon('folder') }}</i></div>
+      <div class="portal-stat" data-login-tip="登录后查看详细信息" title="登录后查看详细信息"><strong>{{ portal_stats.tasks }}</strong><span>任务数量</span><i class="stat-mini-icon">{{ icon('task') }}</i></div>
+      <div class="portal-stat" data-login-tip="登录后查看详细信息" title="登录后查看详细信息"><strong>{{ portal_stats.bulletins }}</strong><span>公示数量</span><i class="stat-mini-icon">{{ icon('bulletin') }}</i></div>
+      <div class="portal-stat" data-login-tip="登录后查看详细信息" title="登录后查看详细信息"><strong>{{ portal_stats.memos }}</strong><span>备忘数量</span><i class="stat-mini-icon">{{ icon('memo') }}</i></div>
     </div>
   </section>
 
@@ -1262,8 +1485,23 @@ main.portal-grid section:nth-child(4) .item-toggle {
       </div>
     </section>
   </main>
+  <div class="portal-scroll-toolbar">
+    <label><input type="checkbox" id="portalAutoScrollToggle" checked>四栏缓慢滚动</label>
+    <select id="publicThemeSelect" class="theme-select" title="切换首页皮肤" aria-label="切换首页皮肤">
+      <option value="blue">蓝灰</option>
+      <option value="forest">松林</option>
+      <option value="sepia">暖砂</option>
+    </select>
+  </div>
 </div>
 <script>
+(function() {
+  var select = document.getElementById('publicThemeSelect');
+  if (!select || !window.OATheme) return;
+  select.value = window.OATheme.current();
+  select.onchange = function() { window.OATheme.apply(this.value); };
+})();
+
 function togglePublicItem(button) {
   var item = button.closest('.item-main');
   if (!item) return;
@@ -1273,11 +1511,69 @@ function togglePublicItem(button) {
   if (isHidden) {
     content.removeAttribute('hidden');
     button.textContent = '收起';
+    normalizePublicImages(content);
   } else {
     content.setAttribute('hidden', '');
     button.textContent = '展开查看';
   }
 }
+function normalizePublicImages(container) {
+  var images = container.getElementsByTagName('img');
+  for (var i = 0; i < images.length; i++) {
+    (function(image) {
+      function applyNaturalLimit() {
+        if (image.naturalWidth && image.offsetWidth > image.naturalWidth) {
+          image.style.width = image.naturalWidth + 'px';
+          image.style.maxWidth = '100%';
+          image.style.height = 'auto';
+        }
+      }
+      if (image.complete) applyNaturalLimit();
+      else image.onload = applyNaturalLimit;
+    })(images[i]);
+  }
+}
+(function() {
+  var storageKey = 'oa_public_list_auto_scroll';
+  var stored = null;
+  try { stored = window.localStorage.getItem(storageKey); } catch (ignore) {}
+  var defaultEnabled = stored !== 'off';
+  var masterToggle = document.getElementById('portalAutoScrollToggle');
+  if (!masterToggle) return;
+  masterToggle.checked = defaultEnabled;
+  masterToggle.onchange = function() {
+    try { window.localStorage.setItem(storageKey, masterToggle.checked ? 'on' : 'off'); } catch (ignore) {}
+  };
+  var panels = document.querySelectorAll('.portal-grid .portal-panel');
+  for (var i = 0; i < panels.length; i++) {
+    (function(panel, index) {
+      var body = panel.querySelector('.panel-body');
+      if (!body) return;
+      body.className += ' portal-auto-scroll';
+      var originalItems = body.querySelectorAll('.item');
+      var copyRound = 0;
+      while (originalItems.length && body.scrollHeight <= body.clientHeight + 80 && copyRound < 3) {
+        for (var copyIndex = 0; copyIndex < originalItems.length; copyIndex++) {
+          var copy = originalItems[copyIndex].cloneNode(true);
+          copy.setAttribute('aria-hidden', 'true');
+          body.appendChild(copy);
+        }
+        copyRound += 1;
+      }
+      var paused = false;
+      body.onmouseenter = function() { paused = true; };
+      body.onmouseleave = function() { paused = false; };
+      window.setInterval(function() {
+        if (!masterToggle.checked || paused || body.scrollHeight <= body.clientHeight) return;
+        if (body.scrollTop + body.clientHeight >= body.scrollHeight - 1) {
+          body.scrollTop = 0;
+        } else {
+          body.scrollTop += 1;
+        }
+      }, 90 + index * 8);
+    })(panels[i], i);
+  }
+})();
 </script>
 </body>
 </html>

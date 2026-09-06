@@ -7,27 +7,43 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20260820-auto-sidebar') }}">
+<script src="{{ url_for('static', filename='js/theme.js', v='20260820-global-theme') }}"></script>
+<script>
+/* Stop an accidentally nested shell before the browser paints it. */
+if (window.top !== window.self) {
+    document.documentElement.style.display = 'none';
+    window.top.location.replace(window.location.href);
+}
+</script>
 </head>
-<body>
+<body class="workbench-shell">
+<a class="skip-link" href="#mainFrame" id="skipToContent">跳到主要内容</a>
 
 <!-- Header -->
 <div class="header">
   <div class="logo">
     <span class="logo-icon logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon.png') }}" alt=""></span>
-    <span class="logo-title">{{ app_name }}</span>
+    <span class="logo-title" id="workbenchLogoTitle">{{ app_name }}</span>
+    <button type="button" class="sidebar-toggle" id="sidebarToggle" title="折叠导航" aria-label="折叠导航">&#9776;</button>
   </div>
 
   <div class="header-center">
+    <button type="button" class="header-back" id="headerBack" title="返回上一步" aria-label="返回上一步">{{ icon('base-return') }}<span>返回</span></button>
     <div class="breadcrumb">
-      <span>工作台</span>
+      <span id="currentPageTitle">工作台</span>
     </div>
   </div>
 
   <div class="header-right">
-    <a href="{{ url_for('index_bp.index') }}" target="_top" class="btn btn-ghost btn-sm">{{ icon('public-home') }} 首页</a>
+    <a href="{{ url_for('index_bp.index') }}" target="_top" class="btn btn-ghost btn-sm" title="返回首页">{{ icon('public-home') }} 返回首页</a>
     <a href="{{ url_for('index_bp.help_page') }}" target="mainFrame" class="btn btn-ghost btn-sm">帮助</a>
     <a href="{{ url_for('auth.profile') }}" target="mainFrame" class="btn btn-ghost btn-sm">设置</a>
+    <select id="themeSelect" class="theme-select" title="切换色彩皮肤" aria-label="切换色彩皮肤">
+      <option value="blue">蓝灰</option>
+      <option value="forest">松林</option>
+      <option value="sepia">暖砂</option>
+    </select>
     {% if session.get('role')=='super_admin' %}
     <form id="userSwitchForm" class="user-switch-form" method="post" action="{{ url_for('auth.switch_user') }}">
       <input type="hidden" name="user_id" id="userSwitchId">
@@ -87,7 +103,7 @@
       <span class="nav-icon">{{ icon('public-home') }}</span>
       <span>首页</span>
     </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('index_bp.workbench') }}" data-title="工作台" data-id="home">
+    <a href="{{ url_for('index_bp.workbench_dashboard', embedded=1) }}" class="nav-item active" data-url="{{ url_for('index_bp.workbench_dashboard', embedded=1) }}" data-title="工作台" data-id="home">
       <span class="nav-icon">{{ icon('dashboard') }}</span>
       <span>工作台</span>
     </a>
@@ -95,69 +111,20 @@
 
   <div class="nav-section">
     <div class="nav-section-title">业务模块</div>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('tasks.list_tasks') }}" data-title="任务管理" data-id="tasks">
+    <a href="{{ url_for('tasks.list_tasks') }}" class="nav-item" data-url="{{ url_for('tasks.list_tasks') }}" data-title="任务管理" data-id="tasks">
       <span class="nav-icon">{{ icon('task') }}</span>
       <span>任务管理</span>
     </a>
-    {% if session.get('role')!='user' %}
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('tasks.create_task') }}" data-title="创建任务" data-id="task_create">
-      <span class="nav-icon">{{ icon('add') }}</span>
-      <span>创建任务</span>
-    </a>
-    {% endif %}
-
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('bulletin.index') }}" data-title="公示管理" data-id="bulletin">
+    <a href="{{ url_for('bulletin.index') }}" class="nav-item" data-url="{{ url_for('bulletin.index') }}" data-title="公示管理" data-id="bulletin">
       <span class="nav-icon">{{ icon('bulletin') }}</span>
       <span>{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</span>
     </a>
 
-    {% for cat in visible_categories %}
-    <div class="nav-subsection">
-      <div class="nav-subsection-title" style="color:{{ cat.color }};">{{ icon('category') }} {{ cat.name }}</div>
-      {% for col in cat.columns %}
-      <a href="javascript:void(0);" class="nav-item nav-sub-item" data-url="{{ url_for('bulletin.column_list', column_id=col.id) }}" data-title="{{ col.name }}" data-id="col_{{ col.id }}">
-        <span class="nav-icon">{{ icon('column') }}</span>
-        <span>{{ col.name }}</span>
-      </a>
-      {% endfor %}
-    </div>
-    {% endfor %}
-
-    {% if session.get('role') in ('super_admin','dept_admin') %}
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('bulletin.create') }}" data-title="发布内容" data-id="bulletin_create">
-      <span class="nav-icon">{{ icon('edit') }}</span>
-      <span>发布内容</span>
-    </a>
-    {% endif %}
-
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('memo.list_memos') }}" data-title="工作备忘" data-id="memos">
+    <a href="{{ url_for('memo.list_memos') }}" class="nav-item" data-url="{{ url_for('memo.list_memos') }}" data-title="工作备忘" data-id="memos">
       <span class="nav-icon">{{ icon('memo') }}</span>
       <span>工作备忘</span>
     </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('memo.create_memo') }}" data-title="新建备忘" data-id="memo_create">
-      <span class="nav-icon">{{ icon('add') }}</span>
-      <span>新建备忘</span>
-    </a>
-
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('docs.list_docs') }}" data-title="在线文档" data-id="docs">
-      <span class="nav-icon">{{ icon('file') }}</span>
-      <span>在线文档</span>
-    </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('docs.create_doc') }}" data-title="新建文档" data-id="doc_create">
-      <span class="nav-icon">{{ icon('add') }}</span>
-      <span>新建文档</span>
-    </a>
-
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('sheets.list_sheets') }}" data-title="在线表格" data-id="sheets">
-      <span class="nav-icon">{{ icon('memo') }}</span>
-      <span>在线表格</span>
-    </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('sheets.create_sheet') }}" data-title="新建表格" data-id="sheet_create">
-      <span class="nav-icon">{{ icon('add') }}</span>
-      <span>新建表格</span>
-    </a>
-
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('files.list_files') }}" data-title="文件管理" data-id="files">
+    <a href="{{ url_for('files.list_files') }}" class="nav-item" data-url="{{ url_for('files.list_files') }}" data-title="文件管理" data-id="files">
       <span class="nav-icon">{{ icon('folder') }}</span>
       <span>文件管理</span>
     </a>
@@ -165,59 +132,39 @@
 
   <div class="nav-section">
     <div class="nav-section-title">协同工具</div>
-    <a href="{{ url_for('stats.story') }}" target="_top" class="nav-item" data-title="数据故事" data-id="data_story">
+    <a href="{{ url_for('cloud.index') }}" class="nav-item" data-url="{{ url_for('cloud.index') }}" data-title="云文档中心" data-id="cloud_office">
+      <span class="nav-icon">{{ icon('file') }}</span>
+      <span>云文档中心</span>
+    </a>
+    <a href="{{ url_for('stats.story') }}" class="nav-item" data-url="{{ url_for('stats.story') }}" data-title="数据故事" data-id="data_story">
       <span class="nav-icon">{{ icon('chart') }}</span>
       <span>数据故事</span>
     </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('index_bp.quick_links') }}" data-title="我的快捷链接" data-id="my_quick_links">
-      <span class="nav-icon">{{ icon('gen-link') }}</span>
-      <span>我的快捷链接</span>
-    </a>
   </div>
-
-  {% if sidebar_tabs %}
-  <div class="nav-section">
-    <div class="nav-section-title">快捷入口</div>
-    {% for tab in sidebar_tabs %}
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ tab.url }}" data-title="{{ tab.name }}" data-id="custom_tab_{{ tab.id }}">
-      <span class="nav-icon">{{ icon('gen-bookmark') }}</span>
-      <span>{{ tab.name }}</span>
-    </a>
-    {% endfor %}
-  </div>
-  {% endif %}
 
   {% if session.get('role') in ('super_admin','dept_admin') %}
   <div class="nav-section">
     <div class="nav-section-title">管理设置</div>
     {% if session.get('role')=='super_admin' %}
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('admin.users') }}" data-title="用户管理" data-id="admin_users">
+    <a href="{{ url_for('admin.users') }}" class="nav-item" data-url="{{ url_for('admin.users') }}" data-title="用户管理" data-id="admin_users">
       <span class="nav-icon">{{ icon('users') }}</span>
       <span>用户管理</span>
     </a>
     {% endif %}
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('settings.task_categories') }}" data-title="分类设置" data-id="category_settings">
+    <a href="{{ url_for('settings.task_categories') }}" class="nav-item" data-url="{{ url_for('settings.task_categories') }}" data-title="分类设置" data-id="category_settings">
       <span class="nav-icon">{{ icon('category') }}</span>
       <span>分类设置</span>
     </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('admin.columns') }}" data-title="栏目管理" data-id="admin_columns">
+    <a href="{{ url_for('admin.columns') }}" class="nav-item" data-url="{{ url_for('admin.columns') }}" data-title="栏目管理" data-id="admin_columns">
       <span class="nav-icon">{{ icon('column') }}</span>
       <span>栏目管理</span>
     </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('admin.shares') }}" data-title="共享文件夹" data-id="admin_shares">
-      <span class="nav-icon">{{ icon('share') }}</span>
-      <span>共享文件夹</span>
-    </a>
     {% if session.get('role')=='super_admin' %}
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('admin.logs') }}" data-title="操作日志" data-id="admin_logs">
+    <a href="{{ url_for('admin.logs') }}" class="nav-item" data-url="{{ url_for('admin.logs') }}" data-title="操作日志" data-id="admin_logs">
       <span class="nav-icon">{{ icon('audit-log') }}</span>
       <span>操作日志</span>
     </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('admin.quick_links') }}" data-title="首页快捷链接" data-id="admin_quick_links">
-      <span class="nav-icon">{{ icon('gen-link') }}</span>
-      <span>首页快捷链接</span>
-    </a>
-    <a href="javascript:void(0);" class="nav-item" data-url="{{ url_for('admin.config') }}" data-title="系统设置" data-id="system_config">
+    <a href="{{ url_for('admin.config') }}" class="nav-item" data-url="{{ url_for('admin.config') }}" data-title="系统设置" data-id="system_config">
       <span class="nav-icon">{{ icon('settings') }}</span>
       <span>系统设置</span>
     </a>
@@ -228,80 +175,48 @@
 
 <!-- Main Container -->
 <div class="main-container">
-  <div class="tab-header">
-    <div class="tab-nav-wrap"><div class="tab-nav" id="tabNav"></div></div>
-    <div class="tab-ops">
-      <a href="javascript:void(0);" id="refreshTab" title="刷新当前页">{{ icon('refresh') }}</a>
-      <a href="javascript:void(0);" id="closeAllTabs" title="关闭所有">✕</a>
-    </div>
+  <div class="tab-body" id="contentBody" style="top:0;">
+    <iframe title="办公系统主要内容" tabindex="0" id="mainFrame" name="mainFrame" src="{{ url_for('index_bp.workbench_dashboard', embedded=1) }}" frameborder="0" scrolling="auto"></iframe>
   </div>
-  <div class="tab-body" id="tabBody"></div>
-  <div class="footer-bar">{{ app_name }} &copy; {{ current_year }} · 作者 Jonathan · 内网专用 · 操作留痕</div>
 </div>
-<div class="copyright-corner">&copy; {{ current_year }} Jonathan · All rights reserved.</div>
 
 <script>
 (function(){
-    var tabs = [], activeId = '';
-    var nav = document.getElementById('tabNav');
-    var body = document.getElementById('tabBody');
+    var mainFrame = document.getElementById('mainFrame');
+    document.getElementById('skipToContent').onclick = function(e) {
+        e.preventDefault();
+        mainFrame.focus();
+        mainFrame.contentWindow.focus();
+    };
+    var sidebarToggle = document.getElementById('sidebarToggle');
+    var currentPageTitle = document.getElementById('currentPageTitle');
+    var headerBack = document.getElementById('headerBack');
+    var themeSelect = document.getElementById('themeSelect');
+    var workbenchLogoTitle = document.getElementById('workbenchLogoTitle');
 
-    function init() {
-        // Bind nav clicks
-        var links = document.querySelectorAll('.nav-item[data-url]');
-        for (var i = 0; i < links.length; i++) {
-            links[i].addEventListener('click', (function(link) {
-                return function(e) {
-                    e.preventDefault();
-                    var id = link.getAttribute('data-id');
-                    var title = link.getAttribute('data-title');
-                    var url = link.getAttribute('data-url');
-                    openTab(id, title, url);
-                };
-            })(links[i]));
-        }
-
-        // Tab ops
-        document.getElementById('refreshTab').addEventListener('click', function() {
-            var iframe = document.getElementById('iframe_' + activeId);
-            if (iframe) iframe.src = iframe.src;
-        });
-
-        document.getElementById('closeAllTabs').addEventListener('click', function() {
-            var keepTabs = [];
-            for (var i = 0; i < tabs.length; i++) {
-                if (tabs[i].id === 'home') keepTabs.push(tabs[i]);
-            }
-            tabs = keepTabs;
-            if (tabs.length > 0) {
-                activeId = tabs[0].id;
-            }
-            renderTabs();
-            renderBody();
-        });
-
-        // Start with home
-        openTab('home', '工作台', '{{ url_for("index_bp.workbench") }}');
+    function updateWorkbenchWidth() {
+        var titleWidth = workbenchLogoTitle ? workbenchLogoTitle.scrollWidth : 96;
+        var sidebarWidth = titleWidth + 96;
+        if (sidebarWidth < 190) sidebarWidth = 190;
+        if (sidebarWidth > 340) sidebarWidth = 340;
+        document.documentElement.style.setProperty('--workbench-sidebar-width', sidebarWidth + 'px');
     }
 
-    function openTab(id, title, url) {
-        // Check if already open
-        for (var i = 0; i < tabs.length; i++) {
-            if (tabs[i].id === id) {
-                switchTab(id);
-                return;
-            }
+    function setSidebarCollapsed(collapsed) {
+        if (collapsed) {
+            document.body.classList.add('sidebar-collapsed');
+            sidebarToggle.title = '展开导航';
+            sidebarToggle.setAttribute('aria-label', '展开导航');
+        } else {
+            document.body.classList.remove('sidebar-collapsed');
+            sidebarToggle.title = '折叠导航';
+            sidebarToggle.setAttribute('aria-label', '折叠导航');
         }
-        // Add new tab
-        tabs.push({ id: id, title: title, url: url });
-        switchTab(id);
+        try { localStorage.setItem('oa.sidebar.collapsed', collapsed ? '1' : '0'); } catch (e) {}
     }
 
-    function switchTab(id) {
-        activeId = id;
-        renderTabs();
-        renderBody();
-        // Update active nav
+    function showPage(id, url) {
+        mainFrame.src = url;
         var navItems = document.querySelectorAll('.nav-item');
         for (var i = 0; i < navItems.length; i++) {
             var item = navItems[i];
@@ -310,92 +225,103 @@
                 item.classList.add('active');
             }
         }
-    }
-
-    function closeTab(id) {
-        if (id === 'home') return;
-        for (var i = 0; i < tabs.length; i++) {
-            if (tabs[i].id === id) {
-                tabs.splice(i, 1);
+        for (var j = 0; j < navItems.length; j++) {
+            if (navItems[j].getAttribute('data-id') === id) {
+                currentPageTitle.innerHTML = navItems[j].getAttribute('data-title') || '工作台';
                 break;
             }
         }
-        if (activeId === id) {
-            activeId = tabs.length > 0 ? tabs[tabs.length - 1].id : 'home';
-        }
-        renderTabs();
-        renderBody();
     }
 
-    function renderTabs() {
-        var html = '';
-        for (var i = 0; i < tabs.length; i++) {
-            var t = tabs[i];
-            html += '<a href="javascript:void(0);" class="tab-item' + (t.id === activeId ? ' active' : '') + '" data-id="' + t.id + '">';
-            html += t.title;
-            if (t.id !== 'home') {
-                html += '<span class="tab-close" data-id="' + t.id + '">✕</span>';
-            }
-            html += '</a>';
-        }
-        nav.innerHTML = html;
-
-        // Bind tab clicks
-        var tabItems = nav.querySelectorAll('.tab-item');
-        for (var j = 0; j < tabItems.length; j++) {
-            tabItems[j].addEventListener('click', (function(item) {
-                return function(e) {
-                    if (e.target.classList.contains('tab-close')) {
-                        e.stopPropagation();
-                        closeTab(e.target.getAttribute('data-id'));
-                    } else {
-                        switchTab(item.getAttribute('data-id'));
-                    }
-                };
-            })(tabItems[j]));
-        }
+    function applyFrameTheme(theme) {
+        try {
+            var frameDocument = mainFrame.contentWindow.document;
+            frameDocument.documentElement.setAttribute('data-theme', theme);
+            if (frameDocument.body) frameDocument.body.setAttribute('data-theme', theme);
+        } catch (e) {}
     }
 
-    function renderBody() {
-        // Hide all iframes
-        var iframes = body.querySelectorAll('iframe');
-        for (var i = 0; i < iframes.length; i++) {
-            iframes[i].style.display = 'none';
-        }
-
-        // Check if current iframe exists
-        var currentFrame = document.getElementById('iframe_' + activeId);
-        if (currentFrame) {
-            currentFrame.style.display = 'block';
+    function syncNavigation() {
+        var framePath = '';
+        try {
+            framePath = mainFrame.contentWindow.location.pathname;
+        } catch (e) {
             return;
         }
-
-        // Find tab data
-        var tabData = null;
-        for (var j = 0; j < tabs.length; j++) {
-            if (tabs[j].id === activeId) {
-                tabData = tabs[j];
-                break;
+        if (framePath === '/login' || framePath === '/logout') {
+            window.top.location.href = framePath;
+            return;
+        }
+        var links = document.querySelectorAll('.nav-item[data-url]');
+        var bestLink = null;
+        var bestLength = -1;
+        for (var i = 0; i < links.length; i++) {
+            var linkPath = links[i].getAttribute('data-url').split('?')[0];
+            var matchesDashboard = linkPath === '/workbench/dashboard' && framePath === linkPath;
+            var matchesModule = linkPath !== '/workbench/dashboard' && framePath.indexOf(linkPath) === 0;
+            if ((matchesDashboard || matchesModule) && linkPath.length > bestLength) {
+                bestLink = links[i];
+                bestLength = linkPath.length;
             }
         }
-
-        if (!tabData) return;
-
-        // Create iframe
-        var iframe = document.createElement('iframe');
-        iframe.id = 'iframe_' + activeId;
-        iframe.src = tabData.url;
-        iframe.setAttribute('frameborder', '0');
-        iframe.setAttribute('scrolling', 'auto');
-        iframe.style.cssText = 'width:100%;height:100%;border:none;display:block;';
-        body.appendChild(iframe);
+        if (bestLink) {
+            var navItems = document.querySelectorAll('.nav-item');
+            for (var j = 0; j < navItems.length; j++) navItems[j].classList.remove('active');
+            bestLink.classList.add('active');
+            currentPageTitle.innerHTML = bestLink.getAttribute('data-title') || '工作台';
+        }
     }
 
-    // Public API for pages to open new tabs
-    window.openTab = openTab;
-    window.closeTab = closeTab;
+    var collapsed = false;
+    updateWorkbenchWidth();
+    try { collapsed = localStorage.getItem('oa.sidebar.collapsed') === '1'; } catch (e) {}
+    setSidebarCollapsed(collapsed);
+    sidebarToggle.addEventListener('click', function() {
+        setSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed'));
+    });
+    window.addEventListener('resize', updateWorkbenchWidth);
 
-    init();
+    var links = document.querySelectorAll('.nav-item[data-url]');
+    for (var i = 0; i < links.length; i++) {
+        if (!links[i].getAttribute('title')) {
+            links[i].setAttribute('title', links[i].getAttribute('data-title'));
+        }
+        links[i].addEventListener('click', (function(link) {
+            return function(e) {
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button > 0) return;
+                e.preventDefault();
+                showPage(link.getAttribute('data-id'), link.getAttribute('data-url'));
+            };
+        })(links[i]));
+    }
+    mainFrame.addEventListener('load', function() {
+        syncNavigation();
+        applyFrameTheme(window.OATheme ? window.OATheme.current() : themeSelect.value);
+    });
+    if (window.OATheme) themeSelect.value = window.OATheme.current();
+    themeSelect.addEventListener('change', function() {
+        var selectedTheme = window.OATheme ? window.OATheme.apply(this.value) : this.value;
+        applyFrameTheme(selectedTheme);
+        try {
+            mainFrame.contentWindow.postMessage({ type: 'oa-theme-change', theme: selectedTheme }, '*');
+        } catch (e) {}
+    });
+    headerBack.addEventListener('click', function() {
+        try {
+            if (mainFrame.contentWindow.history.length > 1) {
+                mainFrame.contentWindow.history.back();
+            } else {
+                showPage('home', '{{ url_for("index_bp.workbench_dashboard", embedded=1) }}');
+            }
+        } catch (e) {
+            showPage('home', '{{ url_for("index_bp.workbench_dashboard", embedded=1) }}');
+        }
+    });
+
+    /* Backward-compatible API for links in existing business pages. */
+    window.openTab = function(id, title, url) {
+        showPage(id, url);
+    };
 })();
 </script>
 </body>

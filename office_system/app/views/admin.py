@@ -335,6 +335,9 @@ def column_add():
     db.session.add(col)
     db.session.commit()
 
+    from app.nextcloud import ensure_business_folder
+    ensure_business_folder(col.category, col)
+
     add_log('create_column', 'column', col.id, 'Created column: ' + name)
     flash('栏目创建成功', 'success')
     return redirect(url_for('admin.columns', category_id=category_id))
@@ -356,6 +359,8 @@ def column_edit(column_id):
     col.visible_roles = request.form.get('visible_roles', col.visible_roles).strip()
 
     db.session.commit()
+    from app.nextcloud import ensure_business_folder
+    ensure_business_folder(col.category, col)
     add_log('edit_column', 'column', col.id, 'Edited column: ' + col.name)
     flash('栏目更新成功', 'success')
     return redirect(url_for('admin.columns', category_id=col.category_id))
@@ -519,7 +524,7 @@ def quick_links():
     links = QuickLink.query.filter_by(scope='public').order_by(
         QuickLink.sort_order.asc(), QuickLink.id.asc()
     ).all()
-    return render_template('admin/quick_links.html', links=links, max_links=10)
+    return render_template('admin/quick_links.html', links=links)
 
 
 @admin_bp.route('/quick-links/add', methods=['POST'])
@@ -527,11 +532,6 @@ def quick_links():
 @require_super_admin
 def quick_link_add():
     """Add a public portal quick link."""
-    count = QuickLink.query.filter_by(scope='public').count()
-    if count >= 10:
-        flash('首页快捷链接最多只能添加 10 个', 'warning')
-        return redirect(url_for('admin.quick_links'))
-
     name = request.form.get('name', '').strip()
     link_url = request.form.get('url', '').strip()
     if not name or not link_url:
@@ -691,9 +691,21 @@ def batch_delete_logs():
 def config():
     """System configuration page."""
     if request.method == 'POST':
+        share_groups = request.form.getlist('config_nextcloud_share_groups')
+        file_share_groups = request.form.getlist('config_nextcloud_file_share_groups')
+        nextcloud_url = request.form.get('config_nextcloud_url', '').strip().rstrip('/')
+        if nextcloud_url and not (nextcloud_url.startswith('http://') or nextcloud_url.startswith('https://')):
+            flash('Nextcloud 地址必须以 http:// 或 https:// 开头', 'warning')
+            return redirect(url_for('admin.config'))
         for key, value in request.form.items():
             if key.startswith('config_'):
                 cfg_key = key[7:]
+                if cfg_key in ('nextcloud_share_groups', 'nextcloud_file_share_groups'):
+                    continue
+                if cfg_key == 'nextcloud_app_password' and not value.strip():
+                    continue
+                if cfg_key == 'nextcloud_url':
+                    value = nextcloud_url
                 cfg = SystemConfig.query.filter_by(config_key=cfg_key).first()
                 if cfg:
                     cfg.config_value = value.strip()
@@ -701,6 +713,22 @@ def config():
                     cfg = SystemConfig(config_key=cfg_key,
                                        config_value=value.strip())
                     db.session.add(cfg)
+
+        groups_value = json.dumps(share_groups, ensure_ascii=False)
+        groups_cfg = SystemConfig.query.filter_by(config_key='nextcloud_share_groups').first()
+        if groups_cfg:
+            groups_cfg.config_value = groups_value
+        else:
+            db.session.add(SystemConfig(config_key='nextcloud_share_groups',
+                                        config_value=groups_value))
+        file_groups_value = json.dumps(file_share_groups, ensure_ascii=False)
+        file_groups_cfg = SystemConfig.query.filter_by(
+            config_key='nextcloud_file_share_groups').first()
+        if file_groups_cfg:
+            file_groups_cfg.config_value = file_groups_value
+        else:
+            db.session.add(SystemConfig(config_key='nextcloud_file_share_groups',
+                                        config_value=file_groups_value))
 
         db.session.commit()
         add_log('update_config', 'system_config', 0, 'System config updated')
@@ -710,18 +738,193 @@ def config():
     configs_list = SystemConfig.query.all()
     config_dict = {c.config_key: c.config_value for c in configs_list}
 
+    try:
+        selected_share_groups = json.loads(config_dict.get('nextcloud_share_groups', '[]'))
+    except (TypeError, ValueError):
+        selected_share_groups = []
+    try:
+        selected_file_share_groups = json.loads(
+            config_dict.get('nextcloud_file_share_groups', '[]'))
+    except (TypeError, ValueError):
+        selected_file_share_groups = []
+    from app.nextcloud import list_share_groups
+    nextcloud_groups, nextcloud_groups_error = list_share_groups()
+    nextcloud_groups = sorted(set(
+        nextcloud_groups + selected_share_groups + selected_file_share_groups))
+
     from app.models import File
+    from app.models import CloudAttachment
     stats = {
         'user_count': User.query.count(),
         'tab_count': Tab.query.count(),
         'column_count': Column.query.count(),
         'log_count': OperationLog.query.count(),
-        'file_count': File.query.filter_by(is_deleted=0).count()
+        'file_count': File.query.filter_by(is_deleted=0).count(),
+        'cloud_synced': CloudAttachment.query.filter_by(sync_status='synced').count(),
+        'cloud_pending': CloudAttachment.query.filter(
+            CloudAttachment.sync_status.in_(('pending', 'failed'))).count(),
+        'cloud_file_synced': CloudAttachment.query.filter_by(
+            target_type='file', sync_status='synced').count(),
+        'cloud_file_pending': CloudAttachment.query.filter(
+            CloudAttachment.target_type == 'file',
+            CloudAttachment.sync_status.in_(('pending', 'failed'))).count()
     }
 
     return render_template('admin/config.html',
                            configs=config_dict,
-                           stats=stats)
+                           stats=stats,
+                           nextcloud_groups=nextcloud_groups,
+                           selected_share_groups=selected_share_groups,
+                           selected_file_share_groups=selected_file_share_groups,
+                           nextcloud_groups_error=nextcloud_groups_error)
+
+
+@admin_bp.route('/config/nextcloud/retry', methods=['POST'])
+@login_required
+@require_super_admin
+def retry_nextcloud_attachments():
+    """Retry pending/failed attachment mirrors without blocking normal OA work."""
+    from app.models import CloudAttachment
+    from app.nextcloud import sync_attachment
+    records = CloudAttachment.query.filter(
+        CloudAttachment.sync_status.in_(('pending', 'failed'))
+    ).order_by(CloudAttachment.created_at.asc()).limit(100).all()
+    synced = 0
+    sync_context = {'folder_cache': set(), 'share_cache': set()}
+    for record in records:
+        if sync_attachment(record, sync_context):
+            synced += 1
+    db.session.commit()
+    add_log('retry_nextcloud_sync', 'cloud_attachment', 0,
+            'Retried {} cloud attachments, {} synced'.format(len(records), synced))
+    flash('已重试 {} 个附件，成功同步 {} 个'.format(len(records), synced),
+          'success' if synced == len(records) else 'warning')
+    return redirect(url_for('admin.config'))
+
+
+@admin_bp.route('/config/nextcloud/queue-history', methods=['POST'])
+@login_required
+@require_super_admin
+def queue_nextcloud_history():
+    """Queue existing task, bulletin and memo attachments for controlled migration."""
+    import os
+    from flask import current_app
+    from app.models import Task, BulletinAttachment, File, CloudAttachment
+    from app.nextcloud import queue_attachment
+
+    before = CloudAttachment.query.count()
+    root = current_app.root_path
+
+    def static_path(value):
+        relative = (value or '').lstrip('/').replace('/', os.sep)
+        if relative.startswith('static' + os.sep):
+            relative = relative[len('static' + os.sep):]
+        return os.path.abspath(os.path.join(root, 'static', relative))
+
+    for task in Task.query.filter(Task.attachments != '').all():
+        try:
+            attachments = json.loads(task.attachments or '[]')
+        except Exception:
+            attachments = []
+        for item in attachments:
+            path = static_path(item.get('path', ''))
+            if os.path.isfile(path):
+                queue_attachment('task', task.id, path,
+                                 item.get('original') or item.get('name') or os.path.basename(path),
+                                 task.creator_id)
+
+    for item in BulletinAttachment.query.all():
+        path = static_path(item.file_path)
+        if os.path.isfile(path):
+            queue_attachment('bulletin', item.bulletin_id, path, item.original_name, item.uploaded_by)
+
+    for item in File.query.filter(File.related_type == 'memo', File.is_deleted == 0).all():
+        path = static_path(item.file_path)
+        if os.path.isfile(path):
+            queue_attachment('memo', item.related_id, path, item.original_name, item.uploaded_by)
+
+    db.session.commit()
+    added = CloudAttachment.query.count() - before
+    add_log('queue_nextcloud_history', 'cloud_attachment', 0,
+            'Queued {} historical attachments'.format(added))
+    flash('已新增 {} 个历史附件到待同步队列，请点击“重试待同步附件”分批上传'.format(added), 'success')
+    return redirect(url_for('admin.config'))
+
+
+@admin_bp.route('/config/nextcloud/sync-folders', methods=['POST'])
+@login_required
+@require_super_admin
+def sync_nextcloud_folders():
+    """Create all missing category/column folders; deliberately never delete extras."""
+    from app.nextcloud import sync_business_folders
+    try:
+        count, error = sync_business_folders()
+        if error:
+            flash(error, 'warning')
+        else:
+            add_log('sync_nextcloud_folders', 'system_config', 0,
+                    'Ensured {} Nextcloud folders'.format(count))
+            flash('已检查并补齐 {} 个分类/栏目目录；云端冗余内容未作任何删除'.format(count), 'success')
+    except Exception as exc:
+        flash('Nextcloud 目录同步失败：' + str(exc), 'warning')
+    return redirect(url_for('admin.config'))
+
+
+@admin_bp.route('/config/nextcloud/sync-files', methods=['POST'])
+@login_required
+@require_super_admin
+def sync_nextcloud_files():
+    """Queue all active file-manager content and upload a controlled batch."""
+    import os
+    from app.config import BASE_DIR
+    from app.models import File, CloudAttachment
+    from app.nextcloud import (queue_attachment, sync_attachment,
+                               sync_managed_file_shares, managed_file_cloud_path)
+
+    sync_context = {'folder_cache': set(), 'share_cache': set()}
+    try:
+        share_roots = sync_managed_file_shares(sync_context)
+    except Exception as exc:
+        flash('文件资料分组分享补齐失败：' + str(exc), 'warning')
+        return redirect(url_for('admin.config'))
+
+    queued = 0
+    skipped = 0
+    missing = 0
+    for item in File.query.filter_by(is_deleted=0).order_by(File.id.asc()).all():
+        relative = (item.file_path or '').replace('/', os.sep)
+        local_path = os.path.realpath(os.path.join(BASE_DIR, relative))
+        if (os.path.commonpath([os.path.realpath(BASE_DIR), local_path]) != os.path.realpath(BASE_DIR)
+                or not os.path.isfile(local_path)):
+            missing += 1
+            continue
+        record = queue_attachment('file', item.id, local_path, item.original_name, item.uploaded_by)
+        expected_path = managed_file_cloud_path(item)
+        if record.sync_status == 'synced' and record.cloud_path == expected_path:
+            skipped += 1
+        else:
+            record.sync_status = 'pending'
+            record.sync_error = ''
+            queued += 1
+    db.session.commit()
+
+    records = CloudAttachment.query.filter_by(
+        target_type='file', sync_status='pending').order_by(CloudAttachment.id.asc()).limit(20).all()
+    synced = 0
+    for record in records:
+        if sync_attachment(record, sync_context):
+            synced += 1
+        db.session.commit()
+    remaining = CloudAttachment.query.filter(
+        CloudAttachment.target_type == 'file',
+        CloudAttachment.sync_status.in_(('pending', 'failed'))).count()
+    add_log('sync_nextcloud_files', 'cloud_attachment', 0,
+            'Ensured {} share roots, queued {}, skipped {}, synced {}, remaining {}, missing {}'.format(
+                share_roots, queued, skipped, synced, remaining, missing))
+    flash('已检查 {} 个分享目录；新增/变化 {} 个，跳过未变化 {} 个，本批同步成功 {} 个，剩余/失败 {} 个，本地缺失 {} 个'.format(
+        share_roots, queued, skipped, synced, remaining, missing),
+        'success' if remaining == 0 else 'warning')
+    return redirect(url_for('admin.config'))
 
 
 def _parse_ids():

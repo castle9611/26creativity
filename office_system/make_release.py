@@ -40,6 +40,7 @@ EXCLUDED_DIRS = {
 # Files to always exclude
 EXCLUDED_FILES = {
     "get-pip.py",
+    "nextcloud_config.bat",
 }
 
 # Within python/, exclude these DLLs (target Win7 must use install_win7_runtime.bat)

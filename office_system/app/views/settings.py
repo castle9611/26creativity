@@ -75,6 +75,9 @@ def create_task_category():
     db.session.add(category)
     db.session.commit()
 
+    from app.nextcloud import ensure_business_folder
+    ensure_business_folder(category)
+
     return jsonify({'success': True, 'message': '创建成功', 'category': category.to_dict()})
 
 
@@ -113,6 +116,9 @@ def edit_task_category(cat_id):
     category.visible_roles = visible_roles
     category.is_active = is_active
     db.session.commit()
+
+    from app.nextcloud import ensure_business_folder
+    ensure_business_folder(category)
 
     return jsonify({'success': True, 'message': '更新成功', 'category': category.to_dict()})
 

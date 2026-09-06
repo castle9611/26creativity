@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, flash, session, send_file, jsonify)
 from app.extensions import db
-from app.models import (File, FileRelation, User, BulletinCategory, Task,
+from app.models import (File, FileRelation, User, BulletinCategory, Column, Task,
                         TaskAssignee, Bulletin, Memo)
 from app.decorators import login_required, require_role
 from app.utils import (add_log, get_pagination, format_file_size,
@@ -40,6 +40,18 @@ def require_file_access(file_record):
     return role in ('super_admin', 'dept_admin') or file_record.uploaded_by == session.get('user_id')
 
 
+def can_manage_file(file_record):
+    """Allow owners and administrators in the file owner's scope to edit metadata."""
+    role = session.get('role', '')
+    user_id = session.get('user_id')
+    if role == 'super_admin' or file_record.uploaded_by == user_id:
+        return True
+    if role == 'dept_admin':
+        uploader = User.query.get(file_record.uploaded_by)
+        return bool(uploader and uploader.department == session.get('department'))
+    return False
+
+
 def safe_file_path(file_record):
     """Resolve a stored relative path without allowing it to escape BASE_DIR."""
     from app.config import BASE_DIR
@@ -63,6 +75,9 @@ def infer_category_id(related_type, related_id, category_id=0):
     if related_type == 'bulletin' and related_id:
         bulletin = Bulletin.query.get(related_id)
         return bulletin.category_id if bulletin else None
+    if related_type == 'column' and related_id:
+        column = Column.query.get(related_id)
+        return column.category_id if column else None
     return None
 
 
@@ -86,7 +101,7 @@ def parse_relation_values(values):
             continue
         target_type, raw_id = value.split(':', 1)
         target_type = target_type.strip()
-        if target_type not in ('task', 'bulletin', 'memo'):
+        if target_type not in ('task', 'bulletin', 'memo', 'column'):
             continue
         try:
             target_id = int(raw_id)
@@ -103,6 +118,9 @@ def parse_relation_values(values):
 
 def parse_request_relations():
     """Read relation selections, keeping old related_type/related_id posts compatible."""
+    column_id = request.form.get('column_id', 0, type=int)
+    if column_id > 0:
+        return [('column', column_id)]
     relations = parse_relation_values(request.form.getlist('relations'))
     if relations:
         return relations
@@ -131,8 +149,8 @@ def sync_file_relations(file_record, relations):
 
 def relation_title(target_type, target_id):
     """Return a human label for a relation target."""
-    label_map = {'task': '任务', 'bulletin': '公示', 'memo': '备忘'}
-    model_map = {'task': Task, 'bulletin': Bulletin, 'memo': Memo}
+    label_map = {'task': '任务', 'bulletin': '公示', 'memo': '备忘', 'column': '栏目'}
+    model_map = {'task': Task, 'bulletin': Bulletin, 'memo': Memo, 'column': Column}
     model = model_map.get(target_type)
     obj = model.query.get(target_id) if model else None
     title = getattr(obj, 'title', '') if obj else ''
@@ -140,59 +158,36 @@ def relation_title(target_type, target_id):
 
 
 def relation_labels_for(file_records):
-    """Build display labels for file relations."""
+    """Build display labels for column relations only."""
     labels = {}
     file_ids = [f.id for f in file_records]
     if not file_ids:
         return labels
-    rows = FileRelation.query.filter(FileRelation.file_id.in_(file_ids)).order_by(FileRelation.id.asc()).all()
+    rows = FileRelation.query.filter(
+        FileRelation.file_id.in_(file_ids),
+        FileRelation.target_type == 'column'
+    ).order_by(FileRelation.id.asc()).all()
     for rel in rows:
-        labels.setdefault(rel.file_id, []).append(relation_title(rel.target_type, rel.target_id))
+        column = Column.query.get(rel.target_id)
+        if column:
+            labels.setdefault(rel.file_id, []).append(column.name)
     for file_record in file_records:
-        if file_record.id not in labels and file_record.related_type and file_record.related_id:
-            labels[file_record.id] = [relation_title(file_record.related_type, file_record.related_id)]
+        if (file_record.id not in labels and file_record.related_type == 'column'
+                and file_record.related_id):
+            column = Column.query.get(file_record.related_id)
+            if column:
+                labels[file_record.id] = [column.name]
     return labels
 
 
 def relation_choices(user_role, user_id, user_dept):
-    """Return selectable relation targets for the current user."""
-    task_query = Task.query
-    if user_role == 'dept_admin':
-        task_query = task_query.filter(Task.department == user_dept)
-    elif user_role == 'user':
-        task_query = task_query.filter(db.or_(
-            Task.creator_id == user_id,
-            Task.assignee_id == user_id,
-            Task.assignee_links.any(TaskAssignee.user_id == user_id)
-        ))
-    tasks = task_query.order_by(Task.updated_at.desc()).limit(80).all()
+    """Return selectable columns for uploaded files."""
+    columns = Column.query.filter_by(is_active=1).order_by(
+        Column.sort_order.asc(), Column.id.asc()
+    ).all()
+    columns = [column for column in columns if check_visible(column.visible_roles, user_role)]
 
-    bulletins = Bulletin.query.filter(
-        Bulletin.status == 'published',
-        Bulletin.is_active == 1
-    ).order_by(Bulletin.created_at.desc()).limit(80).all()
-    bulletins = [
-        b for b in bulletins
-        if (b.column and check_visible(b.column.visible_roles, user_role))
-        or (b.category and check_visible(b.category.visible_roles, user_role))
-        or (not b.column and not b.category)
-    ]
-
-    memo_query = Memo.query.filter(Memo.is_archived == 0)
-    if user_role != 'super_admin':
-        memo_query = memo_query.filter(db.or_(
-            db.and_(Memo.memo_type == 'private', Memo.created_by == user_id),
-            Memo.memo_type == 'public'
-        ))
-    memos = memo_query.order_by(Memo.updated_at.desc()).limit(80).all()
-    memos = [
-        m for m in memos
-        if user_role == 'super_admin'
-        or (m.memo_type == 'private' and m.created_by == user_id)
-        or (m.memo_type == 'public' and check_visible(m.visible_roles, user_role))
-    ]
-
-    return {'tasks': tasks, 'bulletins': bulletins, 'memos': memos}
+    return {'columns': columns}
 
 
 def allowed_file(filename):
@@ -271,13 +266,10 @@ def list_files():
 
     total_files = stats_query.count()
     total_size = sum(f.file_size or 0 for f in stats_query.all())
-    task_files = stats_query.filter(db.or_(
-        File.related_type == 'task',
-        File.relation_links.any(FileRelation.target_type == 'task')
-    )).count()
-    bulletin_files = stats_query.filter(db.or_(
-        File.related_type == 'bulletin',
-        File.relation_links.any(FileRelation.target_type == 'bulletin')
+    categorized_files = stats_query.filter(File.category_id.isnot(None)).count()
+    column_files = stats_query.filter(db.or_(
+        File.related_type == 'column',
+        File.relation_links.any(FileRelation.target_type == 'column')
     )).count()
 
     users_map = {u.id: u.username for u in User.query.all()}
@@ -297,8 +289,8 @@ def list_files():
                            keyword=keyword,
                            total_files=total_files,
                            total_size=total_size,
-                           task_files=task_files,
-                           bulletin_files=bulletin_files)
+                           categorized_files=categorized_files,
+                           column_files=column_files)
 
 
 @files_bp.route('/upload', methods=['POST'])
@@ -331,6 +323,11 @@ def upload():
     try:
         file_obj.save(save_path)
         file_size = os.path.getsize(save_path)
+        from app.config import Config
+        if file_size > Config.MAX_FILE_SIZE:
+            os.remove(save_path)
+            flash('上传失败：单个文件不能超过 50GB', 'danger')
+            return redirect(request.referrer or url_for('files.list_files'))
     except Exception as e:
         flash('上传失败: ' + str(e), 'danger')
         return redirect(request.referrer or url_for('files.list_files'))
@@ -388,6 +385,64 @@ def download(file_id):
     response = send_file(full_path, as_attachment=True)
     response.headers['Content-Disposition'] = content_disposition(file_record.original_name)
     return response
+
+
+@files_bp.route('/<int:file_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_file(file_id):
+    """Edit display name, category and column association without replacing bytes."""
+    file_record = File.query.get_or_404(file_id)
+    if file_record.is_deleted or not can_manage_file(file_record):
+        flash('无权修改此文件', 'danger')
+        return redirect(url_for('files.list_files'))
+
+    user_role = session.get('role', '')
+    user_id = session.get('user_id')
+    user_dept = session.get('department', '')
+    choices = relation_choices(user_role, user_id, user_dept)
+    categories = BulletinCategory.query.filter_by(is_active=1).order_by(
+        BulletinCategory.sort_order.asc(), BulletinCategory.id.asc()).all()
+
+    if request.method == 'POST':
+        original_name = clean_original_filename(request.form.get('original_name', '').strip())
+        category_id = request.form.get('category_id', 0, type=int)
+        column_id = request.form.get('column_id', 0, type=int)
+        if not original_name:
+            flash('文件名不能为空', 'warning')
+            return redirect(url_for('files.edit_file', file_id=file_id))
+
+        if category_id and not BulletinCategory.query.filter_by(id=category_id, is_active=1).first():
+            flash('所选分类不存在或已停用', 'warning')
+            return redirect(url_for('files.edit_file', file_id=file_id))
+
+        relations = []
+        if column_id:
+            allowed_column_ids = [item.id for item in choices['columns']]
+            if column_id not in allowed_column_ids:
+                flash('所选栏目不存在或不可见', 'warning')
+                return redirect(url_for('files.edit_file', file_id=file_id))
+            relations = [('column', column_id)]
+
+        old_name = file_record.original_name
+        file_record.original_name = original_name
+        file_record.category_id = category_id or None
+        sync_file_relations(file_record, relations)
+        db.session.commit()
+        add_log('edit_file', 'file', file_record.id,
+                'Updated file metadata: ' + old_name + ' -> ' + original_name)
+        flash('文件信息已更新', 'success')
+        return redirect(url_for('files.list_files'))
+
+    selected_column_id = 0
+    column_relation = FileRelation.query.filter_by(
+        file_id=file_record.id, target_type='column').order_by(FileRelation.id.asc()).first()
+    if column_relation:
+        selected_column_id = column_relation.target_id
+    elif file_record.related_type == 'column':
+        selected_column_id = file_record.related_id
+
+    return render_template('files/edit.html', file=file_record, categories=categories,
+                           columns=choices['columns'], selected_column_id=selected_column_id)
 
 
 @files_bp.route('/<int:file_id>/preview')
@@ -543,6 +598,10 @@ def api_upload():
     try:
         file_obj.save(save_path)
         file_size = os.path.getsize(save_path)
+        from app.config import Config
+        if file_size > Config.MAX_FILE_SIZE:
+            os.remove(save_path)
+            return jsonify({'error': 1, 'message': '单个文件不能超过 50GB'}), 413
     except Exception as e:
         return jsonify({'error': 1, 'message': str(e)})
 

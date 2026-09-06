@@ -88,7 +88,7 @@
         <td style="color:#94a3b8;font-weight:700;">#{{ t.id }}</td>
         <td>
           <a href="{{ url_for('tasks.detail_task', task_id=t.id) }}" class="oa-title-link">
-            {{ t.title[:50] }}{% if t.title|length>50 %}...{% endif %}
+            {{ t.title }}
           </a>
           {% if t.id in read_ids %}
           <span class="read-badge">已读</span>

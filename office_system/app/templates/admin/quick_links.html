@@ -92,7 +92,7 @@ body { padding:24px; background:#f1f5f9; }
 <div class="page-header">
   <div>
     <h2 class="page-title">首页快捷链接</h2>
-    <p class="page-subtitle">配置首页右上方快捷跳转，最多 {{ max_links }} 个，仅超级管理员可维护。</p>
+    <p class="page-subtitle">配置首页右上方快捷跳转，链接数量暂不设上限，仅超级管理员可维护。</p>
   </div>
   <a class="btn" href="{{ url_for('index_bp.index') }}" target="_blank">{{ icon('public-home') }} 查看首页</a>
 </div>
@@ -117,11 +117,7 @@ body { padding:24px; background:#f1f5f9; }
           <option value="{{ icon_id }}" {% if icon_id == 'gen-link' %}selected{% endif %}>{{ icon_label }} · {{ icon_id }}</option>
           {% endfor %}
         </select>
-        <select class="form-input" name="sort_order">
-          {% for n in range(max_links) %}
-          <option value="{{ n }}">{{ n + 1 }}</option>
-          {% endfor %}
-        </select>
+        <input class="form-input" type="number" name="sort_order" min="0" value="{{ links|length }}" placeholder="排序值">
         <label style="display:flex;align-items:center;gap:8px;color:#334155;font-size:13px;">
           <input type="checkbox" name="is_active" value="1" checked> 启用
         </label>
@@ -159,14 +155,7 @@ body { padding:24px; background:#f1f5f9; }
         <option value="{{ current_icon }}" selected>{{ current_icon }}</option>
         {% endif %}
       </select>
-      <select class="form-input small" name="sort_order">
-        {% for n in range(max_links) %}
-        <option value="{{ n }}" {% if link.sort_order == n %}selected{% endif %}>{{ n + 1 }}</option>
-        {% endfor %}
-        {% if link.sort_order < 0 or link.sort_order >= max_links %}
-        <option value="{{ link.sort_order }}" selected>{{ link.sort_order }}</option>
-        {% endif %}
-      </select>
+      <input class="form-input small" type="number" name="sort_order" min="0" value="{{ link.sort_order }}">
       <select class="form-input small" name="is_active">
         <option value="1" {% if link.is_active %}selected{% endif %}>启用</option>
         <option value="0" {% if not link.is_active %}selected{% endif %}>停用</option>

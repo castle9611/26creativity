@@ -15,7 +15,7 @@ ONLYOFFICE_JWT_SECRET=<LONG_RANDOM_SHARED_SECRET>
 APP_PUBLIC_URL=https://castlej.pythonanywhere.com
 DOCUMENT_STORAGE_FOLDER=/home/<YOUR_USERNAME>/26creativity/office_system/data/online_documents
 DOCUMENT_VERSION_FOLDER=/home/<YOUR_USERNAME>/26creativity/office_system/data/document_versions
-DOCUMENT_MAX_UPLOAD_MB=50
+DOCUMENT_MAX_UPLOAD_MB=51200
 DOCUMENT_URL_TOKEN_MAX_AGE=600
 ONLYOFFICE_DOWNLOAD_HOSTS=docs.example.com
 ```

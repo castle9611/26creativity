@@ -126,6 +126,7 @@ class Bulletin(db.Model):
                             nullable=True, index=True)
     title = db.Column(db.String(500), nullable=False)
     content = db.Column(db.Text, default='')
+    nextcloud_url = db.Column(db.String(2000), default='')
     attachments = db.Column(db.Text, default='[]')
     is_pinned = db.Column(db.Integer, default=0, index=True)
     is_active = db.Column(db.Integer, default=1, index=True)
@@ -146,6 +147,7 @@ class Bulletin(db.Model):
             'column_id': self.column_id,
             'title': self.title,
             'content': self.content,
+            'nextcloud_url': self.nextcloud_url,
             'attachments': self.attachments,
             'is_pinned': self.is_pinned,
             'is_active': self.is_active,
@@ -169,6 +171,8 @@ class BulletinAttachment(db.Model):
     file_path = db.Column(db.String(1000), nullable=False)
     file_size = db.Column(db.Integer, default=0)
     file_type = db.Column(db.String(100), default='')
+    category_id = db.Column(db.Integer, db.ForeignKey('bulletin_categories.id'), nullable=True, index=True)
+    column_id = db.Column(db.Integer, db.ForeignKey('columns.id', ondelete='SET NULL'), nullable=True, index=True)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -182,9 +186,11 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     title = db.Column(db.String(500), nullable=False)
     content = db.Column(db.Text, default='')
+    nextcloud_url = db.Column(db.String(2000), default='')
     priority = db.Column(db.String(20), default='normal', index=True)
     department = db.Column(db.String(100), default='', index=True)
     category_id = db.Column(db.Integer, db.ForeignKey('bulletin_categories.id'), nullable=True, index=True)
+    column_id = db.Column(db.Integer, db.ForeignKey('columns.id', ondelete='SET NULL'), nullable=True, index=True)
     assignee_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     deadline = db.Column(db.Date, nullable=True, index=True)
@@ -227,6 +233,7 @@ class Task(db.Model):
             'id': self.id,
             'title': self.title,
             'content': self.content,
+            'nextcloud_url': self.nextcloud_url,
             'priority': self.priority,
             'department': self.department,
             'category_id': self.category_id,
@@ -388,10 +395,14 @@ class Memo(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     title = db.Column(db.String(500), nullable=False)
     content = db.Column(db.Text, default='')
+    nextcloud_url = db.Column(db.String(2000), default='')
     memo_type = db.Column(db.String(20), default='private', index=True)
     group_id = db.Column(db.Integer, db.ForeignKey('memo_groups.id'), nullable=True, index=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('bulletin_categories.id'), nullable=True, index=True)
+    column_id = db.Column(db.Integer, db.ForeignKey('columns.id', ondelete='SET NULL'), nullable=True, index=True)
     visible_roles = db.Column(db.String(200), default='all')
     is_archived = db.Column(db.Integer, default=0, index=True)
+    expires_at = db.Column(db.DateTime, nullable=True, index=True)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -404,10 +415,12 @@ class Memo(db.Model):
             'id': self.id,
             'title': self.title,
             'content': self.content,
+            'nextcloud_url': self.nextcloud_url,
             'memo_type': self.memo_type,
             'group_id': self.group_id,
             'visible_roles': self.visible_roles,
             'is_archived': self.is_archived,
+            'expires_at': self.expires_at.strftime('%Y-%m-%d %H:%M:%S') if self.expires_at else '',
             'created_by': self.created_by,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else '',
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
@@ -441,6 +454,7 @@ class File(db.Model):
     file_size = db.Column(db.Integer, default=0)
     file_type = db.Column(db.String(100), default='')
     category_id = db.Column(db.Integer, db.ForeignKey('bulletin_categories.id'), nullable=True, index=True)
+    column_id = db.Column(db.Integer, db.ForeignKey('columns.id', ondelete='SET NULL'), nullable=True, index=True)
     related_type = db.Column(db.String(50), default='', index=True)
     related_id = db.Column(db.Integer, default=0, index=True)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
@@ -461,11 +475,22 @@ class File(db.Model):
             'file_size': self.file_size,
             'file_type': self.file_type,
             'category_id': self.category_id,
+            'column_id': self.column_id,
             'related_type': self.related_type,
             'related_id': self.related_id,
             'uploaded_by': self.uploaded_by,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else ''
         }
+
+
+class FileSearchText(db.Model):
+    """Offline extracted file text; rebuilt independently of business data."""
+    __tablename__ = 'file_search_text'
+
+    file_id = db.Column(db.Integer, db.ForeignKey('files.id', ondelete='CASCADE'), primary_key=True)
+    content = db.Column(db.Text, default='')
+    status = db.Column(db.String(30), default='pending', index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class FileRelation(db.Model):
@@ -518,6 +543,34 @@ class SystemConfig(db.Model):
     config_key = db.Column(db.String(100), unique=True, nullable=False, index=True)
     config_value = db.Column(db.Text, default='')
     description = db.Column(db.String(500), default='')
+
+
+class CloudAttachment(db.Model):
+    """Nextcloud mirror/link for attachments owned by OA business records."""
+    __tablename__ = 'cloud_attachments'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    target_type = db.Column(db.String(30), nullable=False, index=True)
+    target_id = db.Column(db.Integer, nullable=False, index=True)
+    original_name = db.Column(db.String(500), nullable=False)
+    local_path = db.Column(db.String(1000), default='')
+    cloud_path = db.Column(db.String(1000), default='')
+    cloud_file_id = db.Column(db.String(100), default='', index=True)
+    cloud_url = db.Column(db.String(1000), default='')
+    sync_status = db.Column(db.String(20), default='pending', index=True)
+    sync_error = db.Column(db.String(1000), default='')
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('bulletin_categories.id'), nullable=True, index=True)
+    column_id = db.Column(db.Integer, db.ForeignKey('columns.id', ondelete='SET NULL'), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    synced_at = db.Column(db.DateTime)
+
+    __table_args__ = (db.UniqueConstraint('target_type', 'target_id', 'local_path',
+                                          name='uq_cloud_attachment_local'),)
+
+    uploader = db.relationship('User', backref=db.backref('cloud_attachments', lazy='dynamic'))
+    category = db.relationship('BulletinCategory', foreign_keys=[category_id])
+    column = db.relationship('Column', foreign_keys=[column_id])
 
 
 class BulletinCategory(db.Model):

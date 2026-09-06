@@ -5,14 +5,42 @@ Personal private memos + public shared memos.
 """
 import json
 from datetime import datetime
+from urllib.parse import urlsplit
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, flash, session)
 from app.extensions import db
-from app.models import Memo, User, MemoGroup, File
+from app.models import Memo, User, MemoGroup, File, BulletinCategory, Column
 from app.decorators import login_required, require_role
 from app.utils import add_log, get_pagination, check_visible
 
 memo_bp = Blueprint('memo', __name__)
+
+
+def _optional_nextcloud_url():
+    value = request.form.get('nextcloud_url', '').strip()[:2000]
+    if not value:
+        return ''
+    parsed = urlsplit(value)
+    return value if parsed.scheme in ('http', 'https') and parsed.netloc else ''
+
+
+def _attachment_classification():
+    category_id = request.form.get('attachment_category_id', 0, type=int)
+    column_id = request.form.get('attachment_column_id', 0, type=int)
+    column = Column.query.filter_by(id=column_id, is_active=1).first() if column_id else None
+    if column:
+        return column.category_id or category_id or None, column.id
+    return category_id or None, None
+
+
+def _memo_form_options():
+    categories = BulletinCategory.query.filter_by(is_active=1).order_by(BulletinCategory.sort_order.asc()).all()
+    columns = Column.query.filter_by(is_active=1).order_by(Column.sort_order.asc()).all()
+    cols_by_cat = {}
+    for column in columns:
+        cols_by_cat.setdefault(column.category_id or 0, []).append(column)
+    from app.nextcloud import cloud_home_url
+    return categories, cols_by_cat, cloud_home_url()
 
 
 @memo_bp.route('/')
@@ -23,19 +51,25 @@ def list_memos():
     user_id = session['user_id']
     user_role = session['role']
 
-    memo_type = request.args.get('type', 'all').strip()
+    memo_type = request.args.get('type', 'private').strip()
+    if memo_type not in ('private', 'public', 'past'):
+        memo_type = 'private'
     keyword = request.args.get('keyword', '').strip()
-    group_id = request.args.get('group_id', 0, type=int)
+    group_id = 0
+    now = datetime.utcnow()
 
     # Build query: private memos (own) + public memos (visible)
-    query = Memo.query.filter(Memo.is_archived == 0)
+    if memo_type == 'past':
+        query = Memo.query.filter(db.or_(Memo.is_archived == 1, Memo.expires_at < now))
+    else:
+        query = Memo.query.filter(Memo.is_archived == 0,
+                                  db.or_(Memo.expires_at == None, Memo.expires_at >= now))
 
     if memo_type == 'private':
         query = query.filter(Memo.memo_type == 'private', Memo.created_by == user_id)
     elif memo_type == 'public':
         query = query.filter(Memo.memo_type == 'public')
-    else:
-        # 'all': own private + visible public
+    elif memo_type == 'past':
         query = query.filter(
             db.or_(
                 db.and_(Memo.memo_type == 'private', Memo.created_by == user_id),
@@ -50,9 +84,6 @@ def list_memos():
                 Memo.content.like('%' + keyword + '%')
             )
         )
-
-    if group_id:
-        query = query.filter(Memo.group_id == group_id)
 
     memos = query.order_by(Memo.created_at.desc()).all()
 
@@ -74,19 +105,24 @@ def list_memos():
     has_next = end < total
 
     # Memo statistics
-    private_count = Memo.query.filter(Memo.memo_type == 'private', Memo.created_by == user_id, Memo.is_archived == 0).count()
+    private_count = Memo.query.filter(Memo.memo_type == 'private', Memo.created_by == user_id,
+                                      Memo.is_archived == 0,
+                                      db.or_(Memo.expires_at == None, Memo.expires_at >= now)).count()
     public_count = sum(
-        1 for memo in Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).all()
+        1 for memo in Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0,
+                                        db.or_(Memo.expires_at == None, Memo.expires_at >= now)).all()
         if check_visible(memo.visible_roles, user_role)
     )
     memo_total_count = private_count + public_count
-    groups = MemoGroup.query.filter(
-        MemoGroup.is_active == 1,
-        db.or_(MemoGroup.created_by == user_id, MemoGroup.memo_type == 'public')
-    ).order_by(MemoGroup.memo_type.asc(), MemoGroup.sort_order.asc(), MemoGroup.name.asc()).all()
+    groups = []
+    past_count = sum(
+        1 for memo in Memo.query.filter(db.or_(Memo.is_archived == 1, Memo.expires_at < now)).all()
+        if (memo.memo_type == 'private' and memo.created_by == user_id)
+        or (memo.memo_type == 'public' and check_visible(memo.visible_roles, user_role))
+    )
 
     # Build memo links data for all displayed memos
-    from app.models import OnlineDocument, Spreadsheet
+    from app.models import OnlineDocument, Spreadsheet, CloudAttachment
     memo_ids = [m.id for m in page_memos]
     memo_links = {}
     if memo_ids:
@@ -122,6 +158,7 @@ def list_memos():
                                private_count=private_count,
                                public_count=public_count,
                                memo_total_count=memo_total_count,
+                               past_count=past_count,
                                memo_links=memo_links)
         return html
 
@@ -139,6 +176,7 @@ def list_memos():
                            private_count=private_count,
                            public_count=public_count,
                            memo_total_count=memo_total_count,
+                           past_count=past_count,
                            memo_links=memo_links)
 
 
@@ -149,9 +187,12 @@ def create_memo():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
+        nextcloud_url = _optional_nextcloud_url()
         memo_type = request.form.get('memo_type', 'private').strip()
         visible_roles = request.form.get('visible_roles', 'all').strip()
         group_id = request.form.get('group_id', 0, type=int)
+        expires_raw = request.form.get('expires_at', '').strip()
+        expires_at = datetime.strptime(expires_raw + ' 23:59:59', '%Y-%m-%d %H:%M:%S') if expires_raw else None
 
         if not title:
             flash('备忘标题不能为空', 'warning')
@@ -160,8 +201,10 @@ def create_memo():
         memo = Memo(
             title=title,
             content=content,
+            nextcloud_url=nextcloud_url,
             memo_type=memo_type,
             group_id=group_id if group_id > 0 else None,
+            expires_at=expires_at,
             visible_roles=visible_roles,
             created_by=session['user_id']
         )
@@ -192,11 +235,14 @@ def create_memo():
         return redirect(url_for('memo.list_memos'))
 
     groups = _visible_groups()
-    from app.models import OnlineDocument, Spreadsheet
+    from app.models import OnlineDocument, Spreadsheet, CloudAttachment
     available_docs = OnlineDocument.query.filter_by(is_active=1).order_by(OnlineDocument.updated_at.desc()).all()
     available_sheets = Spreadsheet.query.filter_by(is_active=1).order_by(Spreadsheet.updated_at.desc()).all()
+    categories, cols_by_cat, nextcloud_url = _memo_form_options()
     return render_template('memo/edit.html', memo=None, is_edit=False, groups=groups,
-                           available_docs=available_docs, available_sheets=available_sheets)
+                           available_docs=available_docs, available_sheets=available_sheets,
+                           categories=categories, cols_by_cat=cols_by_cat,
+                           nextcloud_url=nextcloud_url)
 
 
 @memo_bp.route('/<int:memo_id>/edit', methods=['GET', 'POST'])
@@ -220,9 +266,12 @@ def edit_memo(memo_id):
 
         memo.title = title
         memo.content = request.form.get('content', '').strip()
+        memo.nextcloud_url = _optional_nextcloud_url()
         memo.memo_type = request.form.get('memo_type', memo.memo_type).strip()
         group_id = request.form.get('group_id', 0, type=int)
         memo.group_id = group_id if group_id > 0 else None
+        expires_raw = request.form.get('expires_at', '').strip()
+        memo.expires_at = datetime.strptime(expires_raw + ' 23:59:59', '%Y-%m-%d %H:%M:%S') if expires_raw else None
         memo.visible_roles = request.form.get('visible_roles', memo.visible_roles).strip()
         memo.updated_at = datetime.utcnow()
 
@@ -256,7 +305,7 @@ def edit_memo(memo_id):
         return redirect(url_for('memo.list_memos'))
 
     groups = _visible_groups()
-    from app.models import OnlineDocument, Spreadsheet
+    from app.models import OnlineDocument, Spreadsheet, CloudAttachment
     available_docs = OnlineDocument.query.filter_by(is_active=1).order_by(OnlineDocument.updated_at.desc()).all()
     available_sheets = Spreadsheet.query.filter_by(is_active=1).order_by(Spreadsheet.updated_at.desc()).all()
     linked_doc_ids = [d.id for d in OnlineDocument.query.filter_by(related_type='memo', related_id=memo.id)]
@@ -264,10 +313,16 @@ def edit_memo(memo_id):
     memo_attachments = File.query.filter_by(
         related_type='memo', related_id=memo.id, is_deleted=0
     ).order_by(File.created_at.asc()).all()
+    cloud_attachments = CloudAttachment.query.filter_by(
+        target_type='memo', target_id=memo.id).order_by(CloudAttachment.created_at.asc()).all()
+    categories, cols_by_cat, nextcloud_url = _memo_form_options()
     return render_template('memo/edit.html', memo=memo, is_edit=True, groups=groups,
                            available_docs=available_docs, available_sheets=available_sheets,
                            linked_doc_ids=linked_doc_ids, linked_sheet_ids=linked_sheet_ids,
-                           memo_attachments=memo_attachments)
+                           memo_attachments=memo_attachments,
+                           cloud_attachments=cloud_attachments,
+                           categories=categories, cols_by_cat=cols_by_cat,
+                           nextcloud_url=nextcloud_url)
 
 
 def _save_memo_attachments(memo_id):
@@ -276,6 +331,7 @@ def _save_memo_attachments(memo_id):
     from flask import current_app
     upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'memos', str(memo_id))
     os.makedirs(upload_folder, exist_ok=True)
+    attachment_category_id, attachment_column_id = _attachment_classification()
     for f in request.files.getlist('attachments'):
         if not f or not f.filename:
             continue
@@ -289,10 +345,15 @@ def _save_memo_attachments(memo_id):
             file_path='/static/uploads/memos/{}/{}'.format(memo_id, safe_name),
             file_size=os.path.getsize(file_path),
             file_type=original.rsplit('.', 1)[-1].lower() if '.' in original else '',
+            category_id=attachment_category_id,
+            column_id=attachment_column_id,
             related_type='memo',
             related_id=memo_id,
             uploaded_by=session['user_id']
         ))
+        from app.nextcloud import mirror_attachment
+        mirror_attachment('memo', memo_id, file_path, original, session['user_id'],
+                          category_id=attachment_category_id, column_id=attachment_column_id)
 
 
 def _delete_memo_attachments(memo_id, raw_ids):
@@ -383,14 +444,15 @@ def restore_memo(memo_id):
 
     if memo.created_by != user_id and user_role != 'super_admin':
         flash('无权执行此操作', 'danger')
-        return redirect(url_for('memo.archived'))
+        return redirect(url_for('memo.list_memos', type='past'))
 
     memo.is_archived = 0
+    memo.expires_at = None
     memo.updated_at = datetime.utcnow()
     db.session.commit()
     add_log('restore_memo', 'memo', memo.id, 'Restored memo: ' + memo.title)
     flash('备忘已恢复', 'success')
-    return redirect(url_for('memo.archived'))
+    return redirect(url_for('memo.list_memos', type='past'))
 
 
 @memo_bp.route('/<int:memo_id>/delete', methods=['POST'])
@@ -417,42 +479,8 @@ def delete_memo(memo_id):
 @memo_bp.route('/archived')
 @login_required
 def archived():
-    """View archived memos."""
-    page, per_page = get_pagination()
-    user_id = session['user_id']
-    user_role = session['role']
-
-    query = Memo.query.filter(Memo.is_archived == 1)
-    if user_role != 'super_admin':
-        query = query.filter(Memo.created_by == user_id)
-    query = query.order_by(Memo.updated_at.desc())
-
-    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-
-    return render_template('memo/list.html',
-                           memos=pagination.items,
-                           groups=_visible_groups(),
-                           group_id=0,
-                           page=page,
-                           per_page=per_page,
-                           total=pagination.total,
-                           has_prev=pagination.has_prev,
-                           has_next=pagination.has_next,
-                           memo_type='archived',
-                           keyword='',
-                           memo_links={},
-                           private_count=Memo.query.filter(Memo.memo_type == 'private', Memo.created_by == user_id, Memo.is_archived == 0).count(),
-                           public_count=sum(
-                               1 for memo in Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).all()
-                               if check_visible(memo.visible_roles, user_role)
-                           ),
-                           memo_total_count=(
-                               Memo.query.filter(Memo.memo_type == 'private', Memo.created_by == user_id, Memo.is_archived == 0).count()
-                               + sum(
-                                   1 for memo in Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).all()
-                                   if check_visible(memo.visible_roles, user_role)
-                               )
-                           ))
+    """Keep the legacy URL working and route it into past memos."""
+    return redirect(url_for('memo.list_memos', type='past'))
 
 
 @memo_bp.route('/batch-restore', methods=['POST'])
@@ -476,8 +504,10 @@ def batch_restore():
     count = 0
     for mid in ids:
         memo = Memo.query.get(mid)
-        if memo and memo.is_archived == 1 and (memo.created_by == user_id or user_role == 'super_admin'):
+        is_past = memo and (memo.is_archived == 1 or (memo.expires_at and memo.expires_at < datetime.utcnow()))
+        if is_past and (memo.created_by == user_id or user_role == 'super_admin'):
             memo.is_archived = 0
+            memo.expires_at = None
             memo.updated_at = datetime.utcnow()
             count += 1
 

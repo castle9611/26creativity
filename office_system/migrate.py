@@ -146,6 +146,36 @@ def migrate():
             db.session.commit()
             print('[MIG]   Done')
 
+        existing_task_cols = db.session.execute(text("PRAGMA table_info(tasks)")).fetchall()
+        existing_task_col_names = [row[1] for row in existing_task_cols]
+        if 'nextcloud_url' not in existing_task_col_names:
+            print('[MIG] Adding tasks.nextcloud_url...')
+            db.session.execute(text("ALTER TABLE tasks ADD COLUMN nextcloud_url VARCHAR(2000) DEFAULT ''"))
+            db.session.commit()
+            print('[MIG]   Done')
+
+        for table_name in ('bulletins', 'memos'):
+            table_cols = db.session.execute(text("PRAGMA table_info(%s)" % table_name)).fetchall()
+            table_col_names = [row[1] for row in table_cols]
+            if 'nextcloud_url' not in table_col_names:
+                print('[MIG] Adding %s.nextcloud_url...' % table_name)
+                db.session.execute(text("ALTER TABLE %s ADD COLUMN nextcloud_url VARCHAR(2000) DEFAULT ''" % table_name))
+                db.session.commit()
+                print('[MIG]   Done')
+
+        for table_name in ('bulletin_attachments', 'files'):
+            table_cols = db.session.execute(text("PRAGMA table_info(%s)" % table_name)).fetchall()
+            table_col_names = [row[1] for row in table_cols]
+            if 'category_id' not in table_col_names:
+                print('[MIG] Adding %s.category_id...' % table_name)
+                db.session.execute(text("ALTER TABLE %s ADD COLUMN category_id INTEGER" % table_name))
+            if 'column_id' not in table_col_names:
+                print('[MIG] Adding %s.column_id...' % table_name)
+                db.session.execute(text("ALTER TABLE %s ADD COLUMN column_id INTEGER" % table_name))
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_%s_category_id ON %s(category_id)" % (table_name, table_name)))
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_%s_column_id ON %s(column_id)" % (table_name, table_name)))
+            db.session.commit()
+
         # Migration 11: Create read/comment/memo group tables
         existing_tables = db.session.execute(
             text("SELECT name FROM sqlite_master WHERE type='table'")
@@ -171,6 +201,26 @@ def migrate():
             db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_memos_group_id ON memos(group_id)"))
             db.session.commit()
             print('[MIG]   Done')
+        if 'expires_at' not in existing_memo_col_names:
+            print('[MIG] Adding memos.expires_at...')
+            db.session.execute(text("ALTER TABLE memos ADD COLUMN expires_at DATETIME"))
+            db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_memos_expires_at ON memos(expires_at)"))
+            db.session.commit()
+            print('[MIG]   Done')
+
+        # Optional classification metadata for mirrored business attachments.
+        if 'cloud_attachments' in existing_table_names:
+            cloud_cols = db.session.execute(text("PRAGMA table_info(cloud_attachments)")).fetchall()
+            cloud_col_names = [row[1] for row in cloud_cols]
+            if 'category_id' not in cloud_col_names:
+                print('[MIG] Adding cloud_attachments.category_id...')
+                db.session.execute(text("ALTER TABLE cloud_attachments ADD COLUMN category_id INTEGER"))
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_cloud_attachments_category_id ON cloud_attachments(category_id)"))
+            if 'column_id' not in cloud_col_names:
+                print('[MIG] Adding cloud_attachments.column_id...')
+                db.session.execute(text("ALTER TABLE cloud_attachments ADD COLUMN column_id INTEGER"))
+                db.session.execute(text("CREATE INDEX IF NOT EXISTS ix_cloud_attachments_column_id ON cloud_attachments(column_id)"))
+            db.session.commit()
 
         # Migration 13: Add avatar to users
         existing_user_cols = db.session.execute(text("PRAGMA table_info(users)")).fetchall()

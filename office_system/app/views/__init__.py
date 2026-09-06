@@ -2,6 +2,7 @@
 """
 Blueprint auto-registration.
 """
+import json
 from app.views.auth import auth_bp
 from app.views.admin import admin_bp
 from app.views.tasks import tasks_bp
@@ -13,6 +14,7 @@ from app.views.stats import stats_bp
 from app.views.settings import settings_bp
 from app.views.docs import docs_bp
 from app.views.sheets import sheets_bp
+from app.views.cloud import cloud_bp
 
 
 def register_blueprints(app):
@@ -28,6 +30,7 @@ def register_blueprints(app):
     app.register_blueprint(settings_bp)
     app.register_blueprint(docs_bp)
     app.register_blueprint(sheets_bp)
+    app.register_blueprint(cloud_bp)
 
     from flask import session, g
     from app.models import Column, Tab, User
@@ -88,7 +91,7 @@ def register_blueprints(app):
         }
 
     # Index / dashboard routes
-    from flask import Blueprint, render_template, jsonify, session, request, url_for, redirect, flash
+    from flask import Blueprint, render_template, jsonify, session, request, url_for, redirect, flash, current_app
     from app.extensions import db
     from app.decorators import login_required
     from app.models import Task, TaskAssignee, Bulletin, Memo, User, File, OnlineDocument, Spreadsheet, Column, BulletinCategory, QuickLink
@@ -150,14 +153,19 @@ def register_blueprints(app):
         from sqlalchemy import or_
         pending_count = task_query.filter(Task.status.in_(active_statuses)).count()
         tracking_count = task_query.count()
+        bulletin_count = bulletin_query.count()
         reminders_count = bulletin_query.filter(
             or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
         ).count()
         files_count = file_query.count()
-        memos_count = Memo.query.filter(
+        public_memo_candidates = Memo.query.filter(
             Memo.memo_type == 'public',
-            Memo.is_archived == 0
-        ).count()
+            Memo.is_archived == 0,
+            or_(Memo.expires_at == None, Memo.expires_at >= datetime.utcnow())
+        ).order_by(Memo.updated_at.desc()).all()
+        public_memos_visible = [memo for memo in public_memo_candidates
+                                if check_visible(memo.visible_roles, 'anonymous')]
+        memos_count = len(public_memos_visible)
 
         pending_tasks = task_query.filter(Task.status.in_(active_statuses)).order_by(
             Task.deadline.asc().nullslast(), Task.created_at.desc()
@@ -167,16 +175,15 @@ def register_blueprints(app):
             or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
         ).order_by(Bulletin.created_at.desc()).limit(8).all()
         public_files = file_query.order_by(File.created_at.desc()).limit(8).all()
-        public_memos = Memo.query.filter(
-            Memo.memo_type == 'public',
-            Memo.is_archived == 0
-        ).order_by(Memo.updated_at.desc()).limit(6).all()
+        public_memos = public_memos_visible[:6]
         public_quick_links = QuickLink.query.filter_by(
             scope='public',
             is_active=1
-        ).order_by(QuickLink.sort_order.asc(), QuickLink.id.asc()).limit(10).all()
+        ).order_by(QuickLink.sort_order.asc(), QuickLink.id.asc()).all()
 
         portal_stats = {
+            'tasks': tracking_count,
+            'bulletins': bulletin_count,
             'pending': pending_count,
             'tracking': tracking_count,
             'reminders': reminders_count,
@@ -338,6 +345,12 @@ def register_blueprints(app):
     @index_bp.route('/workbench')
     @login_required
     def workbench():
+        """Persistent workbench shell with sidebar navigation."""
+        return render_template('base.html')
+
+    @index_bp.route('/workbench/dashboard')
+    @login_required
+    def workbench_dashboard():
         """Main dashboard."""
         user_id = session.get('user_id')
         user_role = session.get('role', '')
@@ -448,7 +461,7 @@ def register_blueprints(app):
             scope='user',
             user_id=user_id,
             is_active=1
-        ).order_by(QuickLink.sort_order.asc(), QuickLink.id.asc()).limit(10).all()
+        ).order_by(QuickLink.sort_order.asc(), QuickLink.id.asc()).all()
 
         return render_template('index.html',
                                pending_count=pending_count,
@@ -484,18 +497,13 @@ def register_blueprints(app):
         links = QuickLink.query.filter_by(scope='user', user_id=user_id).order_by(
             QuickLink.sort_order.asc(), QuickLink.id.asc()
         ).all()
-        return render_template('quick_links.html', links=links, max_links=10)
+        return render_template('quick_links.html', links=links)
 
     @index_bp.route('/quick-links/add', methods=['POST'])
     @login_required
     def quick_link_add():
         """Add a personal workbench quick link."""
         user_id = session.get('user_id')
-        count = QuickLink.query.filter_by(scope='user', user_id=user_id).count()
-        if count >= 10:
-            flash('个人快捷链接最多只能添加 10 个', 'warning')
-            return redirect(url_for('index_bp.quick_links'))
-
         name = request.form.get('name', '').strip()
         link_url = request.form.get('url', '').strip()
         if not name or not link_url:
@@ -559,9 +567,20 @@ def register_blueprints(app):
     def public_task_detail(task_id):
         """Public read-only task detail."""
         task = Task.query.get_or_404(task_id)
+        attachment_items = []
+        try:
+            for attachment in json.loads(task.attachments or '[]'):
+                attachment_items.append({
+                    'name': attachment.get('original') or attachment.get('name') or '附件',
+                    'url': attachment.get('path') or '',
+                    'size': attachment.get('size') or 0,
+                })
+        except (TypeError, ValueError):
+            attachment_items = []
         return render_template('public_detail.html',
                                detail_type='task',
                                item=task,
+                               attachment_items=attachment_items,
                                back_url=url_for('index_bp.index', category_id=task.category_id) if task.category_id else url_for('index_bp.index'))
 
     @index_bp.route('/public/bulletin/<int:bulletin_id>')
@@ -572,9 +591,15 @@ def register_blueprints(app):
             Bulletin.status == 'published',
             Bulletin.is_active == 1
         ).first_or_404()
+        attachment_items = [{
+            'name': attachment.original_name,
+            'url': attachment.file_path,
+            'size': attachment.file_size or 0,
+        } for attachment in bulletin.files.all()]
         return render_template('public_detail.html',
                                detail_type='bulletin',
                                item=bulletin,
+                               attachment_items=attachment_items,
                                back_url=url_for('index_bp.index', category_id=bulletin.category_id) if bulletin.category_id else url_for('index_bp.index'))
 
     @index_bp.route('/public/memo/<int:memo_id>')
@@ -585,9 +610,19 @@ def register_blueprints(app):
             Memo.memo_type == 'public',
             Memo.is_archived == 0
         ).first_or_404()
+        from app.models import File
+        memo_files = File.query.filter_by(
+            related_type='memo', related_id=memo.id, is_deleted=0
+        ).order_by(File.created_at.asc()).all()
+        attachment_items = [{
+            'name': attachment.original_name,
+            'url': attachment.file_path,
+            'size': attachment.file_size or 0,
+        } for attachment in memo_files]
         return render_template('public_detail.html',
                                detail_type='memo',
                                item=memo,
+                               attachment_items=attachment_items,
                                back_url=url_for('index_bp.index'))
 
     @index_bp.route('/search')
@@ -616,9 +651,17 @@ def register_blueprints(app):
             Memo.memo_type == 'public'
         ))
 
-        results = {'tasks': [], 'bulletins': [], 'memos': []}
+        results = {'tasks': [], 'bulletins': [], 'memos': [], 'files': [], 'cloud_files': []}
         if keyword:
             like = '%' + keyword + '%'
+            file_query = File.query.filter(File.is_deleted == 0)
+            if user_role == 'dept_admin':
+                dept_user_ids = [u.id for u in User.query.filter_by(department=user_dept).all()]
+                file_query = file_query.filter(File.uploaded_by.in_(dept_user_ids))
+            elif user_role == 'user':
+                file_query = file_query.filter(File.uploaded_by == user_id)
+            results['files'] = file_query.filter(File.original_name.like(like)).order_by(
+                File.created_at.desc()).limit(12).all()
             if search_scope == 'title':
                 results['tasks'] = task_query.filter(Task.title.like(like)).limit(8).all()
                 results['bulletins'] = bulletin_query.filter(Bulletin.title.like(like)).limit(8).all()
@@ -627,6 +670,13 @@ def register_blueprints(app):
                 results['tasks'] = task_query.filter(db.or_(Task.title.like(like), Task.content.like(like))).limit(8).all()
                 results['bulletins'] = bulletin_query.filter(db.or_(Bulletin.title.like(like), Bulletin.content.like(like))).limit(8).all()
                 results['memos'] = memo_query.filter(db.or_(Memo.title.like(like), Memo.content.like(like))).limit(8).all()
+
+            try:
+                from app.nextcloud import is_nextcloud_configured, search_files
+                if is_nextcloud_configured():
+                    results['cloud_files'] = search_files(keyword, 12)
+            except Exception as exc:
+                current_app.logger.warning('Nextcloud dashboard search failed: %s', exc)
 
         return render_template('search.html', keyword=keyword, search_scope=search_scope, results=results)
 

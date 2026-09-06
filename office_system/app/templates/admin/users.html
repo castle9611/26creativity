@@ -1,16 +1,17 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 {% from '_icon.html' import icon %}
 <head>
 <meta charset="utf-8"><title>用户管理</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<script src="{{ url_for('static', filename='js/theme.js', v='20260820-global-theme') }}"></script>
 <style>
 body { background: #f1f5f9; }
 .breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display:block;
+
+
     font-size: var(--text-sm);
     color: #64748b;
     margin-bottom: 16px;
@@ -19,9 +20,9 @@ body { background: #f1f5f9; }
 .breadcrumb a:hover { color: #2563eb; }
 .breadcrumb-sep { color: #cbd5e1; }
 .back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display:inline-block;
+
+
     padding: 6px 12px;
     font-size: var(--text-sm);
     color: #64748b;
@@ -29,12 +30,12 @@ body { background: #f1f5f9; }
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .back-btn:hover { border-color: #2563eb; color: #2563eb; }
 </style>
 </head>
-<body style="padding:24px;background:#f1f5f9;">
+<body class="theme-page user-management-page" style="padding:24px;background:#f1f5f9;">
 
 <!-- Breadcrumb -->
 <div class="breadcrumb">
@@ -55,15 +56,16 @@ body { background: #f1f5f9; }
   </div>
 </div>
 
+<p id="batchFeedback" role="status" aria-live="polite" tabindex="-1"></p>
 <!-- Batch Actions Bar -->
-<div id="batchActionsBar" style="display:none;background:#1e293b;color:white;padding:12px 16px;border-radius:10px;margin-bottom:16px;align-items:center;justify-content:space-between;">
-  <div style="display:flex;align-items:center;gap:12px;">
+<div id="batchActionsBar" style="display:none;background:#1e293b;color:white;padding:12px 16px;border-radius:10px;margin-bottom:16px;">
+  <div style="display:block;">
     <span id="selectedCount">已选择 0 项</span>
-    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
-      <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" style="width:16px;height:16px;"> 全选
+    <label style="display:block;cursor:pointer;font-size:13px;">
+      <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="width:16px;height:16px;"> 全选
     </label>
   </div>
-  <div style="display:flex;gap:8px;">
+  <div style="display:block;">
     <button type="button" class="btn" style="background:#3b82f6;border:1px solid #3b82f6;color:white;" onclick="openBatchRoleModal()">👤 批量修改角色</button>
     <button type="button" class="btn" style="background:#f59e0b;border:1px solid #f59e0b;color:white;" onclick="batchToggleStatus()">{{ icon('refresh') }} 批量启用/禁用</button>
     <button type="button" class="btn" style="background:#dc2626;border:1px solid #dc2626;color:white;" onclick="batchDelete()">{{ icon('trash') }} 批量删除</button>
@@ -72,48 +74,48 @@ body { background: #f1f5f9; }
 </div>
 
 <!-- Batch Role Modal -->
-<div id="batchRoleModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+<div id="batchRoleModal" class="oa-dialog" role="dialog" aria-modal="true" aria-labelledby="batchRoleTitle" tabindex="-1" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;">
   <div style="background:white;border-radius:12px;padding:32px;width:400px;">
-    <h3 style="font-size:var(--text-h3);font-weight:600;margin-bottom:20px;">批量修改角色</h3>
+    <h3 id="batchRoleTitle" style="font-size:var(--text-h3);font-weight:600;margin-bottom:20px;">批量修改角色</h3>
     <div class="form-group">
-      <label class="form-label">选择角色</label>
+      <label class="form-label" for="batchRoleSelect">选择角色</label>
       <select id="batchRoleSelect" class="form-select" style="height:44px;">
         <option value="user">干警</option>
         <option value="dept_admin">监区管理员</option>
         <option value="super_admin">超级管理员</option>
       </select>
     </div>
-    <div style="display:flex;gap:12px;margin-top:24px;">
-      <button type="button" class="btn btn-primary" onclick="confirmBatchRole()" style="flex:1;">确认修改</button>
-      <button type="button" class="btn" onclick="document.getElementById('batchRoleModal').style.display='none'" style="flex:1;">取消</button>
+    <div style="display:block;margin-top:24px;">
+      <button type="button" class="btn btn-primary" onclick="confirmBatchRole()" style="">确认修改</button>
+      <button type="button" class="btn" onclick="OADialog.close(document.getElementById('batchRoleModal'))" style="">取消</button>
     </div>
   </div>
 </div>
 
 <!-- Stats Bar (clickable to filter by role) -->
-<div class="stats-bar" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-  <a href="{{ url_for('admin.users') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition:all 0.2s;{% if not role_filter %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if not role_filter %}#2563eb{% else %}#e2e8f0{% endif %}'">
+<div class="stats-bar" style="display:block;margin-bottom:16px;">
+  <a href="{{ url_for('admin.users') }}" style="display:block;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;{% if not role_filter %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if not role_filter %}#2563eb{% else %}#e2e8f0{% endif %}'">
     <span style="font-size:var(--text-h3);">{{ icon('users') }}</span>
     <div>
       <div class="stat-num">{{ total_users }}</div>
       <div class="stat-label">用户总数</div>
     </div>
   </a>
-  <a href="{{ url_for('admin.users', role='super_admin') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition:all 0.2s;{% if role_filter=='super_admin' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='super_admin' %}#2563eb{% else %}#e2e8f0{% endif %}'">
+  <a href="{{ url_for('admin.users', role='super_admin') }}" style="display:block;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;{% if role_filter=='super_admin' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='super_admin' %}#2563eb{% else %}#e2e8f0{% endif %}'">
     <span style="font-size:var(--text-h3);">{{ icon('user-key') }}</span>
     <div>
       <div style="class="stat-num" style="color:#dc2626;white-space:nowrap;">{{ super_admin_count }}</div>
       <div class="stat-label">超级管理员</div>
     </div>
   </a>
-  <a href="{{ url_for('admin.users', role='dept_admin') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition:all 0.2s;{% if role_filter=='dept_admin' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='dept_admin' %}#2563eb{% else %}#e2e8f0{% endif %}'">
+  <a href="{{ url_for('admin.users', role='dept_admin') }}" style="display:block;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;{% if role_filter=='dept_admin' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='dept_admin' %}#2563eb{% else %}#e2e8f0{% endif %}'">
     <span style="font-size:var(--text-h3);">{{ icon('settings') }}</span>
     <div>
       <div style="class="stat-num" style="color:#f59e0b;white-space:nowrap;">{{ dept_admin_count }}</div>
       <div class="stat-label">监区管理员</div>
     </div>
   </a>
-  <a href="{{ url_for('admin.users', role='user') }}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition:all 0.2s;{% if role_filter=='user' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='user' %}#2563eb{% else %}#e2e8f0{% endif %}'">
+  <a href="{{ url_for('admin.users', role='user') }}" style="display:block;padding:10px 16px;background:white;border:1px solid #e2e8f0;border-radius:10px;min-width:100px;text-decoration:none;color:inherit;transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;{% if role_filter=='user' %}border-color:#2563eb;box-shadow:0 0 0 2px rgba(37,99,235,0.2);{% endif %}" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='{% if role_filter=='user' %}#2563eb{% else %}#e2e8f0{% endif %}'">
     <span style="font-size:18px;">👮</span>
     <div>
       <div style="class="stat-num" style="color:#3b82f6;white-space:nowrap;">{{ normal_user_count }}</div>
@@ -145,7 +147,7 @@ body { background: #f1f5f9; }
     <thead>
       <tr>
         <th style="width:40px;">
-          <input type="checkbox" id="selectAllTop" onchange="toggleSelectAll()" style="width:16px;height:16px;cursor:pointer;">
+          <input type="checkbox" id="selectAllTop" onchange="toggleSelectAll(this)" style="width:16px;height:16px;cursor:pointer;">
         </th>
         <th style="width:50px;">ID</th>
         <th>用户名</th>
@@ -210,7 +212,7 @@ body { background: #f1f5f9; }
 
 <!-- Pagination -->
 {% if pagination %}
-<div style="display:flex;justify-content:center;align-items:center;padding:24px 0;gap:8px;">
+<div style="display:block;padding:24px 0;">
   {% include '_page_size.html' %}
   {% if pagination.has_prev %}
   <a href="{{ url_for('admin.users', page=pagination.prev_num, per_page=request.args.get('per_page', 10), search=search, role=role_filter) }}" class="btn">上一页</a>
@@ -230,7 +232,7 @@ body { background: #f1f5f9; }
 {% endif %}
 
 <!-- Edit Modal -->
-<div id="editModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+<div id="editModal" class="oa-dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;">
   <div style="background:white;border-radius:12px;padding:32px;width:480px;max-width:90%;">
     <h3 id="modalTitle" style="font-size:var(--text-h3);font-weight:600;margin-bottom:24px;">添加用户</h3>
     <form id="editForm" method="post" autocomplete="off">
@@ -258,8 +260,8 @@ body { background: #f1f5f9; }
         <label class="form-label" for="eDept">部门</label>
         <input type="text" name="department" id="eDept" class="form-input" style="height:44px;" autocomplete="off">
       </div>
-      <div style="display:flex;gap:12px;margin-top:24px;">
-        <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">保存</button>
+      <div style="display:block;margin-top:24px;">
+        <button type="submit" class="btn btn-primary btn-lg" style="">保存</button>
         <button type="button" id="cancelEdit" class="btn btn-lg">取消</button>
       </div>
     </form>
@@ -267,7 +269,7 @@ body { background: #f1f5f9; }
 </div>
 
 <!-- Import Modal -->
-<div id="importModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+<div id="importModal" class="oa-dialog" role="dialog" aria-modal="true" aria-label="批量导入用户" tabindex="-1" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;">
   <div style="background:white;border-radius:12px;padding:32px;width:700px;max-width:90%;max-height:90vh;overflow:auto;">
     <h3 style="font-size:var(--text-h3);font-weight:600;margin-bottom:16px;">📥 批量导入用户</h3>
     <p style="color:#64748b;font-size:13px;margin-bottom:16px;">
@@ -282,16 +284,19 @@ body { background: #f1f5f9; }
         <input type="file" id="importFile" accept=".csv,.txt" class="form-input" style="height:44px;">
       </div>
       <div id="previewArea" style="margin:16px 0;max-height:300px;overflow:auto;"></div>
-      <div style="display:flex;gap:12px;margin-top:24px;">
-        <button type="submit" class="btn btn-primary btn-lg" style="flex:1;">确认导入</button>
+      <div style="display:block;margin-top:24px;">
+        <button type="submit" class="btn btn-primary btn-lg" style="">确认导入</button>
         <button type="button" id="cancelImport" class="btn btn-lg">取消</button>
       </div>
     </form>
   </div>
 </div>
 
+<script src="{{ url_for('static', filename='layui/layui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dialogs.js') }}"></script>
 <script>
-(function(){
+layui.use(['jquery'], function(){
+    var $ = layui.jquery;
     var modal = document.getElementById('editModal');
     var form = document.getElementById('editForm');
 
@@ -307,7 +312,7 @@ body { background: #f1f5f9; }
         document.getElementById('eRole').value = 'user';
         document.getElementById('eDept').value = '';
         form.action = '{{ url_for("admin.user_add") }}';
-        modal.style.display = 'flex';
+        OADialog.open(modal);
     });
 
     var editBtns = document.querySelectorAll('.edit-btn');
@@ -325,16 +330,16 @@ body { background: #f1f5f9; }
             document.getElementById('eRole').value = btn.dataset.role;
             document.getElementById('eDept').value = btn.dataset.dept;
             form.action = '/admin/users/' + btn.dataset.id + '/edit';
-            modal.style.display = 'flex';
+            OADialog.open(modal);
         });
     }
 
     document.getElementById('cancelEdit').addEventListener('click', function(){
-        modal.style.display = 'none';
+        OADialog.close(modal);
     });
 
     modal.addEventListener('click', function(e){
-        if(e.target === modal) modal.style.display = 'none';
+        if(e.target === modal) OADialog.close(modal);
     });
 
     // Import functionality
@@ -344,17 +349,17 @@ body { background: #f1f5f9; }
     var previewArea = document.getElementById('previewArea');
 
     document.getElementById('importBtn').addEventListener('click', function(){
-        importModal.style.display = 'flex';
+        OADialog.open(importModal);
         previewArea.innerHTML = '';
         importForm.reset();
     });
 
     document.getElementById('cancelImport').addEventListener('click', function(){
-        importModal.style.display = 'none';
+        OADialog.close(importModal);
     });
 
     importModal.addEventListener('click', function(e){
-        if(e.target === importModal) importModal.style.display = 'none';
+        if(e.target === importModal) OADialog.close(importModal);
     });
 
     fileInput.addEventListener('change', function(e){
@@ -412,7 +417,7 @@ body { background: #f1f5f9; }
                     var data = JSON.parse(xhr.responseText);
                     if(data.success){
                         alert('导入成功！共导入 ' + data.count + ' 个用户');
-                        importModal.style.display = 'none';
+                        OADialog.close(importModal);
                         location.reload();
                     } else {
                         alert('导入失败: ' + data.message);
@@ -455,54 +460,79 @@ body { background: #f1f5f9; }
         var countText = document.getElementById('selectedCount');
 
         if (count > 0) {
-            bar.style.display = 'flex';
+            bar.style.display = 'block';
             countText.textContent = '已选择 ' + count + ' 项';
         } else {
             bar.style.display = 'none';
         }
 
         var allCheckboxes = document.querySelectorAll('.user-checkbox');
-        var selectAllTop = document.getElementById('selectAllTop');
-        if (selectAllTop) {
-            selectAllTop.checked = (count === allCheckboxes.length && count > 0);
-            selectAllTop.indeterminate = (count > 0 && count < allCheckboxes.length);
+        var allCount = document.querySelectorAll('.user-checkbox').length;
+        var ids = ['selectAllTop', 'selectAllCheckbox'];
+        for (var j = 0; j < ids.length; j++) {
+            var control = document.getElementById(ids[j]);
+            if (control) {
+                control.checked = count > 0 && count === allCount;
+                control.indeterminate = count > 0 && count < allCount;
+            }
         }
     }
 
-    function toggleSelectAll() {
-        var checked = document.getElementById('selectAllCheckbox').checked || document.getElementById('selectAllTop').checked;
+    function toggleSelectAll(source) {
         var checkboxes = document.querySelectorAll('.user-checkbox');
-        for (var i = 0; i < checkboxes.length; i++) checkboxes[i].checked = checked;
+        for (var i = 0; i < checkboxes.length; i++) checkboxes[i].checked = source.checked;
         updateSelectionCount();
     }
 
     function clearSelection() {
         var checkboxes = document.querySelectorAll('.user-checkbox');
         for (var i = 0; i < checkboxes.length; i++) checkboxes[i].checked = false;
-        document.getElementById('batchActionsBar').style.display = 'none';
-        var selectAllTop = document.getElementById('selectAllTop');
-        if (selectAllTop) { selectAllTop.checked = false; selectAllTop.indeterminate = false; }
+        updateSelectionCount();
     }
 
     function openBatchRoleModal() {
         var ids = getSelectedIds();
         if (ids.length === 0) { alert('请先选择用户'); return; }
-        document.getElementById('batchRoleModal').style.display = 'flex';
+        OADialog.open(document.getElementById('batchRoleModal'));
     }
 
+    var batchPending = false;
     function _batchXhr(url, data, cb) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', url, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try { var d = JSON.parse(xhr.responseText); if(d.success) { if(cb) cb(); location.reload(); } else alert(d.message||'操作失败'); }
-                catch(e) { location.reload(); }
-            } else { alert('操作失败'); }
-        };
-        xhr.onerror = function(){ alert('操作失败'); };
-        xhr.send(data);
+        if (batchPending) return;
+        batchPending = true;
+        var feedback = document.getElementById('batchFeedback');
+        var controls = document.querySelectorAll('#batchActionsBar button, #batchRoleModal button, .user-checkbox, #selectAllTop, #selectAllCheckbox');
+        var previous = [];
+        for (var i = 0; i < controls.length; i++) {
+            previous.push(controls[i].disabled);
+            controls[i].disabled = true;
+        }
+        feedback.textContent = '正在处理，请稍候…';
+        var succeeded = false;
+        function failed(message) {
+            feedback.textContent = message;
+            var dialog = document.getElementById('batchRoleModal');
+            if (dialog.style.display !== 'none') OADialog.close(dialog);
+            feedback.focus();
+        }
+        $.ajax({
+            url: url, type: 'POST', data: data, dataType: 'json', timeout: 30000,
+            success: function(result) {
+                if (result.success) {
+                    succeeded = true;
+                    if (cb) cb();
+                    location.reload();
+                } else failed(result.message || '操作未完成，请检查所选用户后重试。');
+            },
+            error: function(xhr, status) {
+                failed(status === 'timeout' ? '请求超时，结果尚未确认。请刷新核对用户状态后再操作。' : '未能确认操作结果，请检查网络并刷新核对状态后再操作。');
+            },
+            complete: function() {
+                if (succeeded) return;
+                batchPending = false;
+                for (var j = 0; j < controls.length; j++) controls[j].disabled = previous[j];
+            }
+        });
     }
 
     function confirmBatchRole() {
@@ -510,7 +540,7 @@ body { background: #f1f5f9; }
         var newRole = document.getElementById('batchRoleSelect').value;
         if (ids.length === 0) { alert('请先选择用户'); return; }
         if (!confirm('确定要将选中的 ' + ids.length + ' 个用户修改为 ' + (newRole === 'super_admin' ? '超级管理员' : newRole === 'dept_admin' ? '监区管理员' : '干警') + ' 吗？')) return;
-        _batchXhr('{{ url_for("admin.batch_update_role") }}', 'ids=' + encodeURIComponent(JSON.stringify(ids)) + '&role=' + encodeURIComponent(newRole), function(){ document.getElementById('batchRoleModal').style.display = 'none'; });
+        _batchXhr('{{ url_for("admin.batch_update_role") }}', 'ids=' + encodeURIComponent(JSON.stringify(ids)) + '&role=' + encodeURIComponent(newRole), function(){ OADialog.close(document.getElementById('batchRoleModal')); });
     }
 
     function batchToggleStatus() {
@@ -534,7 +564,7 @@ body { background: #f1f5f9; }
     window.confirmBatchRole = confirmBatchRole;
     window.batchToggleStatus = batchToggleStatus;
     window.batchDelete = batchDelete;
-})();
+});
 </script>
 
 </body>

@@ -1,23 +1,49 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 {% from '_icon.html' import icon %}
 <head>
 <meta charset="utf-8"><title>{% if is_edit %}编辑任务{% else %}创建任务{% endif %}</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <style>
-body { background: #f1f5f9; }
-.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: #64748b; margin-bottom: 16px; }
+body { background: var(--bg-page, #f1f5f9); }
+.breadcrumb { display:block;   font-size: var(--text-sm); color: #64748b; margin-bottom: 16px; }
 .breadcrumb a { color: #64748b; text-decoration: none; }
 .breadcrumb a:hover { color: #2563eb; }
 .breadcrumb-sep { color: #cbd5e1; }
-.back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: var(--text-sm); color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+.back-btn { display:inline-block;   padding: 6px 12px; font-size: var(--text-sm); color: #64748b; background: white; border: 1px solid #e2e8f0; border-radius: 6px; text-decoration: none; transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s; }
 .back-btn:hover { border-color: #2563eb; color: #2563eb; }
-.form-card { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 32px; }
-.form-card h3 { font-size: var(--text-h3); font-weight: 600; color: #0f172a; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+.form-card { width: 100% !important; max-width: none !important; margin: 0 !important; background: white; border: 1px solid #dbe4ef; padding: 18px 22px; box-sizing: border-box; }
+.form-card h3 { font-size: var(--text-h3); font-weight: 600; color: #0f172a; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #dbe4ef; }
+.task-form-row { display: table; width: 100%; table-layout: fixed; }
+.task-form-cell { display: table-cell; width: 50%; vertical-align: top; padding-right: 6px; }
+.task-form-cell + .task-form-cell { padding-right: 0; padding-left: 6px; }
+.assignee-tools { display: table; width: 100%; table-layout: fixed; margin-bottom: 7px; }
+.assignee-search-wrap { display: table-cell; vertical-align: middle; }
+.assignee-actions { display: table-cell; width: 210px; vertical-align: middle; text-align: right; white-space: nowrap; }
+.assignee-picker { height: 286px; overflow-y: auto; border: 1px solid #cbd5e1; background: #fff; }
+.assignee-department { border-bottom: 1px solid #e2e8f0; padding: 0 4px 3px; }
+.assignee-department:last-child { border-bottom: 0; }
+.assignee-department-title { margin: 0 -4px 2px; padding: 4px 7px; background: #f1f5f9; color: #334155; font-size: 13px; font-weight: 600; }
+.assignee-option { display: inline-block !important; width: 25% !important; padding: 2px !important; vertical-align: top; box-sizing: border-box; cursor: pointer; }
+.assignee-option-inner { display: table; width: 100%; min-height: 38px; padding: 3px 5px; border: 1px solid #e2e8f0; box-sizing: border-box; background: #fff; }
+.assignee-option:hover .assignee-option-inner, .assignee-option.is-selected .assignee-option-inner { border-color: var(--primary, #2563eb); background: var(--primary-soft, #eff6ff); }
+.assignee-check, .assignee-avatar, .assignee-info { display: table-cell; vertical-align: middle; }
+.assignee-check { width: 20px; }
+.assignee-check input { width: 14px; height: 14px; margin: 0; }
+.assignee-avatar { width: 26px; height: 26px; text-align: center; color: var(--primary, #2563eb); background: var(--primary-soft, #eff6ff); font-size: 13px; font-weight: 700; }
+.assignee-info { padding-left: 6px; line-height: 1.2; }
+.assignee-name { display: block; color: #0f172a; font-size: 13px; font-weight: 600; word-break: break-all; }
+.assignee-meta { display: block; color: #475569; font-size: 11px; word-break: break-all; }
+.assignee-summary { padding: 7px 9px; border: 1px solid #dbe4ef; border-top: 0; background: #f8fafc; color: #334155; font-size: 13px; line-height: 1.5; }
+.assignee-summary strong { color: var(--primary, #2563eb); }
+@media (min-width: 1700px) { .assignee-option { width: 20% !important; } }
+@media (max-width: 1100px) { .assignee-option { width: 33.333% !important; } }
+@media (max-width: 760px) { .assignee-option { width: 50% !important; } }
+@media (max-width: 540px) { .task-form-row, .task-form-cell { display: block; width: 100%; padding: 0; } .assignee-option { width: 100% !important; } .assignee-actions { width: 176px; } }
 </style>
 </head>
-<body style="padding:24px;background:#f1f5f9;">
+<body style="padding:0 !important;margin:0 !important;background:var(--bg-page, #f1f5f9);">
 
 <!-- Breadcrumb -->
 <div class="breadcrumb">
@@ -43,8 +69,25 @@ body { background: #f1f5f9; }
       <textarea name="content" class="form-textarea" placeholder="请输入任务详细描述..." rows="6" style="font-size:14px;line-height:1.8;">{{ task.content if is_edit else '' }}</textarea>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
-      <div class="form-group">
+    <div class="form-group">
+      <label class="form-label">云盘 资料链接（可选）</label>
+      <div style="display:table;width:100%;table-layout:fixed;">
+        <div style="display:table-cell;vertical-align:middle;padding-right:6px;">
+          <input type="url" name="nextcloud_url" class="form-input" style="height:44px;" maxlength="2000" placeholder="可粘贴 云盘 文件、文件夹或共享链接，不填写也可以创建任务" value="{{ task.nextcloud_url if is_edit else '' }}">
+        </div>
+        <div style="display:table-cell;width:228px;vertical-align:middle;">
+          {% if nextcloud_url %}
+          <a href="{{ nextcloud_url }}" target="_blank" rel="noopener" class="btn" style="width:100%;height:44px;line-height:28px;box-sizing:border-box;text-align:center;" title="在新标签页打开 云盘">{{ icon('folder') }} 前往 云盘 获取链接 ↗</a>
+          {% else %}
+          <span class="btn" style="display:block;height:44px;line-height:28px;box-sizing:border-box;text-align:center;cursor:not-allowed;" title="请先在系统设置中配置 云盘">云盘 尚未配置</span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="margin-top:5px;color:#475569;font-size:12px;">此链接不是必填项；可用于关联 云盘 中的任务资料，发布后会显示在任务详情页。</div>
+    </div>
+
+    <div class="task-form-row">
+      <div class="form-group task-form-cell">
         <label class="form-label">任务类别</label>
         <select name="category_id" id="taskCatSelect" class="form-select" style="height:48px;" onchange="updateColumnSelect()">
           <option value="">未分类</option>
@@ -54,7 +97,7 @@ body { background: #f1f5f9; }
         </select>
       </div>
 
-      <div class="form-group">
+      <div class="form-group task-form-cell">
         <label class="form-label">栏目（可选）</label>
         <select name="column_id" id="taskColSelect" class="form-select" style="height:48px;">
           <option value="">不选择栏目</option>
@@ -68,8 +111,8 @@ body { background: #f1f5f9; }
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
-      <div class="form-group">
+    <div class="task-form-row">
+      <div class="form-group task-form-cell">
         <label class="form-label">优先级</label>
         <select name="priority" class="form-select" style="height:48px;">
           <option value="normal" {% if is_edit and task.priority=='normal' %}selected{% endif %}>普通</option>
@@ -78,10 +121,13 @@ body { background: #f1f5f9; }
           <option value="high" {% if is_edit and task.priority=='high' %}selected{% endif %}>高优先级</option>
         </select>
       </div>
+      <div class="form-group task-form-cell">
+        <label class="form-label">截止日期</label>
+        <input type="date" name="deadline" class="form-input" style="height:48px;" value="{{ task.deadline.strftime('%Y-%m-%d') if is_edit and task.deadline else '' }}">
+      </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
-      <div class="form-group">
+    <div class="form-group">
         <label class="form-label">负责部门</label>
         <input type="text" name="department" class="form-input" placeholder="请输入部门名称" style="height:48px;" list="dept-list" value="{{ task.department if is_edit else '' }}">
         <datalist id="dept-list">
@@ -89,98 +135,90 @@ body { background: #f1f5f9; }
           <option value="{{ d }}">
           {% endfor %}
         </datalist>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">负责人（可多选）</label>
-        <select name="assignee_ids" class="form-select" multiple style="height:128px;padding:8px;">
-          {% for u in users %}
-          <option value="{{ u.id }}" {% if u.id in selected_assignee_ids %}selected{% endif %}>{{ u.real_name or u.username }} ({{ u.department }})</option>
-          {% endfor %}
-        </select>
-        <div style="margin-top:6px;font-size:12px;color:#64748b;">按住 Ctrl 可选择多个负责人；第一个选中人员会作为主负责人用于兼容旧流程。</div>
-      </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
-      <div class="form-group">
-        <label class="form-label">截止日期</label>
-        <input type="date" name="deadline" class="form-input" style="height:48px;" value="{{ task.deadline.strftime('%Y-%m-%d') if is_edit and task.deadline else '' }}">
+    <div class="form-group">
+      <label class="form-label">负责人（可多选）</label>
+      <div class="assignee-tools">
+        <div class="assignee-search-wrap">
+          <input type="text" id="assigneeSearch" class="form-input" placeholder="搜索姓名、用户名或部门" style="height:40px;" oninput="filterAssignees()">
+        </div>
+        <div class="assignee-actions">
+          <button type="button" class="btn" onclick="selectVisibleAssignees()">选择当前结果</button>
+          <button type="button" class="btn" onclick="clearAssignees()">清空</button>
+        </div>
       </div>
+      <div class="assignee-picker" id="assigneePicker">
+        {% for department_group in users|groupby('department') %}
+        <div class="assignee-department">
+          <div class="assignee-department-title">{{ department_group.grouper or '未分配部门' }}（{{ department_group.list|length }}人）</div>
+          {% for u in department_group.list %}
+          {% set display_name = u.real_name or u.username %}
+          <label class="assignee-option" data-search="{{ display_name }} {{ u.username }} {{ u.department or '' }}" title="{{ display_name }} / {{ u.username }} / {{ u.department or '未分配部门' }}">
+            <span class="assignee-option-inner">
+              <span class="assignee-check"><input type="checkbox" name="assignee_ids" value="{{ u.id }}" data-name="{{ display_name }}" onchange="updateAssigneeSummary()" {% if u.id in selected_assignee_ids %}checked{% endif %}></span>
+              <span class="assignee-avatar">{{ display_name[:1] }}</span>
+              <span class="assignee-info"><span class="assignee-name">{{ display_name }}</span><span class="assignee-meta">{{ u.username }} · {{ u.department or '未分配部门' }}</span></span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:28px;text-align:center;color:#475569;">暂无可选用户</div>
+        {% endfor %}
+      </div>
+      <div class="assignee-summary"><strong id="assigneeCount">0</strong> 人已选：<span id="assigneeNames">尚未选择负责人</span>。第一位选中的人员作为主负责人。</div>
+    </div>
 
-      {% if is_edit %}
-      <div class="form-group">
+    {% if is_edit %}
+    <div class="form-group">
         <label class="form-label">状态</label>
         <select name="status" class="form-select" style="height:48px;">
           {% for s in statuses %}
           <option value="{{ s }}" {% if task.status == s %}selected{% endif %}>{{ s|status_label }}</option>
           {% endfor %}
         </select>
-      </div>
-      {% endif %}
     </div>
+    {% endif %}
 
     <!-- Attachments -->
     <div class="form-group" style="margin-top:16px;">
-      <label class="form-label">附件（可选）</label>
-      <div style="border:2px dashed #e2e8f0;border-radius:12px;padding:24px;text-align:center;background:#fafafa;cursor:pointer;transition:all 0.2s;" onclick="document.getElementById('fileInput').click()" ondragover="this.style.borderColor='#2563eb';this.style.background='#eff6ff'" ondragleave="this.style.borderColor='#e2e8f0';this.style.background='#fafafa'" ondrop="event.preventDefault();this.style.borderColor='#e2e8f0';this.style.background='#fafafa';handleDrop(event)">
-        <div style="font-size:32px;margin-bottom:8px;">{{ icon('attach') }}</div>
-        <div style="color:#64748b;font-size:14px;">点击或拖拽文件到此处上传</div>
-        <input type="file" id="fileInput" multiple style="display:none;" onchange="handleFiles(this.files)">
-      </div>
-      <div id="fileList" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;"></div>
-    </div>
-
-    <!-- Link Online Docs/Sheets (collapsible) -->
-    <div class="form-group" style="margin-top:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleLinkSection()">
-        <label class="form-label" style="font-size:14px;cursor:pointer;margin:0;">{{ icon('file') }} 关联在线文档/表格</label>
-        <span id="linkToggleBtn" style="font-size:12px;color:#2563eb;">展开选择 →</span>
-      </div>
-      <div id="linkSectionBody" style="display:none;margin-top:12px;">
-        <div style="font-size:12px;color:#64748b;margin-bottom:10px;">选择已有的在线文档/表格关联到此任务</div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;">
-          <div style="flex:1;min-width:200px;">
-            <div style="font-size:12px;font-weight:600;color:#2563eb;margin-bottom:6px;">{{ icon('file') }} 在线文档 <a href="{{ url_for('docs.create_doc') }}" target="_blank" style="font-weight:400;font-size:11px;color:#2563eb;text-decoration:none;">+新建</a></div>
-            {% if available_docs %}
-            <div style="max-height:150px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:4px;padding:6px;">
-              {% for d in available_docs %}
-              <label style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:13px;cursor:pointer;border-radius:4px;">
-                <input type="checkbox" name="linked_doc_ids" value="{{ d.id }}" {% if is_edit and d.id in linked_doc_ids %}checked{% endif %}> {{ d.title[:30] }}
-              </label>
-              {% endfor %}
-            </div>
-            {% else %}
-            <div style="color:#94a3b8;font-size:12px;">暂无可用文档，<a href="{{ url_for('docs.create_doc') }}" target="_blank">新建</a></div>
-            {% endif %}
-          </div>
-          <div style="flex:1;min-width:200px;">
-            <div style="font-size:12px;font-weight:600;color:#059669;margin-bottom:6px;">{{ icon('memo') }} 在线表格 <a href="{{ url_for('sheets.create_sheet') }}" target="_blank" style="font-weight:400;font-size:11px;color:#059669;text-decoration:none;">+新建</a></div>
-            {% if available_sheets %}
-            <div style="max-height:150px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:4px;padding:6px;">
-              {% for s in available_sheets %}
-              <label style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:13px;cursor:pointer;border-radius:4px;">
-                <input type="checkbox" name="linked_sheet_ids" value="{{ s.id }}" {% if is_edit and s.id in linked_sheet_ids %}checked{% endif %}> {{ s.name[:30] }}
-              </label>
-              {% endfor %}
-            </div>
-            {% else %}
-            <div style="color:#94a3b8;font-size:12px;">暂无可用表格，<a href="{{ url_for('sheets.create_sheet') }}" target="_blank">新建</a></div>
-            {% endif %}
-          </div>
+      <div style="display:table;width:100%;margin-bottom:8px;">
+        <label class="form-label" style="display:table-cell;vertical-align:middle;">附件（可选）</label>
+        <div style="display:table-cell;text-align:right;vertical-align:middle;">
+          {% if nextcloud_url %}
+          <a href="{{ nextcloud_url }}" target="_blank" rel="noopener" class="btn btn-primary" title="在新标签页打开 云盘">{{ icon('folder') }} 打开 云盘 新建文件 ↗</a>
+          {% else %}
+          <span class="btn" style="cursor:not-allowed;" title="请先在系统设置中配置 云盘">云盘 尚未配置</span>
+          {% endif %}
         </div>
-        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;font-size:12px;">
-          <span style="color:#64748b;">关联文档编辑权限：</span>
-          <select name="doc_edit_role" class="form-select" style="width:auto;padding:4px 8px;font-size:12px;height:32px;">
-            <option value='["super_admin","dept_admin","user"]' selected>干警可编辑</option>
-            <option value='["super_admin","dept_admin"]'>仅管理员可编辑</option>
-            <option value='["super_admin"]'>仅超管可编辑</option>
+      </div>
+      <div style="display:table;width:100%;table-layout:fixed;margin-bottom:8px;">
+        <div style="display:table-cell;padding-right:4px;">
+          <select name="attachment_category_id" id="attachmentCatSelect" class="form-select" style="width:100%;height:40px;" onchange="updateAttachmentColumnSelect()">
+            <option value="">附件暂不分类</option>
+            {% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div style="display:table-cell;padding-left:4px;">
+          <select name="attachment_column_id" id="attachmentColSelect" class="form-select" style="width:100%;height:40px;">
+            <option value="">附件暂不关联栏目</option>
+            {% for cat in categories %}
+            {% for col in cols_by_cat.get(cat.id, []) %}<option value="{{ col.id }}" data-cat="{{ cat.id }}">{{ col.name }}</option>{% endfor %}
+            {% endfor %}
           </select>
         </div>
       </div>
+      <div class="attachment-picker" ondragover="event.preventDefault()" ondrop="event.preventDefault();handleDrop(event)">
+        <div style="font-size:32px;margin-bottom:8px;">{{ icon('attach') }}</div>
+        <button type="button" class="btn" id="chooseFiles" onclick="document.getElementById('fileInput').click()">选择附件</button>
+        <p id="attachmentHint">可多次选择或拖入文件，单个文件不超过 50 GB。</p>
+        <input type="file" id="fileInput" name="attachments" multiple aria-label="选择附件" aria-describedby="attachmentHint" onchange="handleFiles(this.files)">
+      </div>
+      <div id="fileList" style="margin-top:12px;" aria-live="polite"></div>
     </div>
 
-    <div style="display:flex;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid #e2e8f0;">
+    <div style="display:block;margin-top:24px;padding-top:24px;border-top:1px solid #e2e8f0;">
       <button type="submit" class="btn btn-primary btn-lg">{% if is_edit %}{{ icon('save') }} 保存修改{% else %}{{ icon('save') }} 创建任务{% endif %}</button>
       {% if is_edit %}
       <a href="{{ url_for('tasks.detail_task', task_id=task.id) }}" class="btn btn-lg">取消</a>
@@ -192,6 +230,58 @@ body { background: #f1f5f9; }
 </div>
 
 <script>
+function updateAssigneeSummary() {
+    var picker = document.getElementById('assigneePicker');
+    var checks = picker ? picker.querySelectorAll('input[name="assignee_ids"]') : [];
+    var names = [];
+    for (var i = 0; i < checks.length; i++) {
+        var option = checks[i].parentNode.parentNode.parentNode;
+        if (checks[i].checked) {
+            names.push(checks[i].getAttribute('data-name'));
+            option.className = 'assignee-option is-selected';
+        } else {
+            option.className = 'assignee-option';
+        }
+    }
+    document.getElementById('assigneeCount').innerHTML = names.length;
+    document.getElementById('assigneeNames').innerHTML = names.length ? names.join('、') : '尚未选择负责人';
+}
+
+function filterAssignees() {
+    var input = document.getElementById('assigneeSearch');
+    var keyword = input ? input.value.toLowerCase().replace(/^\s+|\s+$/g, '') : '';
+    var groups = document.querySelectorAll('.assignee-department');
+    for (var i = 0; i < groups.length; i++) {
+        var options = groups[i].querySelectorAll('.assignee-option');
+        var visibleCount = 0;
+        for (var j = 0; j < options.length; j++) {
+            var searchText = (options[j].getAttribute('data-search') || '').toLowerCase();
+            var visible = !keyword || searchText.indexOf(keyword) >= 0;
+            options[j].style.display = visible ? 'inline-block' : 'none';
+            if (visible) visibleCount++;
+        }
+        groups[i].style.display = visibleCount ? 'block' : 'none';
+    }
+}
+
+function selectVisibleAssignees() {
+    var options = document.querySelectorAll('.assignee-option');
+    for (var i = 0; i < options.length; i++) {
+        if (options[i].style.display !== 'none' && options[i].parentNode.style.display !== 'none') {
+            options[i].querySelector('input[name="assignee_ids"]').checked = true;
+        }
+    }
+    updateAssigneeSummary();
+}
+
+function clearAssignees() {
+    var checks = document.querySelectorAll('input[name="assignee_ids"]');
+    for (var i = 0; i < checks.length; i++) checks[i].checked = false;
+    updateAssigneeSummary();
+}
+
+updateAssigneeSummary();
+
 function updateColumnSelect(keepSelection) {
     var catId = document.getElementById('taskCatSelect').value;
     var colSelect = document.getElementById('taskColSelect');
@@ -199,7 +289,7 @@ function updateColumnSelect(keepSelection) {
     var opts = colSelect.querySelectorAll('option');
     for (var i = 0; i < opts.length; i++) {
         if (opts[i].value === '') continue;
-        if (!catId || opts[i].dataset.cat === catId) {
+        if (!catId || opts[i].getAttribute('data-cat') === catId) {
             opts[i].style.display = '';
         } else {
             opts[i].style.display = 'none';
@@ -213,36 +303,114 @@ function updateColumnSelect(keepSelection) {
 // When a column is selected, auto-set its category
 document.getElementById('taskColSelect').onchange = function() {
     var opt = this.options[this.selectedIndex];
-    if (opt && opt.dataset.cat) {
+    if (opt && opt.getAttribute('data-cat')) {
         var selectedColumn = this.value;
-        document.getElementById('taskCatSelect').value = opt.dataset.cat;
+        document.getElementById('taskCatSelect').value = opt.getAttribute('data-cat');
         updateColumnSelect(true);
         this.value = selectedColumn;
     }
 };
 updateColumnSelect(true);
 
+function updateAttachmentColumnSelect(keepSelection) {
+    var catSelect = document.getElementById('attachmentCatSelect');
+    var colSelect = document.getElementById('attachmentColSelect');
+    if (!catSelect || !colSelect) return;
+    var catId = catSelect.value;
+    var selected = keepSelection ? colSelect.value : '';
+    var opts = colSelect.querySelectorAll('option');
+    for (var i = 0; i < opts.length; i++) {
+        var itemCat = opts[i].getAttribute('data-cat');
+        if (!itemCat || !catId || itemCat === catId) {
+            opts[i].style.display = '';
+            opts[i].disabled = false;
+        } else {
+            opts[i].style.display = 'none';
+            opts[i].disabled = true;
+        }
+    }
+    colSelect.value = selected;
+    if (!keepSelection || (colSelect.selectedIndex >= 0 && colSelect.options[colSelect.selectedIndex].disabled)) {
+        colSelect.value = '';
+    }
+}
+document.getElementById('attachmentColSelect').onchange = function() {
+    var option = this.options[this.selectedIndex];
+    if (option && option.getAttribute('data-cat')) {
+        var selectedColumn = this.value;
+        document.getElementById('attachmentCatSelect').value = option.getAttribute('data-cat');
+        updateAttachmentColumnSelect(true);
+        this.value = selectedColumn;
+    }
+};
+updateAttachmentColumnSelect(true);
+
 var selectedFiles = [];
+var fileInput = document.getElementById('fileInput');
+var canManageFiles = false;
+try {
+    var probe = new DataTransfer();
+    fileInput.files = probe.files;
+    canManageFiles = true;
+} catch (ignore) {}
+if (canManageFiles) {
+    fileInput.style.display = 'none';
+} else {
+    document.getElementById('chooseFiles').style.display = 'none';
+    document.getElementById('attachmentHint').textContent = '请使用文件选择框，可一次多选；重新选择会替换已有附件。单个文件不超过 50 GB。';
+}
+
+function syncFiles() {
+    if (!canManageFiles) return;
+    var transfer = new DataTransfer();
+    for (var i = 0; i < selectedFiles.length; i++) transfer.items.add(selectedFiles[i]);
+    fileInput.files = transfer.files;
+}
+
+function notifyFileChange() {
+    var change = document.createEvent('Event');
+    change.initEvent('input', true, false);
+    fileInput.dispatchEvent(change);
+}
 
 function handleFiles(files) {
-    for (var i = 0; i < files.length; i++) {
-        if (files[i].size > 50 * 1024 * 1024) {
-            alert('文件 "' + files[i].name + '" 超过50MB限制');
+    var incoming = [];
+    for (var i = 0; i < files.length; i++) incoming.push(files[i]);
+    if (!canManageFiles) selectedFiles = [];
+    for (var j = 0; j < incoming.length; j++) {
+        if (incoming[j].size > 50 * 1024 * 1024 * 1024) {
+            alert('文件 "' + incoming[j].name + '" 超过 50 GB 限制，请选择较小的文件。');
+            if (!canManageFiles) {
+                fileInput.value = '';
+                selectedFiles = [];
+                break;
+            }
             continue;
         }
-        selectedFiles.push(files[i]);
+        selectedFiles.push(incoming[j]);
     }
+    syncFiles();
     renderFileList();
+    notifyFileChange();
 }
 
 function handleDrop(e) {
-    var files = e.dataTransfer.files;
-    handleFiles(files);
+    if (!canManageFiles) {
+        alert('当前浏览器请使用文件选择框上传附件。');
+        return;
+    }
+    handleFiles(e.dataTransfer.files);
 }
 
 function removeFile(idx) {
-    selectedFiles.splice(idx, 1);
+    if (canManageFiles) selectedFiles.splice(idx, 1);
+    else { selectedFiles = []; fileInput.value = ''; }
+    syncFiles();
     renderFileList();
+    notifyFileChange();
+    var buttons = document.getElementById('fileList').getElementsByTagName('button');
+    if (buttons.length) buttons[Math.min(idx, buttons.length - 1)].focus();
+    else document.getElementById(canManageFiles ? 'chooseFiles' : 'fileInput').focus();
 }
 
 function renderFileList() {
@@ -250,38 +418,31 @@ function renderFileList() {
     list.innerHTML = '';
     for (var i = 0; i < selectedFiles.length; i++) {
         (function(idx) {
-            var f = selectedFiles[idx];
-            var size = f.size >= 1024 * 1024 ? (f.size / 1024 / 1024).toFixed(1) + 'MB' : (f.size / 1024).toFixed(0) + 'KB';
-            var div = document.createElement('div');
-            div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 12px;background:white;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;';
-            div.innerHTML = '<span>附件</span><span style="flex:1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span><span class="file-size">' + size + '</span><button type="button" style="width:18px;height:18px;border-radius:50%;background:#fee2e2;color:#dc2626;border:none;cursor:pointer;font-size:12px;" onclick="removeFile(' + idx + ')">×</button>';
-            list.appendChild(div);
+            var file = selectedFiles[idx];
+            var row = document.createElement('div');
+            row.className = 'attachment-row';
+            var name = document.createElement('span');
+            name.className = 'attachment-name';
+            name.textContent = file.name;
+            row.appendChild(name);
+            var size = document.createElement('span');
+            size.className = 'file-size';
+            size.textContent = ' ' + (file.size / 1024 / 1024).toFixed(1) + ' MB ';
+            row.appendChild(size);
+            if (canManageFiles || idx === selectedFiles.length - 1) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'btn attachment-remove';
+                button.textContent = canManageFiles ? '移除' : '清空附件';
+                button.setAttribute('aria-label', canManageFiles ? '移除附件：' + file.name : '清空全部附件');
+                button.onclick = function() { removeFile(idx); };
+                row.appendChild(button);
+            }
+            list.appendChild(row);
         })(i);
     }
 }
 
-// Append files to form on submit
-document.querySelector('form').addEventListener('submit', function(e) {
-    var input = document.getElementById('fileInput');
-    var dt = new DataTransfer();
-    for (var i = 0; i < selectedFiles.length; i++) {
-        dt.items.add(selectedFiles[i]);
-    }
-    input.files = dt.files;
-});
-
-// Collapsible link section toggle
-function toggleLinkSection() {
-    var body = document.getElementById('linkSectionBody');
-    var btn = document.getElementById('linkToggleBtn');
-    if (body.style.display === 'none') {
-        body.style.display = 'block';
-        btn.textContent = '收起 ↑';
-    } else {
-        body.style.display = 'none';
-        btn.textContent = '展开选择 →';
-    }
-}
 </script>
 
 <script src="{{ url_for('static', filename='js/ux.js') }}"></script>

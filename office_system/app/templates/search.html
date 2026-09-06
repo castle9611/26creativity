@@ -15,7 +15,7 @@
 <div class="page-header">
   <div>
     <h2 class="page-title">工作台搜索</h2>
-    <p class="page-subtitle">搜索任务、公示和备忘</p>
+    <p class="page-subtitle">搜索任务、公示、备忘、OA 上传文件和 云盘 文件</p>
   </div>
 </div>
 
@@ -78,6 +78,30 @@
     {% else %}
     <div class="empty-state">没有匹配的备忘</div>
     {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">上传文件</div></div>
+  <div class="card-body" style="padding:12px 16px;">
+    {% for f in results.files %}
+    <div class="activity-item"><div class="activity-content">
+      <div class="activity-title"><a href="{{ url_for('files.preview', file_id=f.id) }}">{{ f.original_name }}</a></div>
+      <div class="activity-meta">{{ f.file_type|upper if f.file_type else 'FILE' }} · {{ f.created_at.strftime('%Y-%m-%d') if f.created_at else '' }}</div>
+    </div></div>
+    {% else %}<div class="empty-state">没有匹配的上传文件</div>{% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-title">云盘 文件</div><a class="btn btn-sm" href="{{ url_for('cloud.index', q=keyword) }}">云文档中心</a></div>
+  <div class="card-body" style="padding:12px 16px;">
+    {% for f in results.cloud_files %}
+    <div class="activity-item"><div class="activity-content">
+      <div class="activity-title"><a href="{{ f.url }}" target="_blank">{% if f.is_folder %}📁 {% endif %}{{ f.name }}</a></div>
+      <div class="activity-meta">{{ f.path }} · {% if f.is_folder %}文件夹{% else %}{{ f.content_type or '文件' }}{% endif %}</div>
+    </div></div>
+    {% else %}<div class="empty-state">未配置 云盘 或没有匹配文件</div>{% endfor %}
   </div>
 </div>
 {% endif %}

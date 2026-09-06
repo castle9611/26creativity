@@ -11,6 +11,7 @@ echo.
 
 set "PROJECT_DIR=%~dp0"
 cd /d "%PROJECT_DIR%"
+if exist "%PROJECT_DIR%nextcloud_config.bat" call "%PROJECT_DIR%nextcloud_config.bat"
 
 :: Check portable Python
 set "PYTHON_EXE=%PROJECT_DIR%python\python.exe"

@@ -5,16 +5,26 @@ Task CRUD / status workflow / transfer & approval / multi-filter search.
 """
 import json
 from datetime import datetime, date
+from urllib.parse import urlsplit
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, flash, session, jsonify)
 from werkzeug.security import check_password_hash
 from app.extensions import db
-from app.models import (Task, TaskTransfer, TaskAssignee, User, File, BulletinCategory,
+from app.models import (Task, TaskTransfer, TaskAssignee, User, File, BulletinCategory, Column,
                         ReadRecord, Comment, Memo, MemoGroup)
 from app.decorators import login_required, require_role
 from app.utils import add_log, get_pagination
 
 tasks_bp = Blueprint('tasks', __name__)
+
+
+def _optional_nextcloud_url():
+    """Accept an optional HTTP(S) Nextcloud file, folder, or share URL."""
+    value = request.form.get('nextcloud_url', '').strip()[:2000]
+    if not value:
+        return ''
+    parsed = urlsplit(value)
+    return value if parsed.scheme in ('http', 'https') and parsed.netloc else ''
 
 
 def _assignee_clause(user_id):
@@ -31,6 +41,21 @@ def _task_assignee_ids(task):
 
 def _is_task_assignee(task, user_id):
     return int(user_id or 0) in _task_assignee_ids(task)
+
+
+def _attachment_classification():
+    """Return optional, validated category/column metadata for new attachments."""
+    category_id = request.form.get('attachment_category_id', 0, type=int)
+    column_id = request.form.get('attachment_column_id', 0, type=int)
+    column = Column.query.filter_by(id=column_id, is_active=1).first() if column_id else None
+    if column:
+        category_id = column.category_id or category_id
+        column_id = column.id
+    else:
+        column_id = None
+    if category_id and not BulletinCategory.query.filter_by(id=category_id, is_active=1).first():
+        category_id = None
+    return category_id or None, column_id
 
 
 def _parse_assignee_ids():
@@ -68,6 +93,18 @@ def _mark_task_read(task_id):
     if not exists:
         db.session.add(ReadRecord(target_type='task', target_id=task_id, user_id=user_id))
         db.session.commit()
+
+
+def _task_department_options(categories):
+    """Return real department values, excluding names used as task categories."""
+    category_names = set((category.name or '').strip() for category in categories)
+    rows = db.session.query(Task.department).filter(Task.department != '').distinct().all()
+    departments = set()
+    for row in rows:
+        name = (row[0] or '').strip()
+        if name and name not in category_names:
+            departments.add(name)
+    return sorted(departments)
 
 
 @tasks_bp.route('/')
@@ -151,10 +188,9 @@ def list_tasks():
         ).all()
     ]
 
-    users = User.query.filter_by(is_active=1).all()
-    depts = db.session.query(Task.department).filter(Task.department != '').distinct().all()
-    dept_list = [d[0] for d in depts]
     categories = BulletinCategory.query.filter_by(is_active=1).order_by(BulletinCategory.sort_order).all()
+    users = User.query.filter_by(is_active=1).all()
+    dept_list = _task_department_options(categories)
 
     # Task statistics
     stats_query = Task.query
@@ -242,11 +278,13 @@ def create_task():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
+        nextcloud_url = _optional_nextcloud_url()
         priority = request.form.get('priority', 'normal').strip()
         department = request.form.get('department', '').strip()
         category_id = request.form.get('category_id', 0, type=int)
         assignee_ids = _parse_assignee_ids()
         deadline = request.form.get('deadline', '').strip()
+        attachment_category_id, attachment_column_id = _attachment_classification()
 
         if not title:
             flash('任务标题不能为空', 'warning')
@@ -255,6 +293,7 @@ def create_task():
         task = Task(
             title=title,
             content=content,
+            nextcloud_url=nextcloud_url,
             priority=priority,
             department=department,
             category_id=category_id if category_id > 0 else None,
@@ -278,34 +317,22 @@ def create_task():
             for f in uploaded_files:
                 if f and f.filename:
                     safe_name = datetime.now().strftime('%Y%m%d%H%M%S') + '_' + f.filename
-                    f.save(os.path.join(upload_folder, safe_name))
+                    saved_path = os.path.join(upload_folder, safe_name)
+                    f.save(saved_path)
                     attachment_list.append({
                         'name': safe_name,
                         'original': f.filename,
                         'path': '/static/uploads/tasks/' + str(task.id) + '/' + safe_name,
-                        'size': os.path.getsize(os.path.join(upload_folder, safe_name)),
+                        'size': os.path.getsize(saved_path),
+                        'category_id': attachment_category_id,
+                        'column_id': attachment_column_id,
                     })
+                    from app.nextcloud import mirror_attachment
+                    mirror_attachment('task', task.id, saved_path, f.filename, session['user_id'],
+                                      category_id=attachment_category_id,
+                                      column_id=attachment_column_id)
         if attachment_list:
             task.attachments = json.dumps(attachment_list)
-
-        # Link selected online docs/sheets to this task
-        from app.models import OnlineDocument, Spreadsheet
-        linked_doc_ids = request.form.getlist('linked_doc_ids')
-        linked_sheet_ids = request.form.getlist('linked_sheet_ids')
-        doc_edit_role = request.form.get('doc_edit_role', '["super_admin","dept_admin","user"]').strip()
-
-        for did in linked_doc_ids:
-            doc = OnlineDocument.query.get(int(did))
-            if doc:
-                doc.related_type = 'task'
-                doc.related_id = task.id
-                doc.edit_roles = doc_edit_role
-        for sid in linked_sheet_ids:
-            sheet = Spreadsheet.query.get(int(sid))
-            if sheet:
-                sheet.related_type = 'task'
-                sheet.related_id = task.id
-                sheet.edit_roles = doc_edit_role
 
         db.session.commit()
 
@@ -314,12 +341,11 @@ def create_task():
         return redirect(url_for('tasks.detail_task', task_id=task.id))
 
     users = User.query.filter(User.is_active == 1).order_by(User.department, User.real_name).all()
-    depts = db.session.query(Task.department).filter(Task.department != '').distinct().all()
-    departments = [d[0] for d in depts]
     categories = BulletinCategory.query.filter_by(is_active=1).order_by(BulletinCategory.sort_order).all()
+    departments = _task_department_options(categories)
 
     # Load columns grouped by category
-    from app.models import Column as ColModel, OnlineDocument, Spreadsheet
+    from app.models import Column as ColModel
     all_columns = ColModel.query.filter_by(is_active=1).order_by(ColModel.sort_order.asc()).all()
     cols_by_cat = {}
     for col in all_columns:
@@ -328,17 +354,15 @@ def create_task():
             cols_by_cat[cid] = []
         cols_by_cat[cid].append(col)
 
-    # Available online docs/sheets for linking
-    available_docs = OnlineDocument.query.filter_by(is_active=1).order_by(OnlineDocument.updated_at.desc()).all()
-    available_sheets = Spreadsheet.query.filter_by(is_active=1).order_by(Spreadsheet.updated_at.desc()).all()
+    from app.nextcloud import cloud_home_url, is_nextcloud_configured
 
     return render_template('tasks/create.html',
                            users=users,
                            departments=departments,
                            categories=categories,
                            cols_by_cat=cols_by_cat,
-                           available_docs=available_docs,
-                           available_sheets=available_sheets,
+                           nextcloud_url=cloud_home_url(),
+                           nextcloud_configured=is_nextcloud_configured(),
                            selected_assignee_ids=[])
 
 
@@ -356,12 +380,14 @@ def edit_task(task_id):
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
+        nextcloud_url = _optional_nextcloud_url()
         priority = request.form.get('priority', 'normal').strip()
         department = request.form.get('department', '').strip()
         category_id = request.form.get('category_id', 0, type=int)
         assignee_ids = _parse_assignee_ids()
         deadline = request.form.get('deadline', '').strip()
         status = request.form.get('status', '').strip()
+        attachment_category_id, attachment_column_id = _attachment_classification()
 
         if not title:
             flash('任务标题不能为空', 'warning')
@@ -370,6 +396,7 @@ def edit_task(task_id):
         old_assignee_ids = _task_assignee_ids(task)
         task.title = title
         task.content = content
+        task.nextcloud_url = nextcloud_url
         task.priority = priority
         task.department = department
         task.category_id = category_id if category_id > 0 else None
@@ -392,33 +419,21 @@ def edit_task(task_id):
             for f in uploaded_files:
                 if f and f.filename:
                     safe_name = datetime.now().strftime('%Y%m%d%H%M%S') + '_' + f.filename
-                    f.save(os.path.join(upload_folder, safe_name))
+                    saved_path = os.path.join(upload_folder, safe_name)
+                    f.save(saved_path)
                     existing.append({
                         'name': safe_name,
                         'original': f.filename,
                         'path': '/static/uploads/tasks/' + str(task.id) + '/' + safe_name,
-                        'size': os.path.getsize(os.path.join(upload_folder, safe_name)),
+                        'size': os.path.getsize(saved_path),
+                        'category_id': attachment_category_id,
+                        'column_id': attachment_column_id,
                     })
+                    from app.nextcloud import mirror_attachment
+                    mirror_attachment('task', task.id, saved_path, f.filename, session['user_id'],
+                                      category_id=attachment_category_id,
+                                      column_id=attachment_column_id)
             task.attachments = json.dumps(existing)
-
-        # Update linked docs/sheets
-        from app.models import OnlineDocument, Spreadsheet
-        OnlineDocument.query.filter_by(related_type='task', related_id=task.id).update(
-            {OnlineDocument.related_type: '', OnlineDocument.related_id: 0}
-        )
-        Spreadsheet.query.filter_by(related_type='task', related_id=task.id).update(
-            {Spreadsheet.related_type: '', Spreadsheet.related_id: 0}
-        )
-        for did in request.form.getlist('linked_doc_ids'):
-            doc = OnlineDocument.query.get(int(did))
-            if doc:
-                doc.related_type = 'task'
-                doc.related_id = task.id
-        for sid in request.form.getlist('linked_sheet_ids'):
-            sheet = Spreadsheet.query.get(int(sid))
-            if sheet:
-                sheet.related_type = 'task'
-                sheet.related_id = task.id
 
         db.session.commit()
         add_log('edit_task', 'task', task.id, 'Edited task: ' + title)
@@ -426,12 +441,11 @@ def edit_task(task_id):
         return redirect(url_for('tasks.detail_task', task_id=task_id))
 
     users = User.query.filter(User.is_active == 1).order_by(User.department, User.real_name).all()
-    depts = db.session.query(Task.department).filter(Task.department != '').distinct().all()
-    departments = [d[0] for d in depts]
     categories = BulletinCategory.query.filter_by(is_active=1).order_by(BulletinCategory.sort_order).all()
+    departments = _task_department_options(categories)
     statuses = ['pending', 'processing', 'completed', 'rejected', 'archived']
 
-    from app.models import Column as ColModel, OnlineDocument, Spreadsheet
+    from app.models import Column as ColModel
     all_columns = ColModel.query.filter_by(is_active=1).order_by(ColModel.sort_order.asc()).all()
     cols_by_cat = {}
     for col in all_columns:
@@ -440,10 +454,7 @@ def edit_task(task_id):
             cols_by_cat[cid] = []
         cols_by_cat[cid].append(col)
 
-    available_docs = OnlineDocument.query.filter_by(is_active=1).order_by(OnlineDocument.updated_at.desc()).all()
-    available_sheets = Spreadsheet.query.filter_by(is_active=1).order_by(Spreadsheet.updated_at.desc()).all()
-    linked_doc_ids = [d.id for d in OnlineDocument.query.filter_by(related_type='task', related_id=task.id)]
-    linked_sheet_ids = [s.id for s in Spreadsheet.query.filter_by(related_type='task', related_id=task.id)]
+    from app.nextcloud import cloud_home_url, is_nextcloud_configured
 
     return render_template('tasks/create.html',
                            task=task, users=users,
@@ -452,10 +463,8 @@ def edit_task(task_id):
                            statuses=statuses,
                            cols_by_cat=cols_by_cat,
                            is_edit=True,
-                           available_docs=available_docs,
-                           available_sheets=available_sheets,
-                           linked_doc_ids=linked_doc_ids,
-                           linked_sheet_ids=linked_sheet_ids,
+                           nextcloud_url=cloud_home_url(),
+                           nextcloud_configured=is_nextcloud_configured(),
                            selected_assignee_ids=_task_assignee_ids(task))
 
 
@@ -522,13 +531,15 @@ def detail_task(task_id):
             read_users = User.query.filter(User.id.in_(read_ids)).all()
 
     # Related online documents and spreadsheets
-    from app.models import OnlineDocument, Spreadsheet
+    from app.models import OnlineDocument, Spreadsheet, CloudAttachment
     related_docs = OnlineDocument.query.filter_by(
         related_type='task', related_id=task_id, is_active=1
     ).order_by(OnlineDocument.updated_at.desc()).all()
     related_sheets = Spreadsheet.query.filter_by(
         related_type='task', related_id=task_id, is_active=1
     ).order_by(Spreadsheet.updated_at.desc()).all()
+    cloud_attachments = CloudAttachment.query.filter_by(
+        target_type='task', target_id=task_id).order_by(CloudAttachment.created_at.asc()).all()
 
     return render_template('tasks/detail.html',
                            task=task,
@@ -541,6 +552,7 @@ def detail_task(task_id):
                            unread_users=unread_users,
                            related_docs=related_docs,
                            related_sheets=related_sheets,
+                           cloud_attachments=cloud_attachments,
                            is_current_assignee=_is_task_assignee(task, user_id))
 
 

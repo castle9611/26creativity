@@ -36,7 +36,10 @@ class Config:
 
     # File upload
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'data', 'uploads')
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB
+    # Allow one 50GB file plus multipart form overhead. Actual file size is
+    # checked after streaming to disk by the upload views.
+    MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024
+    MAX_CONTENT_LENGTH = MAX_FILE_SIZE + (16 * 1024 * 1024)
 
     # ONLYOFFICE Docs (all deployment-specific values come from environment)
     ONLYOFFICE_ENABLED = env_bool('ONLYOFFICE_ENABLED', False)
@@ -48,11 +51,19 @@ class Config:
         'DOCUMENT_STORAGE_FOLDER', os.path.join(BASE_DIR, 'data', 'online_documents')))
     DOCUMENT_VERSION_FOLDER = os.path.abspath(os.environ.get(
         'DOCUMENT_VERSION_FOLDER', os.path.join(BASE_DIR, 'data', 'document_versions')))
-    DOCUMENT_MAX_UPLOAD_MB = max(1, int(os.environ.get('DOCUMENT_MAX_UPLOAD_MB', '50')))
+    DOCUMENT_MAX_UPLOAD_MB = max(1, int(os.environ.get('DOCUMENT_MAX_UPLOAD_MB', '51200')))
     DOCUMENT_URL_TOKEN_MAX_AGE = max(60, int(os.environ.get('DOCUMENT_URL_TOKEN_MAX_AGE', '600')))
     ONLYOFFICE_DOWNLOAD_HOSTS = tuple(
         item.strip().lower() for item in os.environ.get('ONLYOFFICE_DOWNLOAD_HOSTS', '').split(',')
         if item.strip())
+    # Nextcloud file layer. Use a dedicated app password, never the login password.
+    NEXTCLOUD_ENABLED = env_bool('NEXTCLOUD_ENABLED', False)
+    NEXTCLOUD_URL = os.environ.get('NEXTCLOUD_URL', '').strip().rstrip('/')
+    NEXTCLOUD_USERNAME = os.environ.get('NEXTCLOUD_USERNAME', '').strip()
+    NEXTCLOUD_APP_PASSWORD = os.environ.get('NEXTCLOUD_APP_PASSWORD', '')
+    NEXTCLOUD_ROOT_PATH = os.environ.get('NEXTCLOUD_ROOT_PATH', '').strip().strip('/')
+    NEXTCLOUD_VERIFY_SSL = env_bool('NEXTCLOUD_VERIFY_SSL', True)
+    NEXTCLOUD_TIMEOUT = max(2, int(os.environ.get('NEXTCLOUD_TIMEOUT', '8')))
     ALLOWED_EXTENSIONS = {
         'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
         'pdf', 'txt', 'csv', 'rtf',

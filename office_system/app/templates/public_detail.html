@@ -139,6 +139,7 @@ body {
   border-radius: 8px;
   display: block;
   margin: 12px 0;
+  image-rendering: auto;
 }
 .detail-body-public table {
   max-width: 100%;
@@ -210,7 +211,48 @@ body {
     <div class="detail-body-public">
       {{ item.content|safe if item.content else '暂无详细内容' }}
     </div>
+    {% if item.nextcloud_url or attachment_items %}
+    <div style="border-top:1px solid var(--border, #dbe4ef);padding:18px 28px;background:var(--bg-card, #fff);">
+      {% if item.nextcloud_url %}
+      <div style="display:table;width:100%;table-layout:fixed;margin-bottom:{% if attachment_items %}14px{% else %}0{% endif %};">
+        <div style="display:table-cell;vertical-align:middle;">
+          <div style="font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px;">{{ icon('folder') }} 云盘 资料链接</div>
+          <div style="font-size:13px;color:#334155;word-break:break-all;">{{ item.nextcloud_url }}</div>
+        </div>
+        <div style="display:table-cell;width:142px;vertical-align:middle;text-align:right;"><a href="{{ item.nextcloud_url }}" target="_blank" rel="noopener" class="btn btn-primary">打开资料 ↗</a></div>
+      </div>
+      {% endif %}
+      {% if attachment_items %}
+      <div style="font-size:14px;font-weight:800;color:#0f172a;margin-bottom:7px;">{{ icon('attach') }} 附件（{{ attachment_items|length }}）</div>
+      <div>
+        {% for attachment in attachment_items %}
+        <a href="{{ attachment.url }}" target="_blank" rel="noopener" class="btn" style="margin:0 5px 5px 0;max-width:100%;white-space:normal;word-break:break-all;">{{ icon('attach') }} {{ attachment.name }}{% if attachment.size %} <span style="color:#475569;">（{{ (attachment.size / 1024)|round|int }}KB）</span>{% endif %}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
   </article>
 </div>
+<script>
+(function() {
+  var container = document.querySelector('.detail-body-public');
+  if (!container) return;
+  var images = container.getElementsByTagName('img');
+  for (var i = 0; i < images.length; i++) {
+    (function(image) {
+      function applyNaturalLimit() {
+        if (image.naturalWidth && image.offsetWidth > image.naturalWidth) {
+          image.style.width = image.naturalWidth + 'px';
+          image.style.maxWidth = '100%';
+          image.style.height = 'auto';
+        }
+      }
+      if (image.complete) applyNaturalLimit();
+      else image.onload = applyNaturalLimit;
+    })(images[i]);
+  }
+})();
+</script>
 </body>
 </html>
