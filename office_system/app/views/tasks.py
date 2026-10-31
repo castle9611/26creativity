@@ -7,15 +7,27 @@ import json
 from datetime import datetime, date
 from urllib.parse import urlsplit
 from flask import (Blueprint, render_template, request, redirect,
-                   url_for, flash, session, jsonify)
+                   url_for, flash, session, jsonify, abort)
 from werkzeug.security import check_password_hash
 from app.extensions import db
-from app.models import (Task, TaskTransfer, TaskAssignee, User, File, BulletinCategory, Column,
-                        ReadRecord, Comment, Memo, MemoGroup)
+from app.models import (Task, TaskTransfer, TaskAssignee, User, File, FileRelation,
+                        BulletinCategory, Column, ReadRecord, Comment, Memo,
+                        CloudAttachment)
 from app.decorators import login_required, require_role
 from app.utils import add_log, get_pagination
 
 tasks_bp = Blueprint('tasks', __name__)
+
+
+def _delete_task_with_relations(task):
+    """Delete task-owned relation rows before deleting the task itself."""
+    TaskTransfer.query.filter_by(task_id=task.id).delete(synchronize_session=False)
+    TaskAssignee.query.filter_by(task_id=task.id).delete(synchronize_session=False)
+    ReadRecord.query.filter_by(target_type='task', target_id=task.id).delete(synchronize_session=False)
+    Comment.query.filter_by(target_type='task', target_id=task.id).delete(synchronize_session=False)
+    FileRelation.query.filter_by(target_type='task', target_id=task.id).delete(synchronize_session=False)
+    CloudAttachment.query.filter_by(target_type='task', target_id=task.id).delete(synchronize_session=False)
+    db.session.delete(task)
 
 
 def _optional_nextcloud_url():
@@ -77,9 +89,19 @@ def _parse_assignee_ids():
 def _sync_task_assignees(task, assignee_ids):
     assignee_ids = [uid for uid in assignee_ids if uid]
     task.assignee_id = assignee_ids[0] if assignee_ids else None
+    existing = {link.user_id: (link.progress or 0, link.is_completed or 0, link.completed_at)
+                for link in TaskAssignee.query.filter_by(task_id=task.id).all()}
     TaskAssignee.query.filter_by(task_id=task.id).delete(synchronize_session=False)
     for uid in assignee_ids:
-        db.session.add(TaskAssignee(task_id=task.id, user_id=uid))
+        values = existing.get(uid, (0, 0, None))
+        db.session.add(TaskAssignee(task_id=task.id, user_id=uid, progress=values[0],
+                                    is_completed=values[1], completed_at=values[2]))
+
+
+def _refresh_task_average(task):
+    links = TaskAssignee.query.filter_by(task_id=task.id).all()
+    task.progress = int(round(sum(link.progress or 0 for link in links) / len(links))) if links else 0
+    return links
 
 
 def _mark_task_read(task_id):
@@ -282,6 +304,10 @@ def create_task():
         priority = request.form.get('priority', 'normal').strip()
         department = request.form.get('department', '').strip()
         category_id = request.form.get('category_id', 0, type=int)
+        column_id = request.form.get('column_id', 0, type=int)
+        selected_column = Column.query.filter_by(id=column_id, is_active=1).first() if column_id else None
+        if selected_column:
+            category_id = selected_column.category_id
         assignee_ids = _parse_assignee_ids()
         deadline = request.form.get('deadline', '').strip()
         attachment_category_id, attachment_column_id = _attachment_classification()
@@ -297,6 +323,7 @@ def create_task():
             priority=priority,
             department=department,
             category_id=category_id if category_id > 0 else None,
+            column_id=selected_column.id if selected_column else None,
             assignee_id=assignee_ids[0] if assignee_ids else None,
             creator_id=session['user_id'],
             deadline=datetime.strptime(deadline, '%Y-%m-%d').date() if deadline else None,
@@ -384,6 +411,10 @@ def edit_task(task_id):
         priority = request.form.get('priority', 'normal').strip()
         department = request.form.get('department', '').strip()
         category_id = request.form.get('category_id', 0, type=int)
+        column_id = request.form.get('column_id', 0, type=int)
+        selected_column = Column.query.filter_by(id=column_id, is_active=1).first() if column_id else None
+        if selected_column:
+            category_id = selected_column.category_id
         assignee_ids = _parse_assignee_ids()
         deadline = request.form.get('deadline', '').strip()
         status = request.form.get('status', '').strip()
@@ -400,6 +431,7 @@ def edit_task(task_id):
         task.priority = priority
         task.department = department
         task.category_id = category_id if category_id > 0 else None
+        task.column_id = selected_column.id if selected_column else None
         _sync_task_assignees(task, assignee_ids)
         task.deadline = datetime.strptime(deadline, '%Y-%m-%d').date() if deadline else None
         if status and status in ('pending', 'processing', 'completed', 'rejected', 'archived'):
@@ -466,6 +498,17 @@ def edit_task(task_id):
                            nextcloud_url=cloud_home_url(),
                            nextcloud_configured=is_nextcloud_configured(),
                            selected_assignee_ids=_task_assignee_ids(task))
+
+
+@tasks_bp.route('/published')
+@login_required
+def published_tasks():
+    """Tasks created by the current user with per-assignee progress."""
+    page, per_page = get_pagination()
+    pagination = Task.query.filter_by(creator_id=session['user_id']).order_by(
+        Task.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return render_template('tasks/published.html', tasks=pagination.items,
+                           pagination=pagination)
 
 
 @tasks_bp.route('/<int:task_id>')
@@ -540,6 +583,11 @@ def detail_task(task_id):
     ).order_by(Spreadsheet.updated_at.desc()).all()
     cloud_attachments = CloudAttachment.query.filter_by(
         target_type='task', target_id=task_id).order_by(CloudAttachment.created_at.asc()).all()
+    assignment_progress = TaskAssignee.query.filter_by(task_id=task_id).order_by(
+        TaskAssignee.id.asc()).all()
+    if assignment_progress:
+        task.progress = int(round(sum(link.progress or 0 for link in assignment_progress) /
+                                  len(assignment_progress)))
 
     return render_template('tasks/detail.html',
                            task=task,
@@ -553,6 +601,9 @@ def detail_task(task_id):
                            related_docs=related_docs,
                            related_sheets=related_sheets,
                            cloud_attachments=cloud_attachments,
+                           assignment_progress=assignment_progress,
+                           current_assignment=next((link for link in assignment_progress
+                                                    if link.user_id == user_id), None),
                            is_current_assignee=_is_task_assignee(task, user_id))
 
 
@@ -560,6 +611,7 @@ def detail_task(task_id):
 @login_required
 def add_comment(task_id):
     """Add a comment to a task."""
+    abort(404)
     task = Task.query.get_or_404(task_id)
     content = request.form.get('content', '').strip()
     if not content:
@@ -582,6 +634,7 @@ def add_comment(task_id):
 @login_required
 def reply_comment(task_id, comment_id):
     """Reply to a comment on a task."""
+    abort(404)
     task = Task.query.get_or_404(task_id)
     parent = Comment.query.get_or_404(comment_id)
     content = request.form.get('content', '').strip()
@@ -604,6 +657,7 @@ def reply_comment(task_id, comment_id):
 @login_required
 def vote_comment(comment_id):
     """Like or dislike a comment (AJAX)."""
+    abort(404)
     from flask import jsonify
     comment = Comment.query.get_or_404(comment_id)
     vote_type = request.form.get('vote', 'like').strip()
@@ -647,43 +701,6 @@ def vote_comment(comment_id):
         'likes': comment.likes or 0,
         'dislikes': comment.dislikes or 0
     })
-
-
-@tasks_bp.route('/<int:task_id>/to-memo', methods=['POST'])
-@login_required
-def task_to_memo(task_id):
-    """Convert a task into a private memo for current user."""
-    task = Task.query.get_or_404(task_id)
-    user_id = session['user_id']
-    user_role = session['role']
-    if user_role == 'user' and not _is_task_assignee(task, user_id) and task.creator_id != user_id:
-        flash('无权转换此任务', 'danger')
-        return redirect(url_for('tasks.detail_task', task_id=task.id))
-
-    group = MemoGroup.query.filter_by(
-        name='任务转备忘', memo_type='private', created_by=user_id, is_active=1
-    ).first()
-    if not group:
-        group = MemoGroup(name='任务转备忘', memo_type='private', created_by=user_id)
-        db.session.add(group)
-        db.session.flush()
-
-    content = '<p><b>来源任务：</b>{}</p><p><b>状态：</b>{}</p><hr>{}'.format(
-        task.title, task.status, task.content or ''
-    )
-    memo = Memo(
-        title='任务备忘：' + task.title,
-        content=content,
-        memo_type='private',
-        group_id=group.id,
-        visible_roles='all',
-        created_by=user_id
-    )
-    db.session.add(memo)
-    db.session.commit()
-    add_log('task_to_memo', 'task', task.id, 'Converted task to memo: ' + task.title)
-    flash('已转为个人备忘', 'success')
-    return redirect(url_for('memo.list_memos', type='private', group_id=group.id))
 
 
 @tasks_bp.route('/alerts')
@@ -741,12 +758,34 @@ def update_status(task_id):
         if not _is_task_assignee(task, user_id) and user_role == 'user':
             flash('无权执行此操作', 'danger')
             return redirect(url_for('tasks.detail_task', task_id=task_id))
+    elif action == 'complete':
+        if task.creator_id == user_id or user_role in ('super_admin', 'dept_admin'):
+            completed_at = datetime.utcnow()
+            TaskAssignee.query.filter_by(task_id=task.id).update({
+                'progress': 100,
+                'is_completed': 1,
+                'completed_at': completed_at,
+            }, synchronize_session=False)
+            task.progress = 100
+            task.status = 'completed'
+        else:
+            assignment = TaskAssignee.query.filter_by(task_id=task.id, user_id=user_id).first()
+            if not assignment:
+                flash('无权执行此操作', 'danger')
+                return redirect(url_for('tasks.detail_task', task_id=task_id))
+            assignment.progress = 100
+            assignment.is_completed = 1
+            assignment.completed_at = datetime.utcnow()
+            db.session.flush()
+            links = _refresh_task_average(task)
+            task.status = 'completed' if links and all(link.is_completed for link in links) else 'processing'
     elif action in ('reject', 'archive'):
         if user_role not in ('super_admin', 'dept_admin'):
             flash('需要管理员权限', 'danger')
             return redirect(url_for('tasks.detail_task', task_id=task_id))
 
-    task.status = new_status
+    if action != 'complete':
+        task.status = new_status
     task.updated_at = datetime.utcnow()
     db.session.commit()
 
@@ -868,8 +907,13 @@ def delete_task(task_id):
         return redirect(url_for('tasks.list_tasks'))
 
     title = task.title
-    db.session.delete(task)
-    db.session.commit()
+    try:
+        _delete_task_with_relations(task)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash('任务删除失败，请稍后重试', 'danger')
+        return redirect(url_for('tasks.list_tasks'))
     add_log('delete_task', 'task', task_id, 'Deleted task: ' + title)
     flash('Task deleted', 'success')
     return redirect(url_for('tasks.list_tasks'))
@@ -929,10 +973,8 @@ def update_progress(task_id):
     """Update task progress (assignee only, processing status)."""
     task = Task.query.get_or_404(task_id)
     user_id = session['user_id']
-    user_role = session['role']
-
-    # Allow assignee or admin to update progress
-    if user_role == 'user' and not _is_task_assignee(task, user_id):
+    assignment = TaskAssignee.query.filter_by(task_id=task.id, user_id=user_id).first()
+    if not assignment:
         return jsonify({'success': False, 'message': '无权操作'}), 403
 
     try:
@@ -942,15 +984,19 @@ def update_progress(task_id):
 
     # Clamp to 0-100, round to nearest 10
     progress = max(0, min(100, round(progress / 10) * 10))
-    task.progress = progress
+    assignment.progress = progress
+    assignment.is_completed = 1 if progress == 100 else 0
+    assignment.completed_at = datetime.utcnow() if progress == 100 else None
+    db.session.flush()
+    links = _refresh_task_average(task)
     task.updated_at = datetime.utcnow()
 
-    # Auto-complete at 100%
-    if progress == 100 and task.status == 'processing':
+    if links and all(link.is_completed for link in links):
         task.status = 'completed'
 
     db.session.commit()
-    return jsonify({'success': True, 'progress': progress, 'status': task.status})
+    return jsonify({'success': True, 'progress': progress, 'average': task.progress,
+                    'status': task.status})
 
 
 @tasks_bp.route('/batch-archive', methods=['POST'])
@@ -1007,10 +1053,14 @@ def batch_delete():
     for task_id in ids:
         task = Task.query.get(task_id)
         if task:
-            db.session.delete(task)
+            _delete_task_with_relations(task)
             count += 1
 
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': '任务存在无法清理的关联记录'}), 500
     add_log('batch_delete_tasks', 'task', 0, 'Deleted {} tasks'.format(count))
 
     return jsonify({'success': True, 'message': '已删除 {} 个任务'.format(count)})

@@ -1,0 +1,20 @@
+<section id="homeSlideshow" class="home-slideshow" aria-label="首页图片展播" tabindex="0">
+  <div class="home-slides">
+    {% for image in public_slides %}
+    {% set position = 'front' if loop.first else 'left' if loop.last else 'right' if loop.index0 == 1 else 'far-left' if public_slides|length > 3 and loop.index0 == public_slides|length - 2 else 'far-right' if public_slides|length > 4 and loop.index0 == 2 else '' %}
+    {% set image_url = url_for('index_bp.public_slide_image', position=loop.index0, v=image.path) %}
+    <div class="home-slide{% if position %} slide-{{ position }}{% endif %}" role="button" tabindex="{{ '0' if position else '-1' }}" title="点击查看大图" aria-label="查看大图：{{ image.name }}" aria-hidden="{{ 'false' if position else 'true' }}" data-image="{{ image_url }}"{% if position %} style="background-image:url('{{ image_url }}');"{% endif %}></div>
+    {% endfor %}
+  </div>
+  {% if public_slides|length > 1 %}
+  <button type="button" class="slide-arrow slide-prev" aria-label="上一张">&#8249;</button>
+  <button type="button" class="slide-arrow slide-next" aria-label="下一张">&#8250;</button>
+  <div class="slide-controls"><span class="slide-counter">1 / {{ public_slides|length }}</span><button type="button" class="slide-pause" aria-label="暂停自动展播">暂停</button></div>
+  {% endif %}
+</section>
+<div id="slideViewer" class="slide-viewer" role="dialog" aria-modal="true" aria-label="图片大图预览" tabindex="-1" style="display:none;">
+  <img class="slide-viewer-image" alt="">
+  <button type="button" class="slide-viewer-close" aria-label="关闭大图">关闭 ×</button>
+  {% if public_slides|length > 1 %}<button type="button" class="slide-viewer-prev" aria-label="上一张">&#8249;</button><button type="button" class="slide-viewer-next" aria-label="下一张">&#8250;</button>{% endif %}
+  <div class="slide-viewer-caption" aria-live="polite"></div>
+</div>

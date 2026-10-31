@@ -1,0 +1,114 @@
+{% set can_comment = comment_user and comment_user.is_active and comment_user.real_name|trim %}
+<style>
+#comments.pc-section { margin-top:14px; padding:0 18px; border:1px solid #dbe4ef; border-radius:8px; background:#fff; background:var(--bg-card, #fff); color:#334155; color:var(--text-primary, #334155); }
+#comments .pc-head { padding:13px 0 11px; overflow:hidden; border-bottom:1px solid #edf1f6; }
+#comments .pc-heading { display:inline; margin:0; font-size:16px; line-height:24px; font-weight:700; color:inherit; }
+#comments .pc-count { margin-left:7px; font-size:12px; font-weight:400; color:#64748b; }
+#comments .pc-identity { float:right; margin-top:3px; font-size:12px; line-height:20px; color:#64748b; }
+#comments .pc-composer { margin:12px 0 0; }
+#comments .pc-input { display:block; width:100%; height:60px; min-height:60px; max-height:260px; box-sizing:border-box; margin:0; padding:8px 10px; border:1px solid #dbe4ef; border-radius:5px; background:#f8fafc; background:var(--bg-body, #f8fafc); color:inherit; font:14px/1.6 "Microsoft YaHei",Arial,sans-serif; resize:vertical; box-shadow:none; }
+#comments .pc-input:focus { outline:2px solid #bfd5fa; outline-offset:1px; border-color:#246fe5; background:#fff; background:var(--bg-card, #fff); }
+#comments .pc-compose-foot { min-height:30px; margin-top:7px; overflow:hidden; }
+#comments .pc-hint { display:inline-block; padding:5px 0; font-size:12px; line-height:20px; color:#64748b; }
+#comments .pc-submit { float:right; padding:0 15px; min-height:30px; border:1px solid #246fe5; border-radius:4px; background:#246fe5; color:#fff; font:13px/28px "Microsoft YaHei",Arial,sans-serif; cursor:pointer; }
+#comments .pc-submit:hover { background:#195ac1; border-color:#195ac1; }
+#comments .pc-submit:focus, #comments .pc-reply-button:focus, #comments .pc-cancel:focus { outline:2px solid #92b8f2; outline-offset:2px; }
+#comments .pc-login { margin:12px 0; padding:9px 10px; background:#f4f7fb; background:var(--bg-body, #f4f7fb); border-radius:4px; font-size:13px; line-height:22px; color:#64748b; }
+#comments .pc-login a { margin-right:6px; color:#246fe5; }
+#comments .pc-item { margin:0; padding:12px 0; border-bottom:1px solid #edf1f6; }
+#comments .pc-item:last-child { border-bottom:0; }
+#comments .pc-item:target { background:#f0f6ff; background:var(--primary-light, #f0f6ff); }
+#comments .pc-avatar { float:left; width:28px; height:28px; margin-top:1px; border-radius:6px; background:#eaf1fc; color:#35609d; font-size:13px; line-height:28px; text-align:center; font-weight:700; }
+#comments .pc-main { margin-left:39px; min-width:0; }
+#comments .pc-meta { min-height:22px; overflow:hidden; font-size:12px; line-height:22px; }
+#comments .pc-name { color:inherit; font-size:13px; font-weight:600; word-wrap:break-word; }
+#comments .pc-time { margin-left:9px; color:#64748b; font-weight:400; white-space:nowrap; }
+#comments .pc-reply-button, #comments .pc-cancel { padding:0 3px; border:0; border-radius:3px; background:transparent; color:#35609d; font:12px/22px "Microsoft YaHei",Arial,sans-serif; cursor:pointer; }
+#comments .pc-reply-button { float:right; margin-left:8px; }
+#comments .pc-reply-button:hover, #comments .pc-cancel:hover { background:#edf3fc; text-decoration:underline; }
+#comments .pc-body { margin:3px 0 0; font-size:14px; line-height:1.65; white-space:pre-wrap; word-wrap:break-word; }
+#comments .pc-quote { margin:5px 0 6px; padding:5px 9px; border-left:2px solid #cbd9ee; border-radius:0 3px 3px 0; background:#f4f7fb; background:var(--bg-body, #f4f7fb); color:#64748b; font-size:12px; line-height:1.6; word-wrap:break-word; }
+#comments .pc-quote strong { font-weight:500; color:#476180; }
+#comments .pc-reply-form { margin-top:9px; }
+#comments .pc-reply-form .pc-input { height:52px; min-height:52px; font-size:13px; }
+#comments .pc-cancel { margin-top:3px; color:#64748b; }
+#comments .pc-empty { margin:0; padding:16px 0; color:#64748b; font-size:13px; text-align:center; }
+#comments .pc-pagination { padding:10px 0; border-top:1px solid #edf1f6; text-align:right; font-size:12px; line-height:26px; color:#64748b; }
+#comments .pc-pagination a { display:inline-block; margin-left:8px; padding:0 9px; border:1px solid #dbe4ef; border-radius:4px; color:#35609d; }
+@media (max-width:520px) {
+  #comments.pc-section { padding:0 12px; }
+  #comments .pc-identity { max-width:50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #comments .pc-time { display:block; margin-left:0; font-size:11px; line-height:17px; }
+  #comments .pc-main { margin-left:36px; }
+}
+</style>
+<section id="comments" class="pc-section" aria-label="实名留言区">
+  <header class="pc-head">
+    <h2 class="pc-heading">留言<span class="pc-count">{{ comments.total }} 条</span></h2>
+    {% if can_comment %}<span class="pc-identity" title="实名留言：{{ comment_user.real_name }}">实名 · {{ comment_user.real_name }}</span>{% else %}<span class="pc-identity">实名留言</span>{% endif %}
+  </header>
+  {% if can_comment %}
+  <form class="pc-composer" method="post" action="{{ url_for('public_comment', kind=detail_type, item_id=item.id) }}">
+    <textarea id="commentText" name="content" class="pc-input" aria-label="留言内容" placeholder="写下你的留言…" maxlength="2000" required rows="2"></textarea>
+    <div class="pc-compose-foot"><span class="pc-hint">以真实姓名发布，最多 2000 字</span><button class="pc-submit" type="submit">发布留言</button></div>
+  </form>
+  {% elif not comment_user %}
+  <p class="pc-login"><a href="{{ url_for('auth.login') }}">登录后留言</a>仅支持实名账号留言和回复。</p>
+  {% else %}
+  <p class="pc-login">请使用已填写真实姓名的有效账号留言和回复。</p>
+  {% endif %}
+  <div class="pc-list">
+  {% for comment in comments.items %}
+  {% set author = comment.creator.real_name or '账号姓名未设置' %}
+  <article id="comment-{{ comment.id }}" class="pc-item">
+    <span class="pc-avatar" aria-hidden="true">{{ author[:1] }}</span>
+    <div class="pc-main">
+      <div class="pc-meta">
+        {% if can_comment %}<button id="reply-button-{{ comment.id }}" type="button" class="pc-reply-button" aria-expanded="false" aria-controls="reply-{{ comment.id }}" onclick="togglePublicReply({{ comment.id }});">回复</button>{% endif %}
+        <b class="pc-name">{{ author }}</b><span class="pc-time">{{ comment.created_at|localtime }}</span>
+      </div>
+      {% if comment.parent and not comment.parent.is_deleted %}
+      <div class="pc-quote"><strong>回复 {{ comment.parent.creator.real_name or '账号姓名未设置' }}</strong>：{{ comment.parent.content[:100] }}{% if comment.parent.content|length > 100 %}…{% endif %}</div>
+      {% endif %}
+      <p class="pc-body">{{ comment.content }}</p>
+      {% if can_comment %}
+      <form id="reply-{{ comment.id }}" class="pc-reply-form" style="display:none;" method="post" action="{{ url_for('public_comment', kind=detail_type, item_id=item.id) }}">
+        <input type="hidden" name="parent_id" value="{{ comment.id }}">
+        <textarea id="replyText{{ comment.id }}" name="content" class="pc-input" aria-label="回复 {{ author }}" placeholder="回复 {{ author }}…" maxlength="2000" required rows="2"></textarea>
+        <div class="pc-compose-foot"><button type="button" class="pc-cancel" onclick="togglePublicReply({{ comment.id }});">取消</button><button class="pc-submit" type="submit">发布回复</button></div>
+      </form>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}<p class="pc-empty">暂无留言，欢迎交流。</p>{% endfor %}
+  </div>
+  {% if comments.pages > 1 %}
+  <nav class="pc-pagination" aria-label="留言分页">{{ comments.page }} / {{ comments.pages }} 页
+    {% if comments.has_prev %}<a href="?comment_page={{ comments.prev_num }}#comments">上一页</a>{% endif %}
+    {% if comments.has_next %}<a href="?comment_page={{ comments.next_num }}#comments">下一页</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>
+<script>
+function togglePublicReply(id) {
+    var form = document.getElementById('reply-' + id);
+    var button = document.getElementById('reply-button-' + id);
+    if (!form || !button) return;
+    var opening = form.style.display === 'none';
+    var forms = document.getElementById('comments').getElementsByTagName('form');
+    for (var i = 0; i < forms.length; i++) {
+        if (forms[i].className === 'pc-reply-form') {
+            forms[i].style.display = 'none';
+            var other = document.getElementById('reply-button-' + forms[i].id.replace('reply-', ''));
+            if (other) other.setAttribute('aria-expanded', 'false');
+        }
+    }
+    if (opening) {
+        form.style.display = 'block';
+        button.setAttribute('aria-expanded', 'true');
+        document.getElementById('replyText' + id).focus();
+    } else {
+        button.focus();
+    }
+}
+</script>

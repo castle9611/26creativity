@@ -1,10 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 {% from '_icon.html' import icon %}
 <head>
 <meta charset="utf-8"><title>{% if is_edit %}编辑任务{% else %}创建任务{% endif %}</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/oa-rich-editor.css') }}">
 <style>
 body { background: var(--bg-page, #f1f5f9); }
 .breadcrumb { display:block;   font-size: var(--text-sm); color: #64748b; margin-bottom: 16px; }
@@ -58,32 +59,33 @@ body { background: var(--bg-page, #f1f5f9); }
 <div class="form-card">
   <h3>{% if is_edit %}{{ icon('edit') }} 编辑任务{% else %}{{ icon('task') }} 创建新任务{% endif %}</h3>
 
-  <form method="post" enctype="multipart/form-data">
+  <form method="post" enctype="multipart/form-data" onsubmit="return validateTaskForm();" novalidate>
     <div class="form-group">
-      <label class="form-label">任务标题 <span style="color:#dc2626;">*</span></label>
-      <input type="text" name="title" class="form-input" placeholder="请输入任务标题" required style="height:48px;font-size:15px;" value="{{ task.title if is_edit else '' }}">
+      <label class="form-label" for="taskTitle">任务标题 <span style="color:#dc2626;">*</span></label>
+      <input type="text" name="title" id="taskTitle" class="form-input" placeholder="请输入任务标题" required style="height:48px;font-size:15px;" value="{{ task.title if is_edit else '' }}" aria-describedby="taskFormError">
     </div>
 
     <div class="form-group">
       <label class="form-label">任务内容</label>
-      <textarea name="content" class="form-textarea" placeholder="请输入任务详细描述..." rows="6" style="font-size:14px;line-height:1.8;">{{ task.content if is_edit else '' }}</textarea>
+      {% include '_rich_editor_image.html' %}
+      <textarea name="content" id="taskContent" class="form-textarea oa-rich-field" placeholder="请输入任务详细描述…" rows="10">{{ task.content if is_edit else '' }}</textarea>
     </div>
 
     <div class="form-group">
-      <label class="form-label">云盘 资料链接（可选）</label>
+      <label class="form-label">云盘资料链接（可选）</label>
       <div style="display:table;width:100%;table-layout:fixed;">
         <div style="display:table-cell;vertical-align:middle;padding-right:6px;">
-          <input type="url" name="nextcloud_url" class="form-input" style="height:44px;" maxlength="2000" placeholder="可粘贴 云盘 文件、文件夹或共享链接，不填写也可以创建任务" value="{{ task.nextcloud_url if is_edit else '' }}">
+          <input type="url" name="nextcloud_url" class="form-input" style="height:44px;" maxlength="2000" placeholder="可粘贴云盘文件、文件夹或共享链接，不填写也可以创建任务" value="{{ task.nextcloud_url if is_edit else '' }}">
         </div>
         <div style="display:table-cell;width:228px;vertical-align:middle;">
           {% if nextcloud_url %}
-          <a href="{{ nextcloud_url }}" target="_blank" rel="noopener" class="btn" style="width:100%;height:44px;line-height:28px;box-sizing:border-box;text-align:center;" title="在新标签页打开 云盘">{{ icon('folder') }} 前往 云盘 获取链接 ↗</a>
+          <a href="{{ nextcloud_url }}" target="_blank" rel="noopener" class="btn" style="width:100%;height:44px;line-height:28px;box-sizing:border-box;text-align:center;" title="在新标签页打开云盘">{{ icon('folder') }} 前往云盘获取链接 ↗</a>
           {% else %}
-          <span class="btn" style="display:block;height:44px;line-height:28px;box-sizing:border-box;text-align:center;cursor:not-allowed;" title="请先在系统设置中配置 云盘">云盘 尚未配置</span>
+          <span class="btn" style="display:block;height:44px;line-height:28px;box-sizing:border-box;text-align:center;cursor:not-allowed;" title="请先在系统设置中配置云盘">云盘尚未配置</span>
           {% endif %}
         </div>
       </div>
-      <div style="margin-top:5px;color:#475569;font-size:12px;">此链接不是必填项；可用于关联 云盘 中的任务资料，发布后会显示在任务详情页。</div>
+      <div style="margin-top:5px;color:#475569;font-size:12px;">此链接不是必填项；可用于关联云盘中的任务资料，发布后会显示在任务详情页。</div>
     </div>
 
     <div class="task-form-row">
@@ -104,7 +106,7 @@ body { background: var(--bg-page, #f1f5f9); }
           {% for cat in categories %}
           {% set cat_cols = cols_by_cat.get(cat.id, []) %}
           {% for col in cat_cols %}
-          <option value="{{ col.id }}" data-cat="{{ cat.id }}" style="display:none;">{{ col.name }}</option>
+          <option value="{{ col.id }}" data-cat="{{ cat.id }}" {% if is_edit and task.column_id == col.id %}selected{% endif %}>{{ col.name }}</option>
           {% endfor %}
           {% endfor %}
         </select>
@@ -123,7 +125,7 @@ body { background: var(--bg-page, #f1f5f9); }
       </div>
       <div class="form-group task-form-cell">
         <label class="form-label">截止日期</label>
-        <input type="date" name="deadline" class="form-input" style="height:48px;" value="{{ task.deadline.strftime('%Y-%m-%d') if is_edit and task.deadline else '' }}">
+        <div style="display:table;width:100%;table-layout:fixed;"><input type="date" name="deadline" id="taskDeadline" class="form-input" style="height:48px;display:table-cell;width:62%;" value="{{ task.deadline.strftime('%Y-%m-%d') if is_edit and task.deadline else '' }}"><select class="form-select" style="height:48px;display:table-cell;width:38%;" onchange="setTaskDeadline(this.value)"><option value="">快捷设置</option><option value="uncertain">不确定</option><option value="long_term">长期有效</option></select></div>
       </div>
     </div>
 
@@ -187,9 +189,9 @@ body { background: var(--bg-page, #f1f5f9); }
         <label class="form-label" style="display:table-cell;vertical-align:middle;">附件（可选）</label>
         <div style="display:table-cell;text-align:right;vertical-align:middle;">
           {% if nextcloud_url %}
-          <a href="{{ nextcloud_url }}" target="_blank" rel="noopener" class="btn btn-primary" title="在新标签页打开 云盘">{{ icon('folder') }} 打开 云盘 新建文件 ↗</a>
+          <a href="{{ nextcloud_url }}" target="_blank" rel="noopener" class="btn btn-primary" title="在新标签页打开云盘">{{ icon('folder') }} 打开云盘新建文件 ↗</a>
           {% else %}
-          <span class="btn" style="cursor:not-allowed;" title="请先在系统设置中配置 云盘">云盘 尚未配置</span>
+          <span class="btn" style="cursor:not-allowed;" title="请先在系统设置中配置云盘">云盘尚未配置</span>
           {% endif %}
         </div>
       </div>
@@ -219,6 +221,7 @@ body { background: var(--bg-page, #f1f5f9); }
     </div>
 
     <div style="display:block;margin-top:24px;padding-top:24px;border-top:1px solid #e2e8f0;">
+      <div id="taskFormError" role="alert" aria-live="assertive" style="display:none;color:#b91c1c;margin:10px 0;"></div>
       <button type="submit" class="btn btn-primary btn-lg">{% if is_edit %}{{ icon('save') }} 保存修改{% else %}{{ icon('save') }} 创建任务{% endif %}</button>
       {% if is_edit %}
       <a href="{{ url_for('tasks.detail_task', task_id=task.id) }}" class="btn btn-lg">取消</a>
@@ -245,6 +248,32 @@ function updateAssigneeSummary() {
     }
     document.getElementById('assigneeCount').innerHTML = names.length;
     document.getElementById('assigneeNames').innerHTML = names.length ? names.join('、') : '尚未选择负责人';
+}
+function setTaskDeadline(value) {
+    if (value === 'uncertain' || value === 'long_term') document.getElementById('taskDeadline').value = '';
+}
+function validateTaskForm() {
+    var form = document.querySelector('form'), missing = [];
+    var content = OARichEditor.sync();
+    var contentCheck = document.createElement('div');
+    contentCheck.innerHTML = content;
+    var contentText = (contentCheck.textContent || contentCheck.innerText || '').replace(/^\s+|\s+$/g, '');
+    var errorEl = document.getElementById('taskFormError');
+    if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
+    if (!form.querySelector('[name="title"]').value.replace(/^\s+|\s+$/g, '')) missing.push('任务标题');
+    if (!contentText && !contentCheck.getElementsByTagName('img').length) missing.push('任务内容');
+    if (!form.querySelector('[name="department"]').value.replace(/^\s+|\s+$/g, '')) missing.push('负责部门');
+    if (!form.querySelectorAll('[name="assignee_ids"]:checked').length) missing.push('负责人');
+    if (missing.length) {
+        if (errorEl) { errorEl.textContent = '请补充以下必填项：' + missing.join('、'); errorEl.style.display = 'block'; }
+        var first = form.querySelector('[name="title"]');
+        if (missing.indexOf('任务内容') >= 0) first = null;
+        if (missing.indexOf('负责部门') >= 0) first = form.querySelector('[name="department"]');
+        if (first) first.focus();
+        else OARichEditor.focus();
+        return false;
+    }
+    return true;
 }
 
 function filterAssignees() {
@@ -445,6 +474,8 @@ function renderFileList() {
 
 </script>
 
+<script src="{{ url_for('static', filename='kindeditor/kindeditor-all-min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/oa-rich-editor.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ux.js') }}"></script>
 </body>
 </html>

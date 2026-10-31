@@ -127,6 +127,7 @@ body {
   border: 1px solid rgba(148,163,184,.22);
 }
 .detail-body-public {
+  overflow-x: auto;
   padding: 26px;
   color: #334155;
   font-size: 15px;
@@ -142,7 +143,9 @@ body {
   image-rendering: auto;
 }
 .detail-body-public table {
-  max-width: 100%;
+  width: auto;
+  max-width: none;
+  table-layout: auto;
   border-collapse: collapse;
 }
 .detail-body-public td,
@@ -157,8 +160,9 @@ body {
   .detail-title-public { font-size: 22px; }
 }
 </style>
+{% if public_ui_version == '2.0' %}<link rel="stylesheet" href="{{ url_for('static', filename='css/public-ui-v2.css') }}">{% endif %}
 </head>
-<body>
+<body class="public-detail-page{% if public_ui_version == '2.0' %} public-ui-v2{% endif %}">
 <div class="detail-shell">
   <nav class="public-detail-nav" aria-label="公开详情导航">
     <div class="public-detail-crumb">
@@ -174,7 +178,7 @@ body {
 
   <div class="detail-top">
     <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap;">
-      <span class="readonly-badge">{{ icon('lock') }} 公开只读</span>
+      <span class="readonly-badge">{{ icon('lock') }} 公开详情</span>
       {% if session.get('user_id') %}
       <a class="btn btn-primary" href="{{ url_for('index_bp.workbench') }}">进入工作台</a>
       {% else %}
@@ -216,7 +220,7 @@ body {
       {% if item.nextcloud_url %}
       <div style="display:table;width:100%;table-layout:fixed;margin-bottom:{% if attachment_items %}14px{% else %}0{% endif %};">
         <div style="display:table-cell;vertical-align:middle;">
-          <div style="font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px;">{{ icon('folder') }} 云盘 资料链接</div>
+          <div style="font-size:14px;font-weight:800;color:#0f172a;margin-bottom:4px;">{{ icon('folder') }}云盘资料链接</div>
           <div style="font-size:13px;color:#334155;word-break:break-all;">{{ item.nextcloud_url }}</div>
         </div>
         <div style="display:table-cell;width:142px;vertical-align:middle;text-align:right;"><a href="{{ item.nextcloud_url }}" target="_blank" rel="noopener" class="btn btn-primary">打开资料 ↗</a></div>
@@ -226,13 +230,16 @@ body {
       <div style="font-size:14px;font-weight:800;color:#0f172a;margin-bottom:7px;">{{ icon('attach') }} 附件（{{ attachment_items|length }}）</div>
       <div>
         {% for attachment in attachment_items %}
-        <a href="{{ attachment.url }}" target="_blank" rel="noopener" class="btn" style="margin:0 5px 5px 0;max-width:100%;white-space:normal;word-break:break-all;">{{ icon('attach') }} {{ attachment.name }}{% if attachment.size %} <span style="color:#475569;">（{{ (attachment.size / 1024)|round|int }}KB）</span>{% endif %}</a>
+        <a href="{{ url_for('index_bp.attachment_view', kind=detail_type, item_id=item.id, position=loop.index0, action='download') }}" target="_blank" rel="noopener" class="btn" style="margin:0 5px 5px 0;max-width:100%;white-space:normal;word-break:break-all;">{{ icon('attach') }} {{ attachment.name }} · 下载{% if attachment.size %} <span style="color:#475569;">（{{ (attachment.size / 1024)|round|int }}KB）</span>{% endif %}</a>
+        <a class="btn" href="{{ url_for('index_bp.attachment_view', kind=detail_type, item_id=item.id, position=loop.index0, action='preview') }}" target="_blank" rel="noopener">在线查看</a>
         {% endfor %}
       </div>
       {% endif %}
     </div>
     {% endif %}
   </article>
+  {% if detail_type == 'bulletin' %}{% set poll_bulletin = item %}{% include '_bulletin_poll.html' %}{% endif %}
+  {% if detail_type in ('task', 'bulletin') %}{% include '_public_comments.html' %}{% endif %}
 </div>
 <script>
 (function() {

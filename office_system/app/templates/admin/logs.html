@@ -17,7 +17,12 @@ body { background: #f1f5f9; }
 .log-filter-panel .form-select,
 .log-filter-panel .btn { height: 38px; }
 .log-filter-panel .form-input,
-.log-filter-panel .form-select { min-width: 150px; }
+.log-filter-panel .form-select { width: 150px; min-width: 0; margin: 3px 5px 3px 0; }
+.log-filter-panel .oa-filter-row { display: block; }
+.log-table-panel { overflow-x: auto; }
+.log-table { min-width: 1050px; table-layout: fixed; }
+.oa-batch-bar > div { display: inline-block; vertical-align: middle; margin-right: 18px; }
+.oa-batch-bar label { margin-left: 12px; }
 @media (max-width: 900px) {
   .log-filter-panel .form-input,
   .log-filter-panel .form-select { min-width: 100%; }
@@ -43,13 +48,13 @@ body { background: #f1f5f9; }
 </div>
 
 <div id="batchActionsBar" class="oa-batch-bar">
-  <div style="display:flex;align-items:center;gap:12px;">
+  <div>
     <span id="selectedCount">已选择 0 项</span>
-    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+    <label style="cursor:pointer;font-size:13px;">
       <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="width:16px;height:16px;"> 全选
     </label>
   </div>
-  <div style="display:flex;gap:8px;">
+  <div>
     <button type="button" class="btn" style="background:#dc2626;border:1px solid #dc2626;color:white;" onclick="batchDeleteLogs()">{{ icon('trash') }} 批量删除</button>
     <button type="button" class="btn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;" onclick="clearSelection()">取消</button>
   </div>
@@ -86,8 +91,8 @@ body { background: #f1f5f9; }
   </form>
 </div>
 
-<div class="oa-data-panel">
-  <table class="oa-data-table">
+<div class="oa-data-panel log-table-panel">
+  <table class="oa-data-table log-table">
     <thead>
       <tr>
         <th style="width:42px;"><input type="checkbox" id="selectAllTop" onchange="toggleSelectAll(this)" style="width:16px;height:16px;cursor:pointer;"></th>
@@ -144,33 +149,40 @@ body { background: #f1f5f9; }
 
 <script>
 function getSelectedIds() {
-  return Array.from(document.querySelectorAll('.log-checkbox:checked')).map(function(cb) { return parseInt(cb.value); });
+  var checked = document.querySelectorAll('.log-checkbox:checked');
+  var ids = [];
+  for (var i = 0; i < checked.length; i++) ids.push(parseInt(checked[i].value, 10));
+  return ids;
 }
 
 function updateSelectionCount() {
   var ids = getSelectedIds();
   var bar = document.getElementById('batchActionsBar');
   var countText = document.getElementById('selectedCount');
-  bar.style.display = ids.length > 0 ? 'flex' : 'none';
+  bar.style.display = ids.length > 0 ? 'block' : 'none';
   countText.textContent = '已选择 ' + ids.length + ' 项';
 
   var all = document.querySelectorAll('.log-checkbox');
   var top = document.getElementById('selectAllTop');
   var batch = document.getElementById('selectAllCheckbox');
-  [top, batch].forEach(function(cb) {
-    if (!cb) return;
+  var controls = [top, batch];
+  for (var i = 0; i < controls.length; i++) {
+    var cb = controls[i];
+    if (!cb) continue;
     cb.checked = ids.length === all.length && ids.length > 0;
     cb.indeterminate = ids.length > 0 && ids.length < all.length;
-  });
+  }
 }
 
 function toggleSelectAll(checkbox) {
-  document.querySelectorAll('.log-checkbox').forEach(function(cb) { cb.checked = checkbox.checked; });
+  var boxes = document.querySelectorAll('.log-checkbox');
+  for (var i = 0; i < boxes.length; i++) boxes[i].checked = checkbox.checked;
   updateSelectionCount();
 }
 
 function clearSelection() {
-  document.querySelectorAll('.log-checkbox').forEach(function(cb) { cb.checked = false; });
+  var boxes = document.querySelectorAll('.log-checkbox');
+  for (var i = 0; i < boxes.length; i++) boxes[i].checked = false;
   var top = document.getElementById('selectAllTop');
   var batch = document.getElementById('selectAllCheckbox');
   if (top) { top.checked = false; top.indeterminate = false; }
@@ -185,16 +197,19 @@ function batchDeleteLogs() {
 
   var formData = new FormData();
   formData.append('ids', JSON.stringify(ids));
-  fetch('{{ url_for("admin.batch_delete_logs") }}', {
-    method: 'POST',
-    body: formData,
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  })
-  .then(function(response) { return response.json(); })
-  .then(function(data) {
-    if (data.success) { location.reload(); } else { alert(data.message || '删除失败'); }
-  })
-  .catch(function() { alert('删除失败'); });
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '{{ url_for("admin.batch_delete_logs") }}', true);
+  xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status >= 200 && xhr.status < 300) {
+      var data = JSON.parse(xhr.responseText);
+      if (data.success) { location.reload(); } else { alert(data.message || '删除失败'); }
+    } else {
+      alert('删除失败');
+    }
+  };
+  xhr.send(formData);
 }
 </script>
 </body>

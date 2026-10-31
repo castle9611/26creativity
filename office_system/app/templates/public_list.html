@@ -92,11 +92,30 @@ body {
   text-decoration: none;
 }
 .public-list-name:hover { color: #1266f3; }
+.fresh-badge { display: inline-block; width: auto; margin: 0 5px 0 0; padding: 1px 4px; border-radius: 3px; color: #fff; font-size: 10px; line-height: 16px; text-align: center; vertical-align: 1px; }
+.fresh-3 { background: #b94a48; }
+.fresh-7 { background: #d97706; }
+.fresh-15 { background: #3b82f6; }
 .public-list-meta {
-  margin-top: 7px;
+  margin-top: 0;
   color: #64748b;
   font-size: 13px;
 }
+.public-list-content {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+.public-list-content .public-list-name,
+.public-list-content .public-list-meta {
+  display: table-cell;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.public-list-content .public-list-name { width: 55%; }
+.public-list-content .public-list-meta { width: 45%; text-align: right; }
 .public-list-actions {
   display: inline-flex;
   gap: 8px;
@@ -106,7 +125,10 @@ body {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-top: 18px;
+  min-height: 64px;
+  box-sizing: border-box;
+  align-items: center;
+  margin-top: 16px;
 }
 @media (max-width: 720px) {
   .public-list-head,
@@ -119,8 +141,9 @@ body {
   .public-file-search { width: 100%; }
 }
 </style>
+{% if public_ui_version == '2.0' %}<link rel="stylesheet" href="{{ url_for('static', filename='css/public-ui-v2.css') }}">{% endif %}
 </head>
-<body>
+<body class="public-list-page{% if public_ui_version == '2.0' %} public-ui-v2{% endif %}">
 <div class="public-list-shell">
   <div class="breadcrumb">
     <a href="{{ back_url }}">首页</a>
@@ -151,18 +174,20 @@ body {
   <section class="public-list-card">
     {% for item in items %}
     <div class="public-list-row">
-      <div>
+      <div class="public-list-content">
+        {% set item_time = item.updated_at if list_type in ['memos', 'tasks'] else item.created_at %}
+        {% if item_time and item_time >= recent_cutoffs[0] %}{% set fresh_class, fresh_text = 'fresh-3', '3日内' %}{% elif item_time and item_time >= recent_cutoffs[1] %}{% set fresh_class, fresh_text = 'fresh-7', '7日内' %}{% elif item_time and item_time >= recent_cutoffs[2] %}{% set fresh_class, fresh_text = 'fresh-15', '15日内' %}{% else %}{% set fresh_class, fresh_text = '', '' %}{% endif %}
         {% if list_type == 'memos' %}
-        <a class="public-list-name" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">{{ item.title }}</a>
+        <a class="public-list-name" title="{{ item.title }}" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a>
         <div class="public-list-meta">公共备忘 · {{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</div>
         {% elif list_type == 'tasks' %}
-        <a class="public-list-name" href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">{{ item.title }}</a>
+        <a class="public-list-name" title="{{ item.title }}" href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a>
         <div class="public-list-meta">进度 {{ item.progress or 0 }}% · {{ item.status|status_label }} · {{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</div>
         {% elif list_type == 'reminders' %}
-        <a class="public-list-name" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{{ item.title }}</a>
-        <div class="public-list-meta">{% if item.expire_date %}有效期至 {{ item.expire_date.strftime('%Y-%m-%d') }}{% else %}长期有效{% endif %} · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</div>
+        <a class="public-list-name" title="{{ item.title }}" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a>
+        <div class="public-list-meta">{% if item.expire_date %}有效期至 {{ item.expire_date.strftime('%Y-%m-%d') }}{% else %}长期有效{% endif %} · 发布日期：{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '暂无' }}</div>
         {% else %}
-        <a class="public-list-name" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) if item.file_type in ('jpg','jpeg','png','gif','bmp','webp','mp3','wav','m4a','aac','ogg','flac','mp4','webm','ogv','mov','m4v') else url_for('index_bp.public_file_download', file_id=item.id) }}">{{ item.original_name }}</a>
+        <a class="public-list-name" title="{{ item.original_name }}" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.original_name }}</a>
         <div class="public-list-meta">
           {{ item.file_type|upper if item.file_type else 'FILE' }}
           · {% if item.file_size < 1024 %}{{ item.file_size }}B{% elif item.file_size < 1048576 %}{{ (item.file_size/1024)|round(1) }}KB{% else %}{{ (item.file_size/1048576)|round(1) }}MB{% endif %}
@@ -173,7 +198,7 @@ body {
       </div>
       <div class="public-list-actions">
         {% if list_type == 'files' %}
-        {% if item.file_type in ('jpg','jpeg','png','gif','bmp','webp','mp3','wav','m4a','aac','ogg','flac','mp4','webm','ogv','mov','m4v') %}<a class="btn" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">预览</a>{% endif %}
+        <a class="btn" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">预览</a>
         <a class="btn btn-primary" href="{{ url_for('index_bp.public_file_download', file_id=item.id) }}">下载</a>
         {% elif list_type == 'memos' %}
         <a class="btn btn-primary" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">查看详情</a>

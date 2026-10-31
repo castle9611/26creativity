@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 {% from '_icon.html' import icon %}
 <html lang="zh-CN">
 <head>
@@ -630,7 +630,7 @@
 <body>
 <div class="login-container">
   <section class="login-hero">
-    <div class="login-hero-logo logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon.png') }}" alt=""></div>
+    <div class="login-hero-logo logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon-transparent.png') }}" alt=""></div>
     <h1 class="login-hero-title">{{ app_name }}</h1>
     <p class="login-hero-subtitle">内网OA办公管理系统 v{{ app_version }}</p>
     <div class="login-hero-line"></div>
@@ -684,6 +684,7 @@
       </form>
 
       <div class="login-footer">
+        <p style="margin-bottom:12px;font-size:13px;">还没有账号？<a href="{{ url_for('auth.register') }}" style="color:#246fe5;">申请注册</a> · 管理员审核后使用</p>
         <p style="color: #94a3b8; font-size: 12px;">内网专用 · 安全办公 · 操作留痕</p>
         <a class="login-home-link" href="{{ url_for('index_bp.index') }}">{{ icon('public-home') }} 返回首页</a>
       </div>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>注册审核</title><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body.registration-admin { padding:20px; background:#f1f5f9; color:#334155; }
+.ra-shell { max-width:1200px; margin:0 auto; }
+.ra-back { margin-bottom:14px; font-size:13px; color:#64748b; }
+.ra-back a { color:#35609d; }
+.ra-title { margin:0 0 7px; font-size:22px; color:#203b63; }
+.ra-help { margin:0 0 17px; font-size:13px; color:#64748b; }
+.ra-tabs { margin-bottom:14px; border-bottom:1px solid #dbe4ef; }
+.ra-tabs a { display:inline-block; padding:9px 14px; margin-right:7px; color:#64748b; font-size:13px; text-decoration:none; }
+.ra-tabs a.active { border-bottom:2px solid #246fe5; color:#246fe5; font-weight:600; }
+.ra-card { overflow-x:auto; border:1px solid #dbe4ef; border-radius:7px; background:#fff; }
+.ra-table { width:100%; border-collapse:collapse; font-size:13px; }
+.ra-table th { padding:11px 13px; background:#f8fafc; color:#64748b; font-weight:500; text-align:left; white-space:nowrap; }
+.ra-table td { padding:12px 13px; border-top:1px solid #edf1f6; vertical-align:top; line-height:1.7; word-wrap:break-word; }
+.ra-name { color:#203b63; font-weight:600; }
+.ra-muted { color:#64748b; font-size:12px; }
+.ra-note { max-width:280px; white-space:pre-wrap; word-wrap:break-word; }
+.ra-actions { min-width:230px; }
+.ra-actions textarea { width:100%; height:48px; padding:6px 8px; border:1px solid #dbe4ef; border-radius:4px; box-sizing:border-box; font:12px/1.5 "Microsoft YaHei",Arial,sans-serif; resize:vertical; }
+.ra-actions button { margin-top:5px; padding:0 12px; border:1px solid #246fe5; border-radius:4px; background:#246fe5; color:#fff; font:12px/28px "Microsoft YaHei",Arial,sans-serif; cursor:pointer; }
+.ra-actions button.ra-reject { margin-left:6px; border-color:#dbe4ef; background:#fff; color:#a55342; }
+.ra-actions button:focus, .ra-actions textarea:focus { outline:2px solid #bfd5fa; outline-offset:1px; }
+.ra-empty { padding:30px; text-align:center; color:#64748b; font-size:13px; }
+.ra-pages { margin-top:14px; text-align:right; font-size:13px; color:#64748b; }
+.ra-pages a { display:inline-block; margin-left:10px; color:#35609d; }
+</style></head><body class="registration-admin"><main class="ra-shell">
+<div class="ra-back"><a href="{{ url_for('admin.users') }}">用户管理</a> / 注册审核</div>
+<h1 class="ra-title">注册审核</h1><p class="ra-help">核对真实姓名和部门后通过申请。通过后创建普通用户账号；如需管理权限，请在用户管理中另行设置。</p>
+{% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert alert-{{ category }}" role="status">{{ message }}</div>{% endfor %}
+<nav class="ra-tabs" aria-label="注册申请状态">
+{% for key, label in [('pending','待审核'), ('approved','已通过'), ('rejected','已驳回')] %}<a class="{{ 'active' if status == key else '' }}" href="{{ url_for('admin.registrations', status=key) }}">{{ label }}{% if key == 'pending' %}（{{ registration_pending_count }}）{% endif %}</a>{% endfor %}
+</nav>
+<div class="ra-card">
+{% if applications.items %}<table class="ra-table"><thead><tr><th scope="col">申请人</th><th scope="col">部门</th><th scope="col">申请说明</th><th scope="col">提交时间</th><th scope="col">{{ '审核操作' if status == 'pending' else '审核记录' }}</th></tr></thead><tbody>
+{% for application in applications.items %}<tr>
+<td><div class="ra-name">{{ application.real_name }}</div><div class="ra-muted">{{ application.username }}</div></td>
+<td>{{ application.department }}</td><td><div class="ra-note">{{ application.application_note or '—' }}</div></td><td class="ra-muted">{{ application.created_at|localtime }}</td>
+<td>{% if status == 'pending' %}
+<form class="ra-actions" method="post" action="{{ url_for('admin.review_registration', application_id=application.id) }}">
+  <input type="hidden" name="registration_token" value="{{ registration_token }}">
+  <textarea name="review_note" aria-label="{{ application.real_name }}的审核意见" maxlength="500" rows="2" placeholder="审核意见（驳回时必填）"></textarea>
+  <button name="action" value="approve" type="submit">通过申请</button><button class="ra-reject" name="action" value="reject" type="submit">驳回</button>
+</form>
+{% else %}<div>{{ application.reviewer.real_name or application.reviewer.username if application.reviewer else '—' }} · {{ '已通过' if status == 'approved' else '已驳回' }}</div><div class="ra-muted">{{ application.reviewed_at|localtime }}</div><div class="ra-note">{{ application.review_note }}</div>{% endif %}</td>
+</tr>{% endfor %}</tbody></table>{% else %}<div class="ra-empty">暂无{{ {'pending':'待审核', 'approved':'已通过', 'rejected':'已驳回'}[status] }}的注册申请。</div>{% endif %}
+</div>
+{% if applications.pages > 1 %}<nav class="ra-pages" aria-label="注册申请分页">{{ applications.page }} / {{ applications.pages }} 页{% if applications.has_prev %}<a href="{{ url_for('admin.registrations', status=status, page=applications.prev_num) }}">上一页</a>{% endif %}{% if applications.has_next %}<a href="{{ url_for('admin.registrations', status=status, page=applications.next_num) }}">下一页</a>{% endif %}</nav>{% endif %}
+</main></body></html>

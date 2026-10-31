@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 {% from '_icon.html' import icon %}
+{% set slideshow_visible = public_ui.public_slideshow_show and public_slides and not active_category and not public_search_keyword %}
+{% macro render_slideshow() %}{% if slideshow_visible %}{% include '_public_slideshow.html' %}{% endif %}{% endmacro %}
 {% set priority_names = {'high': '高优先级', 'medium': '中优先级', 'normal': '普通优先级', 'low': '低优先级'} %}
-<html lang="zh-CN">
+{% macro task_progress(task) %}<div class="home-task-progress"><div class="home-task-progress-panel"><strong>执行者进度</strong>{% for link in task.assignee_links.all() %}<div class="home-progress-person"><span>{{ link.user.real_name or link.user.username }}</span><b>{{ 100 if task.status == 'completed' else link.progress or 0 }}% · {{ '已完成' if task.status == 'completed' or link.is_completed else '进行中' }}</b></div>{% else %}{% if task.assignee %}<div class="home-progress-person"><span>{{ task.assignee.real_name or task.assignee.username }}</span><b>{{ 100 if task.status == 'completed' else task.progress or 0 }}% · {{ task.status|status_label }}</b></div>{% else %}<div class="home-progress-person">暂无执行者</div>{% endif %}{% endfor %}</div></div>{% endmacro %}
+<html lang="zh-CN" data-public-scheme="{{ public_ui.public_color_scheme }}">
 <head>
 <meta charset="utf-8">
 <title>{{ app_name }}</title>
@@ -9,7 +12,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
-<script src="{{ url_for('static', filename='js/theme.js', v='20260820-public-theme') }}"></script>
 <style>
 body {
   min-height: 100vh;
@@ -339,6 +341,13 @@ body {
   overflow-y: hidden;
   scroll-behavior: auto;
 }
+.column-section .column-pane.portal-auto-scroll {
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c7dc transparent;
+}
+.column-section .column-pane.portal-auto-scroll::-webkit-scrollbar { width: 5px; }
+.column-section .column-pane.portal-auto-scroll::-webkit-scrollbar-thumb { background: #b8c7dc; border-radius: 4px; }
 .portal-scroll-toolbar {
   margin-top: 3px;
   color: #64748b;
@@ -354,6 +363,7 @@ body {
   cursor: pointer;
 }
 .portal-scroll-toolbar input { vertical-align: middle; margin: 0 5px 1px 0; }
+.portal-copyright { padding:8px 0 14px; color:#8A94A6; font-size:12px; text-align:right; }
 @media (max-height: 900px) and (min-width: 901px) {
   .portal-panel .panel-body.portal-auto-scroll {
     height: calc(100vh - 500px);
@@ -635,7 +645,7 @@ body {
 }
 .public-top {
   min-height: 74px;
-  margin: -22px -24px 0;
+  margin: -22px 0 0;
   padding: 22px 24px 18px;
   background:
     radial-gradient(circle at 62% 16%, rgba(46,118,255,.28), transparent 24%),
@@ -866,22 +876,22 @@ body {
   justify-content: center;
   border-radius: 13px;
   color: #1266f3;
-  background: #eef4ff;
+  background: transparent;
   border: 1px solid #d7e5ff;
 }
 .portal-stat:nth-child(2) .stat-mini-icon {
   color: #059669;
-  background: #effbf6;
+  background: transparent;
   border-color: #d6f3e7;
 }
 .portal-stat:nth-child(3) .stat-mini-icon {
   color: #f97316;
-  background: #fff7ed;
+  background: transparent;
   border-color: #ffdfbc;
 }
 .portal-stat:nth-child(4) .stat-mini-icon {
   color: #6d3be8;
-  background: #f6f0ff;
+  background: transparent;
   border-color: #e3d4ff;
 }
 .portal-stat .stat-mini-icon .svg-icon {
@@ -921,6 +931,7 @@ body {
 .portal-grid {
   grid-template-columns: 1.05fr 1.08fr 1.1fr 1.18fr;
   gap: 14px;
+  align-items: start;
 }
 .portal-panel {
   min-height: 0;
@@ -1180,7 +1191,7 @@ html[data-theme] .portal-stat:nth-child(2) .stat-mini-icon,
 html[data-theme] .portal-stat:nth-child(3) .stat-mini-icon,
 html[data-theme] .portal-stat:nth-child(4) .stat-mini-icon {
   color: var(--primary);
-  background: var(--primary-bg);
+  background: transparent;
   border-color: var(--border);
 }
 html[data-theme] .login-entry.btn-primary {
@@ -1209,8 +1220,12 @@ html[data-theme] .badge {
 }
 html[data-theme] .category-tab::before { display: none; }
 html[data-theme] .category-tab-icon,
-html[data-theme] .panel-count,
 html[data-theme] .empty .svg-icon {
+  color: var(--primary) !important;
+  background: transparent !important;
+  border-color: var(--border) !important;
+}
+html[data-theme] .panel-count {
   color: var(--primary) !important;
   background: var(--primary-bg) !important;
   border-color: var(--border) !important;
@@ -1283,32 +1298,691 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
   border-color: #fff !important;
   transform: translateY(-1px);
 }
+.public-actions { white-space: nowrap; }
+.public-global-search { display: inline-table; width: 430px; margin-right: 10px; vertical-align: middle; }
+.public-global-search .form-input, .public-global-search .btn { display: table-cell; height: 40px; vertical-align: middle; }
+.public-global-search .form-input { width: 330px; }
+.portal-links { display: block; overflow: visible; }
+.portal-link { display: inline-block; min-width: 0; min-height: 0; margin: 3px 6px 3px 0; padding: 7px 11px; background: #fff; border: 1px solid #b9c9dd; border-radius: 4px; box-shadow: none; color: #111827; font-size: 13px; }
+.portal-link .svg-icon { margin-right: 5px; vertical-align: middle; color: var(--primary); fill: currentColor; }
+.portal-link > span { color: #111827; }
+.column-portal { margin: 14px -6px 0; font-size: 0; }
+.column-section { display: inline-block; width: 24%; height: 350px; margin: 0 .5% 16px; vertical-align: top; box-sizing: border-box; overflow: hidden; border: 1px solid var(--border); background: var(--bg-card); box-shadow: 0 8px 20px rgba(15,23,42,.06); font-size: 14px; }
+.column-head { display: table; width: 100%; background: var(--primary); }
+.column-title { display: table-cell; padding: 9px 8px; color: #fff; font-size: 15px; font-weight: 800; vertical-align: middle; white-space: nowrap; }
+.column-tabs { display: table-cell; width: 1%; padding: 5px 7px 5px 0; text-align: right; vertical-align: middle; white-space: nowrap; }
+.column-tab { min-width: 0; padding: 5px 7px; margin: 0 0 0 -1px; border: 1px solid rgba(255,255,255,.38); background: rgba(255,255,255,.12); color: #fff; cursor: pointer; }
+.column-tab:hover, .column-tab:focus { background: rgba(255,255,255,.22); }
+.column-tab.active { color: #334155; background: #fff; border-color: #fff; }
+.column-tab span { display: none; }
+.column-pane { display: none; height: 220px; padding: 5px 12px 10px; box-sizing: border-box; overflow: hidden; }
+.column-pane.active { display: block; }
+.column-item { display: table; width: 100%; padding: 7px 0; border-bottom: 1px solid #edf2f7; table-layout: fixed; }
+.column-item a, .column-item span { display: table-cell; }
+.column-item a { color: #123d79; font-weight: 700; text-align: left; word-wrap: break-word; }
+.column-item > span { display: table-cell; width: 125px; padding-left: 8px; color: var(--text-muted); text-align: right; white-space: nowrap; vertical-align: top; }
+.column-more { display: block; margin-top: 7px; color: var(--primary); text-align: right; font-size: 12px; font-weight: 700; }
+.fresh-badge { display: inline-block !important; width: auto !important; margin: 0 5px 0 0 !important; padding: 1px 4px; border-radius: 3px; color: #fff !important; font-size: 10px; line-height: 16px; text-align: center !important; vertical-align: 1px; }
+.fresh-3 { background: #a84f4f; }
+.fresh-7 { background: #9a6a35; }
+.fresh-15 { background: #58748e; }
+.column-section .column-head { background: var(--primary); }
+.content-tabs-portal { margin: 14px -6px 0; font-size: 0; }
+.content-type-section { display: inline-block; width: 49%; margin: 0 .5% 14px; vertical-align: top; box-sizing: border-box; border: 1px solid var(--border); background: var(--bg-card); font-size: 14px; }
+.content-type-head { padding: 10px 14px; color: #fff; background: var(--primary); font-size: 16px; font-weight: 800; }
+.content-tabs { padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; overflow-x: auto; }
+.content-tab { padding: 6px 10px; margin: 0 -1px 0 0; border: 1px solid var(--border); background: var(--bg-muted); color: var(--text-secondary); cursor: pointer; }
+.content-tab.active { color: #fff; background: #64748b; border-color: #64748b; }
+.content-pane { display: none; height: 220px; padding: 5px 12px 10px; box-sizing: border-box; overflow: hidden; }
+.content-pane.active { display: block; }
 .portal-stats { width: 850px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media(max-width:700px) { .portal-stats { grid-template-columns: 1fr; } }
+@media(max-width:900px) {
+  .public-top, .public-brand, .public-actions { display: block; }
+  .public-actions { margin-top: 12px; white-space: normal; }
+  .public-global-search { width: 100%; margin: 0 0 8px; }
+  .public-global-search .form-input { width: 75%; }
+  .column-item a { text-align: left; }
+  .column-item > span { display: table-cell; width: 125px; text-align: right; }
+  .column-section { width: 49%; }
+}
+@media(max-width:600px) { .column-section { width: 99%; } }
+@media(max-width:700px) { .content-type-section { width: 99%; } }
+
+/* Compact visual refinement */
+.public-shell { max-width: none; width: 100%; margin-right: 0; margin-left: 0; padding-left: 0 !important; padding-right: 0 !important; box-sizing: border-box; }
+.portal-grid, .column-portal, .content-tabs-portal { margin-left: 14px !important; margin-right: 14px !important; }
+@media (max-width: 600px) { .portal-grid, .column-portal, .content-tabs-portal { margin-left: 8px !important; margin-right: 8px !important; } }
+.portal-links-bar { margin-bottom: 10px; border-color: var(--border); box-shadow: 0 2px 8px rgba(15,23,42,.05); }
+.portal-link { transition: border-color .15s ease, background-color .15s ease; }
+.portal-link:hover, .portal-link:focus { border-color: var(--primary); background: var(--primary-bg); }
+.category-tabs { border-color: var(--border); box-shadow: 0 3px 10px rgba(15,23,42,.06); }
+.category-tab { font-weight: 700; }
+.portal-title-card, .portal-stat { border-color: var(--border); box-shadow: 0 4px 14px rgba(15,23,42,.06); }
+.column-section, .content-type-section, .portal-panel { border-radius: 8px; overflow: hidden; box-shadow: 0 5px 16px rgba(15,23,42,.07); }
+.column-head, .content-type-head { background: linear-gradient(90deg, var(--primary-dark), var(--primary)); }
+.column-tabs, .content-tabs { background: var(--bg-muted); }
+.column-item { box-sizing: border-box; transition: background-color .15s ease; }
+.column-item:hover { background: var(--primary-bg); }
+.column-item:last-of-type { border-bottom-color: transparent; }
+.column-more { width: auto; margin: 7px 0 0 auto; padding: 3px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-muted); }
+.content-tab:hover, .content-tab:focus { color: var(--primary); background: var(--primary-bg); border-color: var(--primary-light); }
+.content-tab.active { color: #fff; background: var(--primary); border-color: var(--primary); }
+.category-tabs { gap: 0 !important; border-radius: 0 !important; }
+.category-menu { margin: 0 !important; }
+.portal-grid .panel-head,
+.column-head,
+.content-type-head {
+  background: linear-gradient(180deg, #eaf3ff, #dceaff) !important;
+  border-bottom-color: #c8dcf7 !important;
+}
+.portal-grid .panel-title,
+.column-title,
+.content-type-head {
+  color: #1957a6 !important;
+}
+.portal-grid .panel-title .svg-icon,
+.column-title .svg-icon,
+.content-type-head .svg-icon { color: #2563c7 !important; }
+.category-tab,
+.category-tab:first-child,
+.category-tab:last-child { margin: 0 !important; border-radius: 0 !important; }
+
+/* Icon glyphs have no decorative plate; keep every icon container transparent. */
+.category-tab-icon,
+.category-tab-icon .svg-icon,
+.portal-stat .stat-mini-icon,
+.portal-stat .stat-mini-icon .svg-icon,
+.portal-link .svg-icon,
+.panel-title .svg-icon,
+.column-title .svg-icon,
+.content-type-head .svg-icon,
+.empty .svg-icon {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.category-tab-icon {
+  display: inline-block !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  color: currentColor !important;
+  vertical-align: middle !important;
+}
+.category-tab-icon .svg-icon {
+  display: block !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  margin: 1px !important;
+  color: currentColor !important;
+}
+.category-tab.active .category-tab-icon,
+.category-tab.active .category-tab-icon .svg-icon {
+  color: #fff !important;
+}
+.portal-stat .stat-mini-icon {
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--primary) !important;
+}
+.portal-stat .stat-mini-icon .svg-icon {
+  display: block !important;
+  margin: 0 !important;
+  color: currentColor !important;
+}
+html[data-theme] body .category-tab-icon,
+html[data-theme] body .portal-stat .stat-mini-icon,
+html[data-theme] body .category-tab-icon .svg-icon,
+html[data-theme] body .portal-stat .stat-mini-icon .svg-icon {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Public home masthead: deep-blue portal treatment, scoped to the top controls. */
+html[data-theme] body {
+  background: linear-gradient(180deg, #071d50 0, #071d50 252px, var(--bg-page) 252px, var(--bg-page) 100%) !important;
+}
+html[data-theme] .public-top {
+  min-height: 102px;
+  margin: -22px 0 0;
+  padding: 22px 28px 17px;
+  border: 0;
+  border-bottom: 1px solid rgba(132, 174, 255, .15);
+  background:
+    radial-gradient(circle at 64% 8%, rgba(37, 111, 255, .22), transparent 27%),
+    linear-gradient(110deg, #071d50 0%, #09245f 54%, #071b49 100%);
+  box-sizing: border-box;
+}
+html[data-theme] .public-brand { gap: 16px; }
+html[data-theme] .public-logo {
+  width: 56px;
+  height: 56px;
+  border: 1px solid rgba(139, 187, 255, .42) !important;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #2f86ff, #0862e8) !important;
+  box-shadow: 0 10px 24px rgba(0, 65, 176, .34), inset 0 1px 0 rgba(255, 255, 255, .28) !important;
+}
+html[data-theme] .public-name {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: .5px;
+  line-height: 1.25;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, .24);
+}
+html[data-theme] .public-sub {
+  margin-top: 5px;
+  color: #c5d6f3 !important;
+  font-size: 15px;
+  font-weight: 500;
+}
+html[data-theme] .public-global-search .form-input {
+  color: #fff;
+  background: rgba(5, 24, 67, .64);
+  border-color: rgba(151, 185, 244, .34);
+}
+html[data-theme] .public-global-search .form-input::-ms-input-placeholder { color: #aebfdd; }
+html[data-theme] .public-global-search .form-input::placeholder { color: #aebfdd; }
+html[data-theme] .public-global-search .btn {
+  color: #eaf2ff;
+  background: rgba(21, 61, 128, .86);
+  border-color: rgba(151, 185, 244, .34);
+}
+html[data-theme] .public-global-search .btn:hover,
+html[data-theme] .public-global-search .btn:focus { color: #fff; background: #205fbf; }
+html[data-theme] .public-top .login-entry.btn-primary {
+  min-width: 118px;
+  height: 48px !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  background: linear-gradient(180deg, #2e80f7, #1468dc) !important;
+  border: 1px solid rgba(116, 171, 255, .58) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 26px rgba(0, 69, 181, .34), inset 0 1px 0 rgba(255, 255, 255, .24) !important;
+  font-size: 16px !important;
+  line-height: 46px !important;
+}
+html[data-theme] .public-top .login-entry.btn-primary:hover,
+html[data-theme] .public-top .login-entry.btn-primary:focus {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  background: linear-gradient(180deg, #3a8cff, #1b70e7) !important;
+  border-color: #88b8ff !important;
+}
+html[data-theme] .category-tabs {
+  min-height: 72px;
+  margin: 0;
+  border: 1px solid rgba(137, 174, 235, .25);
+  border-right: 0;
+  border-left: 0;
+  background: #102b60;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 10px 24px rgba(0, 25, 72, .18);
+}
+html[data-theme] .category-menu { height: 72px; }
+html[data-theme] .category-menu > .category-tab,
+html[data-theme] .category-tab {
+  height: 72px;
+  min-height: 72px;
+  padding: 0 14px;
+  color: #eef4ff;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid rgba(151, 185, 244, .17) !important;
+  font-size: 16px;
+  font-weight: 800;
+  box-sizing: border-box;
+}
+html[data-theme] .category-menu:last-child > .category-tab { border-right: 0 !important; }
+html[data-theme] .category-tab:hover,
+html[data-theme] .category-tab:focus { color: #fff; background: rgba(37, 99, 203, .36); }
+html[data-theme] .category-tab.active {
+  color: #fff;
+  background: linear-gradient(180deg, #3387ff, #1268ed);
+  border-color: rgba(151, 185, 244, .17);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 8px 22px rgba(0, 76, 204, .30);
+}
+html[data-theme] .category-tab-icon,
+html[data-theme] .category-tab-icon .svg-icon { color: currentColor !important; }
+html[data-theme] .category-submenu { top: 66px; }
+html[data-theme] .portal-links-bar {
+  min-height: 54px;
+  margin: 16px 24px 10px;
+  padding: 0 20px;
+  color: #fff;
+  background: rgba(7, 27, 70, .82);
+  border: 1px solid rgba(137, 174, 235, .22);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 8px 20px rgba(0, 24, 68, .12);
+}
+html[data-theme] .portal-links { white-space: nowrap; overflow-x: auto; }
+html[data-theme] .portal-link {
+  min-height: 54px;
+  margin: 0;
+  padding: 0 20px;
+  color: #f4f7ff;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid rgba(151, 185, 244, .20);
+  border-radius: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 54px;
+}
+html[data-theme] .portal-link:first-child { padding-left: 0; }
+html[data-theme] .portal-link:last-child { border-right: 0; }
+html[data-theme] .portal-link:hover,
+html[data-theme] .portal-link:focus { color: #fff; background: rgba(46, 112, 225, .20); border-color: rgba(151, 185, 244, .20); }
+html[data-theme] .portal-link > span,
+html[data-theme] .portal-link .svg-icon { color: currentColor !important; }
+html[data-theme] .portal-links-empty { color: #c5d6f3; }
+.home-task-progress { display:inline-block; position:relative; width:0; height:0; vertical-align:top; }
+.home-task-progress-panel { display:none; position:absolute; z-index:100; left:-8px; top:19px; width:350px; max-width:calc(100vw - 30px); max-height:260px; overflow-y:auto; box-sizing:border-box; padding:10px 12px; border:1px solid #d8e3f3; border-radius:7px; color:#24364f; background:#fff; box-shadow:0 10px 28px rgba(15,23,42,.22); font-size:13px; line-height:1.5; white-space:normal; }
+.home-task-progress-panel strong { display:block; margin-bottom:5px; }
+.home-progress-person { display:table; width:100%; padding:5px 0; border-bottom:1px solid #edf2f7; }
+.home-progress-person span, .home-progress-person b { display:table-cell; vertical-align:top; }
+.home-progress-person span { width:55%; padding-right:10px; word-break:break-all; }
+.home-progress-person b { text-align:right; white-space:nowrap; }
+.column-item:hover .home-task-progress-panel, .portal-panel .item:hover .home-task-progress-panel { display:block; }
+.column-item { position:relative; }
+.column-item .home-task-progress { display:block; position:absolute; left:0; top:0; width:0; height:0; }
+.portal-grid .portal-panel { overflow:visible; }
+.content-tabs-portal .content-type-section, .content-tabs-portal .content-pane { overflow:visible; }
+.content-tabs-portal .content-pane { height:auto; min-height:220px; }
+
+@media (max-width: 900px) {
+  html[data-theme] .public-top { margin: -18px -14px 0; padding: 18px 14px 14px; }
+  html[data-theme] .category-tabs { display: block; white-space: nowrap; overflow-x: auto; }
+  html[data-theme] .category-menu { display: inline-block; width: 150px; height: 56px; }
+  html[data-theme] .category-menu > .category-tab,
+  html[data-theme] .category-tab { height: 56px; min-height: 56px; }
+  html[data-theme] .category-submenu { top: 52px; }
+  html[data-theme] .portal-links-bar { margin: 10px 14px; }
+}
+@media (max-width: 560px) {
+  html[data-theme] body { background: linear-gradient(180deg, #071d50 0, #071d50 230px, var(--bg-page) 230px, var(--bg-page) 100%) !important; }
+  html[data-theme] .public-top { margin: -12px -10px 0; padding: 14px 12px 12px; }
+  html[data-theme] .public-logo { width: 44px; height: 44px; }
+  html[data-theme] .public-name { font-size: 21px; }
+  html[data-theme] .public-actions { margin-top: 10px; }
+  html[data-theme] .public-top .login-entry.btn-primary { height: 40px !important; line-height: 38px !important; }
+  html[data-theme] .portal-links-bar { margin: 8px 10px; padding: 0 10px; }
+  html[data-theme] .portal-link { min-height: 42px; padding: 0 12px; line-height: 42px; font-size: 14px; }
+}
+
+/* Carry the masthead blue through the content cards and controls. */
+html body,
+html[data-theme] body {
+  background: linear-gradient(180deg, #071d50 0, #071d50 252px, #edf3fa 252px, #edf3fa 100%) !important;
+}
+html .portal-title-card,
+html[data-theme] .portal-title-card {
+  background: linear-gradient(115deg, #fff 0%, #f2f7ff 100%) !important;
+  border: 1px solid #cddcf2 !important;
+  border-left: 4px solid #246fe5 !important;
+  box-shadow: 0 5px 18px rgba(13, 46, 99, .08) !important;
+}
+html .portal-kicker,
+html[data-theme] .portal-kicker { color: #1759b9 !important; }
+html .portal-title,
+html[data-theme] .portal-title { color: #102c5d !important; }
+html .portal-desc,
+html[data-theme] .portal-desc { color: #536987 !important; }
+html .portal-stat,
+html[data-theme] .portal-stat {
+  background: #fff !important;
+  border: 1px solid #d2dff0 !important;
+  border-top: 3px solid #2b73e2 !important;
+  box-shadow: 0 5px 18px rgba(13, 46, 99, .07) !important;
+}
+html .portal-stat strong,
+html[data-theme] .portal-stat strong { color: #11356e !important; }
+html .portal-stat span,
+html[data-theme] .portal-stat span { color: #526987 !important; }
+html .portal-stat .stat-mini-icon,
+html[data-theme] .portal-stat .stat-mini-icon { color: #246fe5 !important; }
+html .column-section,
+html .content-type-section,
+html .portal-panel,
+html[data-theme] .column-section,
+html[data-theme] .content-type-section,
+html[data-theme] .portal-panel {
+  background: #fff !important;
+  border-color: #d1dff1 !important;
+  box-shadow: 0 6px 20px rgba(13, 46, 99, .08) !important;
+}
+html .column-head,
+html .content-type-head,
+html .portal-grid .panel-head,
+html[data-theme] .column-head,
+html[data-theme] .content-type-head,
+html[data-theme] .portal-grid .panel-head {
+  background: linear-gradient(90deg, #12366e, #1b5098) !important;
+  border-bottom-color: #184982 !important;
+}
+html .column-title,
+html .content-type-head,
+html .portal-grid .panel-title,
+html[data-theme] .column-title,
+html[data-theme] .content-type-head,
+html[data-theme] .portal-grid .panel-title { color: #fff !important; }
+html .column-title .svg-icon,
+html .content-type-head .svg-icon,
+html .portal-grid .panel-title .svg-icon,
+html[data-theme] .column-title .svg-icon,
+html[data-theme] .content-type-head .svg-icon,
+html[data-theme] .portal-grid .panel-title .svg-icon { color: #e7f0ff !important; }
+html .content-tabs,
+html .column-tabs,
+html[data-theme] .content-tabs,
+html[data-theme] .column-tabs { background: #edf4fd !important; border-bottom-color: #d5e3f4 !important; }
+html .content-tab,
+html[data-theme] .content-tab { color: #27548b; background: #fff; border-color: #cfdef1; }
+html .content-tab.active,
+html[data-theme] .content-tab.active { color: #fff !important; background: #236de0 !important; border-color: #236de0 !important; }
+html .column-item,
+html[data-theme] .column-item { border-bottom-color: #e4ecf7; }
+html .column-item:hover,
+html[data-theme] .column-item:hover { background: #f1f6ff !important; }
+html .column-item a,
+html[data-theme] .column-item a { color: #173f7c; }
+html .column-item a:hover,
+html[data-theme] .column-item a:hover { color: #1266d8; }
+html .column-more,
+html[data-theme] .column-more { color: #1b62bf; background: #f1f6ff; border-color: #ccddf5; }
+html .column-more:hover,
+html[data-theme] .column-more:hover { color: #fff; background: #246fe5; border-color: #246fe5; }
+.content-tabs-portal .column-item > .mixed-item-meta {
+  width: 220px;
+  color: #637895;
+  font-size: 12px;
+}
+.content-tabs-portal .mixed-item-meta b { color: #1958aa; font-weight: 700; }
+/* Align the quick links, overview and content cards on one inset. */
+.public-shell .portal-links-bar,
+html[data-theme] .public-shell .portal-links-bar { margin-left:32px; margin-right:32px; }
+.public-shell .portal-hero,
+html[data-theme] .public-shell .portal-hero { margin-left:32px; margin-right:32px; }
+.public-shell .portal-grid,
+.public-shell .column-portal,
+.public-shell .content-tabs-portal { margin-left:32px !important; margin-right:32px !important; }
+.content-tabs-portal .content-type-section { width:49%; margin:0 2% 14px 0; border-radius:10px; }
+.content-tabs-portal .content-type-section:nth-child(2n) { margin-right:0; }
+.portal-title-card { border-radius:10px; }
+@media (max-width: 700px) {
+  .content-tabs-portal .content-type-section { width:100%; margin-right:0; }
+}
+@media (max-width: 560px) {
+  html body,
+  html[data-theme] body { background: linear-gradient(180deg, #071d50 0, #071d50 230px, #edf3fa 230px, #edf3fa 100%) !important; }
+  .content-tabs-portal .column-item > .mixed-item-meta { width: 145px; white-space:normal; }
+  .public-shell .portal-links-bar,
+  .public-shell .portal-hero,
+  html[data-theme] .public-shell .portal-links-bar,
+  html[data-theme] .public-shell .portal-hero { margin-left:12px; margin-right:12px; }
+  .public-shell .portal-grid,
+  .public-shell .column-portal,
+  .public-shell .content-tabs-portal { margin-left:12px !important; margin-right:12px !important; }
+  .content-tabs-portal .content-type-section { width:100%; margin-right:0; }
+}
+/* Public homepage visual rhythm. Keep these overrides last so legacy themes agree. */
+html body, html[data-theme] body { background:#F5F7FA !important; }
+html .public-top, html[data-theme] .public-top { height:78px !important; min-height:78px !important; padding:10px 20px !important; background:#071d50 !important; box-sizing:border-box; }
+html .public-name, html[data-theme] .public-name { font-size:24px !important; }
+html .public-sub, html[data-theme] .public-sub { font-size:12px !important; }
+html .public-global-search, html[data-theme] .public-global-search { width:460px !important; }
+html .public-global-search .form-input, html[data-theme] .public-global-search .form-input { width:360px !important; }
+html .public-top .login-entry.btn-primary, html[data-theme] .public-top .login-entry.btn-primary { height:40px !important; min-width:94px !important; padding:0 15px !important; color:#dce7f8 !important; background:rgba(255,255,255,.09) !important; border:1px solid rgba(255,255,255,.25) !important; box-shadow:none !important; }
+html[data-theme] .public-top .login-entry.btn-primary { line-height:38px !important; -webkit-text-fill-color:#dce7f8 !important; border-radius:9px !important; font-size:14px !important; }
+html .category-tabs, html[data-theme] .category-tabs { min-height:54px !important; height:54px !important; background:#fff !important; border-bottom:1px solid #E5EAF0 !important; box-shadow:none !important; }
+html .category-menu, html .category-tab, html[data-theme] .category-menu, html[data-theme] .category-tab { height:54px !important; min-height:54px !important; }
+html .category-tab, html[data-theme] .category-tab { color:#34445d !important; background:#fff !important; border-color:#E5EAF0 !important; }
+html .category-tab.active, html[data-theme] .category-tab.active { color:#fff !important; background:#102f70 !important; }
+html[data-theme] .category-menu > .category-tab { height:54px !important; min-height:54px !important; color:#34445d !important; background:#fff !important; border-right:1px solid #E5EAF0 !important; font-size:14px !important; }
+html[data-theme] .category-menu > .category-tab.active { color:#fff !important; background:#102f70 !important; }
+html[data-theme] .category-submenu { top:54px !important; }
+html .portal-links-bar, html[data-theme] .portal-links-bar { background:#fff !important; border:1px solid #E5EAF0 !important; border-radius:9px !important; box-shadow:0 2px 10px rgba(20,50,90,.08) !important; }
+html .portal-link, html[data-theme] .portal-link { color:#34445d !important; border-color:#E5EAF0 !important; }
+html .portal-link .svg-icon, html[data-theme] .portal-link .svg-icon { color:#246fe5 !important; }
+html .portal-title-card, html .portal-stat, html .content-type-section, html .column-section, html .portal-panel,
+html[data-theme] .portal-title-card, html[data-theme] .portal-stat, html[data-theme] .content-type-section, html[data-theme] .column-section, html[data-theme] .portal-panel { background:#fff !important; border:1px solid #E5EAF0 !important; border-radius:9px !important; box-shadow:0 2px 10px rgba(20,50,90,.08) !important; }
+html .portal-title-card, html[data-theme] .portal-title-card { padding:20px 24px !important; border-left:4px solid #246fe5 !important; }
+html .portal-stat, html[data-theme] .portal-stat { padding:16px 20px !important; }
+html .portal-stat strong, html[data-theme] .portal-stat strong { color:#102f70 !important; }
+html .content-type-head, html .column-head, html .portal-grid .panel-head,
+html[data-theme] .content-type-head, html[data-theme] .column-head, html[data-theme] .portal-grid .panel-head { background:#fff !important; color:#24344c !important; border-bottom:1px solid #E5EAF0 !important; box-shadow:none !important; }
+html .content-type-head, html[data-theme] .content-type-head { position:relative; padding:16px 22px !important; }
+html .content-type-head:before, html[data-theme] .content-type-head:before { content:""; position:absolute; top:15px; bottom:15px; left:0; width:4px; background:#246fe5; }
+html .content-type-head .svg-icon, html .column-title .svg-icon, html .portal-grid .panel-title .svg-icon,
+html[data-theme] .content-type-head .svg-icon, html[data-theme] .column-title .svg-icon, html[data-theme] .portal-grid .panel-title .svg-icon { color:#246fe5 !important; }
+html .column-title, html .portal-grid .panel-title, html[data-theme] .column-title, html[data-theme] .portal-grid .panel-title { color:#24344c !important; }
+html .column-title, html[data-theme] .column-title { border-left:4px solid #246fe5; padding-left:16px; }
+html .content-tabs, html .column-tabs, html[data-theme] .content-tabs, html[data-theme] .column-tabs { background:#fff !important; border-bottom:1px solid #E5EAF0 !important; }
+html .content-tab, html[data-theme] .content-tab { background:#F5F7FA !important; color:#52627a !important; border:1px solid #E5EAF0 !important; }
+html .content-tab.active, html[data-theme] .content-tab.active { background:#246fe5 !important; color:#fff !important; border-color:#246fe5 !important; }
+.module-more { float:right; color:#2462b8; font-size:13px; font-weight:500; text-decoration:none; }
+.module-more:hover { color:#114a9e; text-decoration:underline; }
+html .content-tabs-portal .content-pane, html[data-theme] .content-tabs-portal .content-pane { min-height:0 !important; padding:0 20px 12px !important; }
+html .content-tabs-portal .content-type-section, html[data-theme] .content-tabs-portal .content-type-section { width:calc(50% - 9px) !important; margin:0 18px 18px 0 !important; }
+html .content-tabs-portal .content-type-section:nth-child(2n), html[data-theme] .content-tabs-portal .content-type-section:nth-child(2n) { margin-right:0 !important; }
+html .content-tabs-portal .column-item, html[data-theme] .content-tabs-portal .column-item { height:50px; padding:0 !important; border-bottom:1px solid #edf0f4 !important; }
+html .content-tabs-portal .column-item:hover, html[data-theme] .content-tabs-portal .column-item:hover { background:#F0F6FF !important; }
+html .content-tabs-portal .column-item > a, html[data-theme] .content-tabs-portal .column-item > a { font-size:14px !important; font-weight:500 !important; color:#26384f !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:0; vertical-align:middle; }
+/* Titles stay on one line in every homepage layout; the title attribute shows full text. */
+html .column-portal .column-item > a, html[data-theme] .column-portal .column-item > a,
+html .content-tabs-portal .column-item > a, html[data-theme] .content-tabs-portal .column-item > a { white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; word-wrap:normal !important; max-width:0; }
+html .portal-grid .item-title-link, html[data-theme] .portal-grid .item-title-link { min-width:0 !important; max-width:100% !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; word-break:normal !important; }
+html .content-tabs-portal .column-item > .mixed-item-meta, html[data-theme] .content-tabs-portal .column-item > .mixed-item-meta { width:238px; color:#8A94A6 !important; font-size:12px; text-align:right; vertical-align:middle; white-space:nowrap; }
+.mixed-item-meta .category-tag { display:inline-block; padding:2px 7px; border-radius:4px; color:#35639b !important; background:#EDF4FD; font-weight:500 !important; }
+.mixed-item-meta .item-status { color:#64748b; font-style:normal; }
+html .content-tabs-portal .column-item > span:not(.mixed-item-meta), html[data-theme] .content-tabs-portal .column-item > span:not(.mixed-item-meta) { color:#8A94A6 !important; vertical-align:middle; }
+.public-shell .portal-links-bar, html[data-theme] .public-shell .portal-links-bar,
+.public-shell .portal-hero, html[data-theme] .public-shell .portal-hero { margin-left:20px !important; margin-right:20px !important; }
+.public-shell .portal-grid, .public-shell .column-portal, .public-shell .content-tabs-portal { margin-left:20px !important; margin-right:20px !important; }
+@media (max-width:700px) {
+  html .content-tabs-portal .content-type-section, html[data-theme] .content-tabs-portal .content-type-section { width:100% !important; margin-right:0 !important; }
+}
+@media (max-width:900px) {
+  html .public-top, html[data-theme] .public-top { height:auto !important; min-height:78px !important; }
+  html .public-global-search, html[data-theme] .public-global-search { width:460px !important; max-width:100%; }
+}
+@media (max-width:560px) {
+  html .public-top, html[data-theme] .public-top { height:auto !important; min-height:78px !important; }
+  html .public-global-search, html[data-theme] .public-global-search { width:100% !important; }
+  html .public-global-search .form-input, html[data-theme] .public-global-search .form-input { width:75% !important; }
+  .public-shell .portal-links-bar, html[data-theme] .public-shell .portal-links-bar,
+  .public-shell .portal-hero, html[data-theme] .public-shell .portal-hero,
+  .public-shell .portal-grid, .public-shell .column-portal, .public-shell .content-tabs-portal { margin-left:12px !important; margin-right:12px !important; }
+  html .content-tabs-portal .column-item > .mixed-item-meta, html[data-theme] .content-tabs-portal .column-item > .mixed-item-meta { width:150px; }
+}
+/* Size metadata to its content so long titles use the remaining row width. */
+html .column-portal .column-item, html[data-theme] .column-portal .column-item,
+html .content-tabs-portal .column-item, html[data-theme] .content-tabs-portal .column-item { table-layout:auto; }
+html .column-portal .column-item > a, html[data-theme] .column-portal .column-item > a,
+html .content-tabs-portal .column-item > a, html[data-theme] .content-tabs-portal .column-item > a { width:100%; }
+html .column-portal .column-item > span, html[data-theme] .column-portal .column-item > span,
+html .content-tabs-portal .column-item > span, html[data-theme] .content-tabs-portal .column-item > span,
+html .content-tabs-portal .column-item > .mixed-item-meta, html[data-theme] .content-tabs-portal .column-item > .mixed-item-meta { width:1px; padding-left:8px; white-space:nowrap; }
+/* Row spacing is managed in the system configuration page. */
+html .column-portal .column-item, html[data-theme] .column-portal .column-item,
+html .content-tabs-portal .column-item, html[data-theme] .content-tabs-portal .column-item { height:{{ public_item_row_height }}px !important; box-sizing:border-box; }
+html .portal-grid .item, html[data-theme] .portal-grid .item { min-height:{{ public_item_row_height }}px !important; box-sizing:border-box; }
+/* The progress panel is positioned outside the hovered row by the script below. */
+.home-task-progress-panel { position:fixed; left:0; top:0; }
+/* Values are validated and range-limited before entering this stylesheet. */
+html body, html[data-theme] body { background:{{ public_ui.public_page_color }} !important; }
+html .public-top, html[data-theme] .public-top { height:{{ public_ui.public_brand_height }}px !important; min-height:{{ public_ui.public_brand_height }}px !important; background:{{ public_ui.public_brand_color }} !important; }
+html .category-tabs, html[data-theme] .category-tabs,
+html .category-menu, html .category-tab, html[data-theme] .category-menu, html[data-theme] .category-tab,
+html[data-theme] .category-menu > .category-tab { height:{{ public_ui.public_nav_height }}px !important; min-height:{{ public_ui.public_nav_height }}px !important; }
+html[data-theme] .category-submenu { top:{{ public_ui.public_nav_height }}px !important; }
+html .public-global-search, html[data-theme] .public-global-search { width:{{ public_ui.public_search_width }}px !important; }
+html .public-global-search .form-input, html[data-theme] .public-global-search .form-input { width:{{ public_ui.public_search_width - 100 }}px !important; }
+html .portal-title-card, html .portal-stat, html .content-type-section, html .column-section, html .portal-panel, html .portal-links-bar,
+html[data-theme] .portal-title-card, html[data-theme] .portal-stat, html[data-theme] .content-type-section, html[data-theme] .column-section, html[data-theme] .portal-panel, html[data-theme] .portal-links-bar { border-radius:{{ public_ui.public_card_radius }}px !important; }
+html .portal-title-card, html[data-theme] .portal-title-card { padding:{{ public_ui.public_card_padding }}px !important; }
+html .content-tabs-portal .content-pane, html[data-theme] .content-tabs-portal .content-pane { padding-right:{{ public_ui.public_card_padding }}px !important; padding-left:{{ public_ui.public_card_padding }}px !important; }
+html .column-portal .column-pane, html[data-theme] .column-portal .column-pane,
+html .portal-grid .panel-body, html[data-theme] .portal-grid .panel-body { padding-right:{{ public_ui.public_card_padding }}px !important; padding-left:{{ public_ui.public_card_padding }}px !important; }
+html .content-tabs-portal .content-type-section, html[data-theme] .content-tabs-portal .content-type-section { width:calc(50% - {{ public_ui.public_card_gap / 2 }}px) !important; margin-right:{{ public_ui.public_card_gap }}px !important; margin-bottom:{{ public_ui.public_card_gap }}px !important; }
+.public-shell .portal-links-bar, html[data-theme] .public-shell .portal-links-bar,
+.public-shell .portal-hero, html[data-theme] .public-shell .portal-hero,
+.public-shell .portal-grid, .public-shell .column-portal, .public-shell .content-tabs-portal { margin-left:{{ public_ui.public_page_gutter }}px !important; margin-right:{{ public_ui.public_page_gutter }}px !important; }
+.public-shell { min-height:100vh; position:relative; padding-bottom:42px !important; }
+.public-shell > .portal-copyright { position:absolute; right:{{ public_ui.public_page_gutter }}px; bottom:8px; margin:0; padding:0; }
+@media (max-width:900px) {
+  html .public-top, html[data-theme] .public-top { height:auto !important; }
+  html .public-global-search, html[data-theme] .public-global-search { max-width:100%; }
+}
+@media (max-width:700px) {
+  html .content-tabs-portal .content-type-section, html[data-theme] .content-tabs-portal .content-type-section { width:100% !important; margin-right:0 !important; }
+}
+@media (max-width:560px) {
+  html .public-global-search, html[data-theme] .public-global-search { width:100% !important; }
+  html .public-global-search .form-input, html[data-theme] .public-global-search .form-input { width:75% !important; }
+  .public-shell .portal-links-bar, html[data-theme] .public-shell .portal-links-bar,
+  .public-shell .portal-hero, html[data-theme] .public-shell .portal-hero,
+  .public-shell .portal-grid, .public-shell .column-portal, .public-shell .content-tabs-portal { margin-left:12px !important; margin-right:12px !important; }
+}
+{% if public_ui.public_color_scheme == 'navy_portal' %}
+/* Reference-inspired dark portal: the content cards remain light for reading. */
+html, html body, html[data-theme] body, html .public-shell, html[data-theme] .public-shell { background:#071d50 !important; }
+html .public-top, html[data-theme] .public-top { background:linear-gradient(110deg, #071a49 0%, #0b2764 55%, #071b4b 100%) !important; border-bottom:1px solid rgba(151,185,244,.18) !important; }
+html .public-global-search .form-input, html[data-theme] .public-global-search .form-input { color:#eef4ff !important; background:rgba(5,24,67,.62) !important; border-color:rgba(151,185,244,.34) !important; }
+html .public-global-search .btn, html[data-theme] .public-global-search .btn { color:#eaf2ff !important; background:#16417f !important; border-color:rgba(151,185,244,.34) !important; }
+html .public-top .login-entry.btn-primary, html[data-theme] .public-top .login-entry.btn-primary { color:#fff !important; -webkit-text-fill-color:#fff !important; background:linear-gradient(180deg, #2d7ff3, #1467db) !important; border-color:#438af1 !important; box-shadow:0 7px 18px rgba(0,65,176,.22) !important; }
+html .category-tabs, html[data-theme] .category-tabs { background:#112b5d !important; border-color:rgba(151,185,244,.26) !important; }
+html .category-tab, html[data-theme] .category-tab, html[data-theme] .category-menu > .category-tab { color:#e9f1ff !important; background:#142e61 !important; border-color:rgba(151,185,244,.17) !important; }
+html .category-tab:hover, html[data-theme] .category-tab:hover, html[data-theme] .category-menu > .category-tab:hover { color:#fff !important; background:#1b4081 !important; }
+html .category-tab.active, html[data-theme] .category-tab.active, html[data-theme] .category-menu > .category-tab.active { color:#fff !important; background:linear-gradient(180deg, #3286ff, #1268eb) !important; }
+html .category-tab-icon, html .category-tab-icon .svg-icon,
+html[data-theme] .category-tab-icon, html[data-theme] .category-tab-icon .svg-icon { color:currentColor !important; }
+html .portal-links-bar, html[data-theme] .portal-links-bar { color:#e9f1ff !important; background:rgba(9,31,78,.86) !important; border-color:rgba(151,185,244,.22) !important; box-shadow:none !important; }
+html .portal-link, html[data-theme] .portal-link { color:#e9f1ff !important; border-color:rgba(151,185,244,.20) !important; }
+html .portal-link:hover, html[data-theme] .portal-link:hover { color:#fff !important; background:rgba(45,116,225,.25) !important; }
+html .portal-link .svg-icon, html[data-theme] .portal-link .svg-icon { color:currentColor !important; }
+html .portal-links-empty, html[data-theme] .portal-links-empty { color:#c5d6f3 !important; }
+html .portal-copyright, html[data-theme] .portal-copyright { color:#b8c9e6 !important; background:transparent !important; border:0 !important; box-shadow:none !important; }
+{% endif %}
+/* Keep a slim hover target while the quick links themselves are hidden. */
+html .portal-links-bar, html[data-theme] .portal-links-bar { display:block !important; height:32px !important; min-height:0 !important; padding:0 20px !important; overflow:hidden !important; box-sizing:border-box; }
+.portal-links-trigger { display:block; width:100%; height:31px; padding:0; border:0; color:#47617e; background:transparent; text-align:left; font-size:12px; font-weight:600; cursor:pointer; }
+html .portal-links-bar .portal-links, html[data-theme] .portal-links-bar .portal-links,
+html .portal-links-bar > .btn, html[data-theme] .portal-links-bar > .btn { display:none !important; }
+html .portal-links-bar:hover, html .portal-links-bar.is-open,
+html[data-theme] .portal-links-bar:hover, html[data-theme] .portal-links-bar.is-open { height:auto !important; min-height:54px !important; padding-bottom:8px !important; overflow:visible !important; }
+html .portal-links-bar:hover .portal-links, html .portal-links-bar.is-open .portal-links,
+html[data-theme] .portal-links-bar:hover .portal-links, html[data-theme] .portal-links-bar.is-open .portal-links { display:block !important; }
+html .portal-links-bar:hover > .btn, html .portal-links-bar.is-open > .btn,
+html[data-theme] .portal-links-bar:hover > .btn, html[data-theme] .portal-links-bar.is-open > .btn { display:inline-block !important; }
+html .portal-links-bar.has-manage:hover .portal-links, html .portal-links-bar.has-manage.is-open .portal-links,
+html[data-theme] .portal-links-bar.has-manage:hover .portal-links, html[data-theme] .portal-links-bar.has-manage.is-open .portal-links { display:inline-block !important; width:calc(100% - 175px); vertical-align:middle; box-sizing:border-box; }
+html .portal-links-bar.has-manage:hover > .btn, html .portal-links-bar.has-manage.is-open > .btn,
+html[data-theme] .portal-links-bar.has-manage:hover > .btn, html[data-theme] .portal-links-bar.has-manage.is-open > .btn { float:right; margin:5px 0 0; vertical-align:middle; }
+@media (max-width:650px) {
+  html .portal-links-bar.has-manage:hover .portal-links, html .portal-links-bar.has-manage.is-open .portal-links,
+  html[data-theme] .portal-links-bar.has-manage:hover .portal-links, html[data-theme] .portal-links-bar.has-manage.is-open .portal-links { display:block !important; width:100%; }
+  html .portal-links-bar.has-manage:hover > .btn, html .portal-links-bar.has-manage.is-open > .btn,
+  html[data-theme] .portal-links-bar.has-manage:hover > .btn, html[data-theme] .portal-links-bar.has-manage.is-open > .btn { float:none; }
+}
+{% if public_ui.public_color_scheme == 'navy_portal' %}
+html .portal-links-trigger, html[data-theme] .portal-links-trigger { color:#c9d9f3; }
+{% endif %}
+.public-search-head { margin:14px {{ public_ui.public_page_gutter }}px 12px; padding:12px 16px; color:#24344c; background:#fff; border-left:4px solid #246fe5; }
+.public-search-head h2 { display:inline; font-size:18px; }
+.public-search-head a { float:right; color:#1d5ed8; }
+.public-search-grid { margin:0 {{ public_ui.public_page_gutter }}px; font-size:0; }
+.public-search-group { display:inline-block; width:calc(50% - 9px); margin:0 18px 18px 0; vertical-align:top; background:#fff; border:1px solid #e5eaf0; border-radius:9px; box-sizing:border-box; font-size:14px; }
+.public-search-group:nth-child(2n) { margin-right:0; }
+.public-search-group h3 { padding:12px 16px; color:#24344c; font-size:16px; border-bottom:1px solid #e5eaf0; }
+.public-search-row { display:table; width:100%; table-layout:fixed; padding:10px 16px; border-bottom:1px solid #edf0f4; box-sizing:border-box; }
+.public-search-row:last-child { border-bottom:0; }
+.public-search-row:hover { background:#f0f6ff; }
+.public-search-row a,.public-search-row span { display:table-cell; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.public-search-row a { color:#173f7c; font-weight:600; }
+.public-search-row span { width:110px; color:#8a94a6; text-align:right; }
+.public-search-empty { padding:18px 16px; color:#8a94a6; }
+@media (max-width:700px) { .public-search-group { display:block; width:100%; margin-right:0; } }
+
+html .item-title-link, html[data-theme] .item-title-link,
+html .column-item > a, html .content-pane .column-item > a { font-size:17px !important; }
+html .column-title, html .panel-title, html .content-type-head { font-size:19px !important; }
+.category-columns .column-section { width:49%; }
+.column-head-more { display:table-cell; width:72px; padding:9px 14px; vertical-align:middle; text-align:right; white-space:nowrap; font-size:13px; font-weight:700; color:#246fe5; }
+.home-slideshow { display:block; position:relative; clear:both; height:390px; margin:0 {{ public_ui.public_page_gutter }}px {{ public_ui.public_card_gap }}px; overflow:hidden; border:1px solid #dbe3ef; border-radius:{{ public_ui.public_card_radius }}px; background:#0b214a; background:radial-gradient(ellipse at 50% 50%, #27476c, #0b214a 75%); box-sizing:border-box; }
+.home-slides { position:absolute; top:0; right:0; bottom:0; left:0; }
+.home-slide { position:absolute; left:50%; top:55px; width:30%; height:280px; margin-left:-15%; box-sizing:border-box; border:0; border-radius:8px; background-color:transparent; background-color:rgba(255,255,255,{{ (100 - public_ui.public_slideshow_background_transparency) / 100 }}); background-position:center; background-repeat:no-repeat; background-size:contain; box-shadow:none; opacity:0; visibility:hidden; transform:perspective(1000px) scale(.5); transition:transform .65s ease, opacity .65s ease; }
+.home-slide.slide-front { opacity:1; visibility:visible; z-index:4; transform:perspective(1000px) translateX(0) scale(1); }
+.home-slide.slide-left { opacity:.96; visibility:visible; z-index:3; transform:perspective(1000px) translateX(-62%) rotateY(8deg) scale(.92); }
+.home-slide.slide-right { opacity:.96; visibility:visible; z-index:3; transform:perspective(1000px) translateX(62%) rotateY(-8deg) scale(.92); }
+.home-slide.slide-far-left { opacity:.92; visibility:visible; z-index:2; transform:perspective(1000px) translateX(-120%) rotateY(8deg) scale(.88); }
+.home-slide.slide-far-right { opacity:.92; visibility:visible; z-index:2; transform:perspective(1000px) translateX(120%) rotateY(-8deg) scale(.88); }
+.home-slide { cursor:zoom-in; }
+.home-slide:focus { outline:3px solid #f9c74f; outline-offset:2px; }
+.slide-viewer { position:fixed; top:0; right:0; bottom:0; left:0; z-index:100000; background:#101820; background:rgba(0,0,0,.93); }
+.slide-viewer-image { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:auto; height:auto; max-width:90%; max-height:80vh; }
+.slide-viewer button { position:absolute; z-index:1; padding:8px 14px; border:1px solid #76889a; border-radius:4px; background:#21374a; color:#fff; cursor:pointer; }
+.slide-viewer-close { top:18px; right:20px; }
+.slide-viewer-prev, .slide-viewer-next { top:50%; margin-top:-30px; font:36px/40px Arial,sans-serif; }
+.slide-viewer-prev { left:16px; } .slide-viewer-next { right:16px; }
+.slide-viewer-caption { position:absolute; bottom:16px; left:10%; width:80%; text-align:center; color:#fff; font-size:14px; word-wrap:break-word; }
+.slide-viewer button:focus { outline:2px solid #f9c74f; }
+.home-slideshow button { cursor:pointer; border:0; color:#fff; }
+.home-slideshow .slide-arrow { position:absolute; top:50%; width:36px; height:52px; margin-top:-26px; padding:0; z-index:6; background:#18334f; background:rgba(0,0,0,.35); border-radius:4px; font:36px/48px Arial,sans-serif; }
+.slide-prev { left:14px; } .slide-next { right:14px; }
+.slide-controls { position:absolute; z-index:6; bottom:12px; left:50%; padding:6px 10px; border-radius:20px; transform:translateX(-50%); background:#18334f; background:rgba(0,0,0,.55); white-space:nowrap; text-align:center; color:#fff; font-size:13px; line-height:20px; }
+.slide-counter, .slide-pause { display:inline-block; vertical-align:middle; margin:0 6px; }
+.home-slideshow .slide-pause { padding:4px 9px; border-radius:4px; background:#18334f; }
+.home-slideshow button:focus { outline:2px solid #f9c74f; outline-offset:2px; }
+@media(max-width:600px) { .home-slideshow { height:290px; margin-left:12px; margin-right:12px; } .home-slide { top:45px; height:180px; width:40%; margin-left:-20%; } }
+@media(max-width:600px) { .home-slide.slide-left { transform:perspective(1000px) translateX(-42%) rotateY(8deg) scale(.92); } .home-slide.slide-right { transform:perspective(1000px) translateX(42%) rotateY(-8deg) scale(.92); } .home-slide.slide-far-left { transform:perspective(1000px) translateX(-76%) rotateY(8deg) scale(.88); } .home-slide.slide-far-right { transform:perspective(1000px) translateX(76%) rotateY(-8deg) scale(.88); } }
+@media(prefers-reduced-motion:reduce) { .home-slide { transition:none; } }
+@media(max-width:600px) { .category-columns .column-section { width:99%; } }
+</style>
+{% if public_ui_version == '2.0' %}<link rel="stylesheet" href="{{ url_for('static', filename='css/public-ui-v2.css') }}">{% endif %}
+<style>
+{% set content_font = public_font('public_font_content',17) %}
+html body .public-shell.public-shell .column-item > a, html body .public-shell.public-shell .item-title-link, html body .public-shell.public-shell .panel-body, html body .public-shell.public-shell .public-search-row a { font-size:{{ content_font }}px !important; }
+html body .public-shell.public-shell .column-title, html body .public-shell.public-shell .panel-title, html body .public-shell.public-shell .content-type-head { font-size:{{ content_font + 2 }}px !important; }
+/* Resolve the portal canvas on the server, independently of browser theme storage. */
+html[data-public-scheme="navy_portal"], html[data-public-scheme="navy_portal"] body.public-home-page,
+html[data-public-scheme="navy_portal"] body.public-home-page > .public-shell { background:#071d50 !important; background-image:none !important; }
+html[data-public-scheme="light"], html[data-public-scheme="light"] body.public-home-page,
+html[data-public-scheme="light"] body.public-home-page > .public-shell { background:{{ public_ui.public_page_color }} !important; background-image:none !important; }
+body.public-home-page #publicHomeDynamic { background:transparent !important; }
 </style>
 </head>
-<body>
+<body class="public-home-page{% if public_ui_version == '2.0' %} public-ui-v2{% endif %}">
 <div class="public-shell">
   <header class="public-top">
     <div class="public-brand">
-      <div class="public-logo logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon.png') }}" alt=""></div>
+      <div class="public-logo logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon-transparent.png') }}" alt=""></div>
       <div>
         <div class="public-name">{{ app_name }}</div>
-        <div class="public-sub">分类查看任务动态、公示信息与近期提醒</div>
+        <div class="public-sub">分类查看任务提醒、通知公告与近期动态</div>
       </div>
     </div>
     <div class="public-actions">
+      <form class="public-global-search" method="get" action="{{ url_for('index_bp.index') }}">
+        <label class="sr-only" for="publicSearch">搜索全部公开内容</label>
+        <input id="publicSearch" name="q" class="form-input" value="{{ public_search_keyword }}" placeholder="搜索备忘、任务、通知公告、文件及文件内容" required>
+        <button class="btn" type="submit">{{ icon('search') }} 搜索</button>
+      </form>
       {% if session.get('user_id') %}
       <a class="btn btn-primary login-entry" href="{{ url_for('index_bp.workbench') }}">{{ icon('dashboard') }} 进入工作台</a>
       {% else %}
       <a class="btn btn-primary login-entry" href="{{ url_for('auth.login') }}">{{ icon('lock') }} 登录</a>
+      <a class="btn login-entry" href="{{ url_for('auth.register') }}">申请注册</a>
       {% endif %}
     </div>
   </header>
 
   <nav class="category-tabs">
     <span class="category-menu">
-      <a class="category-tab {% if not active_category %}active{% endif %}" href="{{ url_for('index_bp.index') }}" style="--tab-color:#1266f3;">
+      <a class="category-tab {% if not active_category %}active{% endif %}" href="{{ url_for('index_bp.index') }}" style="--tab-color:#1266f3;font-size:{{ public_font('public_font_tab',16) }}px !important;">
         <span class="category-tab-icon">{{ icon('category') }}</span>
         <span>全部</span>
       </a>
@@ -1316,11 +1990,11 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
     {% if categories %}
       {% for cat in categories %}
       <span class="category-menu">
-        <a class="category-tab {% if active_category and cat.id == active_category.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id) }}" style="--tab-color:{{ cat.color or '#047857' }};">
+        <a class="category-tab {% if active_category and cat.id == active_category.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id) }}" style="--tab-color:{{ cat.color or '#047857' }};font-size:{{ public_font('public_font_tab',16) }}px !important;">
           <span class="category-tab-icon">{{ icon(cat.icon|icon_id) }}</span>
           <span>{{ cat.name }}</span>
         </a>
-        {% if category_columns.get(cat.id) %}
+        {% if public_home_layout == 'classic' and category_columns.get(cat.id) %}
         <span class="category-submenu">
           {% for column in category_columns.get(cat.id) %}
           <a class="{% if active_column and active_column.id == column.id %}active{% endif %}" href="{{ url_for('index_bp.index', category_id=cat.id, column_id=column.id) }}">{{ column.name }}</a>
@@ -1336,12 +2010,15 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
     {% endif %}
   </nav>
 
-  <section class="portal-links-bar">
-    <div class="portal-links">
+  <section class="portal-links-bar{% if public_ui.public_quick_link_display == 'always' %} is-open{% endif %}{% if session.get('role') == 'super_admin' %} has-manage{% endif %}">
+    {% if public_ui.public_quick_link_display != 'always' %}
+    <button type="button" class="portal-links-trigger" aria-controls="publicQuickLinks" aria-expanded="false" onclick="togglePublicQuickLinks(this)">快捷链接 ▾</button>
+    {% endif %}
+    <div class="portal-links" id="publicQuickLinks">
       {% if public_quick_links %}
         {% for link in public_quick_links %}
-        <a class="portal-link" href="{{ link.url }}" target="_blank" rel="noopener">
-          {{ icon(link.icon or 'gen-link') }} <span>{{ link.name }}</span>
+        <a class="portal-link" href="{{ link.url }}" target="_blank" rel="noopener" title="打开 {{ link.name }}">
+          {% if public_ui.public_quick_link_icons %}{{ icon(link.icon or 'gen-link') }}{% endif %}<span>{{ link.name }}</span>
         </a>
         {% endfor %}
       {% else %}
@@ -1353,6 +2030,26 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
     {% endif %}
   </section>
 
+  <div id="publicHomeDynamic">
+  {% if public_search_keyword %}
+  <div class="public-search-head"><h2>“{{ public_search_keyword }}”的搜索结果</h2><a href="{{ url_for('index_bp.index') }}">清除搜索</a></div>
+  <main class="public-search-grid">
+    {% for key, label in [('memos', '备忘'), ('tasks', '任务提醒'), ('bulletins', '通知公告'), ('files', '文件')] %}
+    <section class="public-search-group">
+      <h3>{{ label }}（{{ public_search_results[key]|length }}）</h3>
+      {% for item in public_search_results[key] %}
+      <div class="public-search-row">
+        {% if key == 'memos' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">{{ item.title }}</a><span>{{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</span>
+        {% elif key == 'tasks' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">{{ item.title }}</a><span>{{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</span>
+        {% elif key == 'bulletins' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{{ item.title }}</a><span>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+        {% else %}<a title="{{ item.original_name }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">{{ item.original_name }}</a><span>{{ item.file_type|upper if item.file_type else 'FILE' }}</span>{% endif %}
+      </div>
+      {% else %}<div class="public-search-empty">没有匹配内容</div>{% endfor %}
+    </section>
+    {% endfor %}
+  </main>
+  {% else %}
+  {% if public_ui.public_show_overview %}
   <section class="portal-hero">
     <div class="portal-title-card">
       <div class="portal-kicker">{{ icon('category') }} {% if active_column %}当前栏目{% else %}当前类别{% endif %}</div>
@@ -1360,19 +2057,106 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
       <div class="portal-desc">无需登录即可查看公开任务概览、跟踪动态、近期提醒和文件资料。</div>
     </div>
     <div class="portal-stats">
-      <div class="portal-stat" data-login-tip="登录后查看详细信息" title="登录后查看详细信息"><strong>{{ portal_stats.tasks }}</strong><span>任务数量</span><i class="stat-mini-icon">{{ icon('task') }}</i></div>
-      <div class="portal-stat" data-login-tip="登录后查看详细信息" title="登录后查看详细信息"><strong>{{ portal_stats.bulletins }}</strong><span>公示数量</span><i class="stat-mini-icon">{{ icon('bulletin') }}</i></div>
+      <div class="portal-stat" data-login-tip="登录后查看详细信息" title="登录后查看详细信息"><strong>{{ portal_stats.tasks }}</strong><span>任务提醒</span><i class="stat-mini-icon">{{ icon('task') }}</i></div>
+      <div class="portal-stat" data-login-tip="登录后查看详细信息" title="登录后查看详细信息"><strong>{{ portal_stats.bulletins }}</strong><span>通知公告</span><i class="stat-mini-icon">{{ icon('bulletin') }}</i></div>
       <div class="portal-stat" data-login-tip="登录后查看详细信息" title="登录后查看详细信息"><strong>{{ portal_stats.memos }}</strong><span>备忘数量</span><i class="stat-mini-icon">{{ icon('memo') }}</i></div>
     </div>
   </section>
 
+  {% endif %}
+  {% if public_home_layout == 'columns' %}
+  <main class="column-portal{% if active_category %} category-columns{% endif %}">
+    {% for section in column_sections %}
+    <section class="column-section tone-{{ section.tone }}">
+      <div class="column-head">
+      <div class="column-title">{{ icon(section.icon|icon_id) }} {{ section.title }}</div>
+      {% if active_category %}<a class="column-head-more" href="{{ url_for('index_bp.public_list', list_type='reminders', category_id=section.category_id, column_id=section.column_id) }}" target="_blank" rel="noopener">更多 &gt;</a>{% endif %}
+      {% if not active_category %}<div class="column-tabs" role="tablist" aria-label="{{ section.title }}内容类型">
+        {% for key, label in [('memos','备忘'),('tasks','任务提醒'),('bulletins','通知公告'),('files','文件')] %}
+        <button type="button" role="tab" class="column-tab{% if key == section.active_key %} active{% endif %}" aria-selected="{{ 'true' if key == section.active_key else 'false' }}" data-pane="{{ key }}">{{ label }} <span>{{ '5+' if section[key]|length > 5 else section[key]|length }}</span></button>
+        {% endfor %}
+      </div>{% endif %}
+      </div>
+      {% if active_category %}
+      <div class="column-pane active">
+        {% for entry in section.entries %}
+        <div class="column-item"><a target="_blank" rel="noopener" href="{{ entry.url }}" title="{{ entry.title }}">{{ entry.title }}</a><span>{{ entry.date.strftime('%Y-%m-%d') if entry.date else '' }}</span></div>
+        {% else %}<div class="empty">暂无内容</div>{% endfor %}
+      </div>
+      {% else %}
+      {% for key in ['memos','tasks','bulletins','files'] %}
+      <div class="column-pane{% if key == section.active_key %} active{% endif %}" data-pane="{{ key }}">
+        {% for item in section[key][:5] %}
+        <div class="column-item">
+          {% set item_time = item.created_at %}
+          {% if item_time and item_time >= recent_cutoffs[0] %}{% set fresh_class, fresh_text = 'fresh-3', '3日内' %}{% elif item_time and item_time >= recent_cutoffs[1] %}{% set fresh_class, fresh_text = 'fresh-7', '7日内' %}{% elif item_time and item_time >= recent_cutoffs[2] %}{% set fresh_class, fresh_text = 'fresh-15', '15日内' %}{% else %}{% set fresh_class, fresh_text = '', '' %}{% endif %}
+          {% if key == 'memos' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a><span>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% elif key == 'tasks' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a>{{ task_progress(item) }}<span>{{ item.status|status_label }} · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% elif key == 'bulletins' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a><span>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% else %}<a title="{{ item.original_name }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.original_name }}</a><span>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>{% endif %}
+        </div>
+        {% else %}<div class="empty">暂无内容</div>{% endfor %}
+        <a class="column-more" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_list', list_type='reminders' if key == 'bulletins' else key, category_id=section.category_id, column_id=section.column_id) }}">更多 &gt;</a>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </section>
+    {% if slideshow_visible and public_ui.public_slideshow_position == 'middle' and loop.index == 2 %}
+  </main>
+  {{ render_slideshow() }}
+  <main class="column-portal">
+    {% endif %}
+    {% else %}<div class="empty">当前类别尚未设置栏目</div>{% endfor %}
+  </main>
+  {% elif public_home_layout == 'content_tabs' %}
+  <main class="content-tabs-portal">
+    {% for section in content_tab_sections %}
+    <section class="content-type-section">
+      <div class="content-type-head">{{ icon(section.icon) }} {{ section.label }}<a class="module-more" target="_blank" rel="noopener" href="{% if section.tabs %}{{ url_for('index_bp.public_list', list_type='reminders' if section.key == 'bulletins' else section.key, category_id=section.tabs[0].category_id, column_id=section.tabs[0].column_id) }}{% elif active_category %}{{ url_for('index_bp.public_list', list_type='reminders' if section.key == 'bulletins' else section.key, category_id=active_category.id) }}{% else %}{{ url_for('index_bp.public_list', list_type='reminders' if section.key == 'bulletins' else section.key) }}{% endif %}">更多 &gt;</a></div>
+      {% if section.tabs %}<div class="content-tabs" role="tablist" aria-label="{{ section.label }}分类">
+        {% for tab in section.tabs %}<button type="button" role="tab" class="content-tab{% if loop.first %} active{% endif %}" data-pane="tab-{{ loop.index0 }}" data-more-url="{{ url_for('index_bp.public_list', list_type='reminders' if section.key == 'bulletins' else section.key, category_id=tab.category_id, column_id=tab.column_id) }}">{{ tab.label }}</button>{% endfor %}
+      </div>{% endif %}
+      {% for tab in section.tabs %}
+      <div class="content-pane{% if loop.first %} active{% endif %}" data-pane="tab-{{ loop.index0 }}">
+        {% for item in tab['items'][:12] %}
+        <div class="column-item">
+          {% set item_time = item.created_at %}
+          {% if item_time and item_time >= recent_cutoffs[0] %}{% set fresh_class, fresh_text = 'fresh-3', '3日内' %}{% elif item_time and item_time >= recent_cutoffs[1] %}{% set fresh_class, fresh_text = 'fresh-7', '7日内' %}{% elif item_time and item_time >= recent_cutoffs[2] %}{% set fresh_class, fresh_text = 'fresh-15', '15日内' %}{% else %}{% set fresh_class, fresh_text = '', '' %}{% endif %}
+          {% if section.key == 'memos' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a><span class="mixed-item-meta"><b class="category-tag">{{ category_names.get(item.category_id, '未分类') }}</b> · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% elif section.key == 'tasks' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a>{{ task_progress(item) }}<span class="mixed-item-meta"><b class="category-tag">{{ category_names.get(item.category_id, '未分类') }}</b> · <em class="item-status">{{ item.status|status_label }}</em> · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% elif section.key == 'bulletins' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a><span class="mixed-item-meta"><b class="category-tag">{{ category_names.get(item.category_id, '未分类') }}</b> · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% else %}<a title="{{ item.original_name }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.original_name }}</a><span class="mixed-item-meta"><b class="category-tag">{{ category_names.get(item.category_id, '未分类') }}</b> · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>{% endif %}
+        </div>
+        {% else %}<div class="empty">暂无内容</div>{% endfor %}
+      </div>
+      {% else %}<div class="content-pane active">
+        {% for item in section['items'] %}
+        <div class="column-item">
+          {% set item_time = item.created_at %}
+          {% if item_time and item_time >= recent_cutoffs[0] %}{% set fresh_class, fresh_text = 'fresh-3', '3日内' %}{% elif item_time and item_time >= recent_cutoffs[1] %}{% set fresh_class, fresh_text = 'fresh-7', '7日内' %}{% elif item_time and item_time >= recent_cutoffs[2] %}{% set fresh_class, fresh_text = 'fresh-15', '15日内' %}{% else %}{% set fresh_class, fresh_text = '', '' %}{% endif %}
+          {% if section.key == 'memos' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a><span class="mixed-item-meta"><b class="category-tag">{{ category_names.get(item.category_id, '未分类') }}</b> · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% elif section.key == 'tasks' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a>{{ task_progress(item) }}<span class="mixed-item-meta"><b class="category-tag">{{ category_names.get(item.category_id, '未分类') }}</b> · <em class="item-status">{{ item.status|status_label }}</em> · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% elif section.key == 'bulletins' %}<a title="{{ item.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.title }}</a><span class="mixed-item-meta"><b class="category-tag">{{ category_names.get(item.category_id, '未分类') }}</b> · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+          {% else %}<a title="{{ item.original_name }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">{% if fresh_text %}<b class="fresh-badge {{ fresh_class }}">{{ fresh_text }}</b>{% endif %}{{ item.original_name }}</a><span class="mixed-item-meta"><b class="category-tag">{{ category_names.get(item.category_id, '未分类') }}</b> · {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>{% endif %}
+        </div>
+        {% else %}<div class="empty">暂无内容</div>{% endfor %}
+      </div>{% endfor %}
+    </section>
+    {% if slideshow_visible and public_ui.public_slideshow_position == 'middle' and loop.index == 2 %}
+  </main>
+  {{ render_slideshow() }}
+  <main class="content-tabs-portal">
+    {% endif %}
+    {% endfor %}
+  </main>
+  {% else %}
   <main class="portal-grid">
     <section class="portal-panel">
       <div class="panel-head">
         <div class="panel-title">{{ icon('memo') }} 公共备忘</div>
         <div class="panel-actions">
           <div class="panel-count">{{ portal_stats.memos }}</div>
-          {% if portal_stats.memos > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='memos', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='memos') }}">查看更多</a>{% endif %}
+          {% if portal_stats.memos > 5 %}<a class="panel-more" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_list', list_type='memos', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='memos') }}">查看更多</a>{% endif %}
         </div>
       </div>
       <div class="panel-body">
@@ -1381,7 +2165,7 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
           <span class="item-dot" style="background:#2563eb;"></span>
           <div class="item-main">
             <div class="item-title-row">
-              <a class="item-title-link" href="{{ url_for('index_bp.public_memo_detail', memo_id=memo.id) }}">{{ memo.title }}</a>
+              <a class="item-title-link" title="{{ memo.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_memo_detail', memo_id=memo.id) }}">{{ memo.title }}</a>
               <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
             </div>
             <div class="item-meta">公共备忘 · {{ memo.updated_at.strftime('%Y-%m-%d') if memo.updated_at else '' }}</div>
@@ -1396,10 +2180,10 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
 
     <section class="portal-panel">
       <div class="panel-head">
-        <div class="panel-title">{{ icon('task-flow') }} 任务跟踪</div>
+        <div class="panel-title">{{ icon('task-flow') }} 任务提醒</div>
         <div class="panel-actions">
           <div class="panel-count">{{ portal_stats.tracking }}</div>
-          {% if portal_stats.tracking > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='tasks', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='tasks') }}">查看更多</a>{% endif %}
+          {% if portal_stats.tracking > 5 %}<a class="panel-more" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_list', list_type='tasks', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='tasks') }}">查看更多</a>{% endif %}
         </div>
       </div>
       <div class="panel-body">
@@ -1408,7 +2192,7 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
           <span class="item-dot" style="background:#0ea5e9;"></span>
           <div class="item-main">
             <div class="item-title-row">
-              <a class="item-title-link" href="{{ url_for('index_bp.public_task_detail', task_id=task.id) }}">{{ task.title }}</a>
+              <a class="item-title-link" title="{{ task.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_task_detail', task_id=task.id) }}">{{ task.title }}</a>{{ task_progress(task) }}
               <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
             </div>
             <div class="item-meta">进度 {{ task.progress or 0 }}% · {{ task.status|status_label }} · {{ task.updated_at.strftime('%Y-%m-%d') if task.updated_at else '' }}</div>
@@ -1420,13 +2204,19 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
         {% endfor %}
       </div>
     </section>
+    {% if slideshow_visible and public_ui.public_slideshow_position == 'middle' %}
+  </main>
+  {{ render_slideshow() }}
+  <main class="portal-grid">
+    {% endif %}
+
 
     <section class="portal-panel">
       <div class="panel-head">
-        <div class="panel-title">{{ icon('bell') }} 近期公示提醒要求</div>
+        <div class="panel-title">{{ icon('bell') }} 通知公告</div>
         <div class="panel-actions">
           <div class="panel-count">{{ portal_stats.reminders }}</div>
-          {% if portal_stats.reminders > 5 %}<a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='reminders', category_id=active_category.id, column_id=active_column.id) if active_column else (url_for('index_bp.public_list', list_type='reminders', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='reminders')) }}">查看更多</a>{% endif %}
+          {% if portal_stats.reminders > 5 %}<a class="panel-more" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_list', list_type='reminders', category_id=active_category.id, column_id=active_column.id) if active_column else (url_for('index_bp.public_list', list_type='reminders', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='reminders')) }}">查看更多</a>{% endif %}
         </div>
       </div>
       <div class="panel-body">
@@ -1435,7 +2225,7 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
           <span class="item-dot" style="background:#f59e0b;"></span>
           <div class="item-main">
             <div class="item-title-row">
-              <a class="item-title-link" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=bulletin.id) }}">{{ bulletin.title }}</a>
+              <a class="item-title-link" title="{{ bulletin.title }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=bulletin.id) }}">{{ bulletin.title }}</a>
               <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
             </div>
             <div class="item-meta">{% if bulletin.expire_date %}有效期至 {{ bulletin.expire_date.strftime('%Y-%m-%d') }}{% else %}长期有效{% endif %} · {{ bulletin.created_at.strftime('%Y-%m-%d') if bulletin.created_at else '' }}</div>
@@ -1443,7 +2233,7 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
           </div>
         </div>
         {% else %}
-        <div class="empty">暂无公示提醒</div>
+        <div class="empty">暂无通知公告</div>
         {% endfor %}
       </div>
     </section>
@@ -1453,7 +2243,7 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
         <div class="panel-title">{{ icon('folder') }} 文件资料</div>
         <div class="panel-actions">
           <div class="panel-count">{{ portal_stats.files }}</div>
-          <a class="panel-more" href="{{ url_for('index_bp.public_list', list_type='files', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='files') }}">搜索{% if portal_stats.files > 5 %}/更多{% endif %}</a>
+          <a class="panel-more" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_list', list_type='files', category_id=active_category.id) if active_category else url_for('index_bp.public_list', list_type='files') }}">搜索{% if portal_stats.files > 5 %}/更多{% endif %}</a>
         </div>
       </div>
       <div class="panel-body">
@@ -1462,7 +2252,7 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
           <span class="item-dot" style="background:#8b5cf6;"></span>
           <div class="item-main">
             <div class="item-title-row">
-              <a class="item-title-link" href="{{ url_for('index_bp.public_file_preview', file_id=file.id) if file.file_type in ('jpg','jpeg','png','gif','bmp','webp','mp3','wav','m4a','aac','ogg','flac','mp4','webm','ogv','mov','m4v') else url_for('index_bp.public_file_download', file_id=file.id) }}">{{ file.original_name }}</a>
+              <a class="item-title-link" title="{{ file.original_name }}" target="_blank" rel="noopener" href="{{ url_for('index_bp.public_file_preview', file_id=file.id) }}">{{ file.original_name }}</a>
               <button type="button" class="item-toggle" onclick="togglePublicItem(this)">展开查看</button>
             </div>
             <div class="item-meta">
@@ -1485,21 +2275,96 @@ html[data-theme] .public-top .login-entry.btn-primary:focus {
       </div>
     </section>
   </main>
+  {% endif %}
+  {% if slideshow_visible and (public_ui.public_slideshow_position == 'bottom' or (public_home_layout == 'columns' and column_sections|length < 2)) %}{{ render_slideshow() }}{% endif %}
+  {% endif %}
+  </div>
+  {% if public_home_layout == 'content_tabs' %}
+  <div class="portal-scroll-toolbar portal-copyright">&copy; {{ current_year }} Jonathan · All rights reserved.</div>
+  {% else %}
   <div class="portal-scroll-toolbar">
     <label><input type="checkbox" id="portalAutoScrollToggle" checked>四栏缓慢滚动</label>
-    <select id="publicThemeSelect" class="theme-select" title="切换首页皮肤" aria-label="切换首页皮肤">
-      <option value="blue">蓝灰</option>
-      <option value="forest">松林</option>
-      <option value="sepia">暖砂</option>
-    </select>
   </div>
+  {% endif %}
 </div>
+<script src="{{ url_for('static', filename='js/public_slideshow.js', v='20261020-pageshow') }}"></script>
 <script>
+function togglePublicQuickLinks(button) {
+  var bar = button.parentNode;
+  var open = (' ' + bar.className + ' ').indexOf(' is-open ') >= 0;
+  bar.className = open ? bar.className.replace(' is-open', '') : bar.className + ' is-open';
+  button.setAttribute('aria-expanded', open ? 'false' : 'true');
+}
 (function() {
-  var select = document.getElementById('publicThemeSelect');
-  if (!select || !window.OATheme) return;
-  select.value = window.OATheme.current();
-  select.onchange = function() { window.OATheme.apply(this.value); };
+  var tabs = document.querySelectorAll('.category-tab[href]');
+  var activeRequest = null;
+  var requestSerial = 0;
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].onclick = function(event) {
+      event = event || window.event;
+      if (event.preventDefault) event.preventDefault();
+      var link = this, dynamic = document.getElementById('publicHomeDynamic');
+      if (!dynamic || !window.XMLHttpRequest) { window.location.href = link.href; return false; }
+      if (link.className.indexOf(' active') >= 0) return false;
+      if (activeRequest) {
+        try { activeRequest.abort(); } catch (ignore) {}
+      }
+      var serial = ++requestSerial;
+      var xhr = new XMLHttpRequest();
+      var timeout = window.setTimeout(function() {
+        if (serial !== requestSerial) return;
+        try { xhr.abort(); } catch (ignore) {}
+        activeRequest = null;
+        dynamic.style.opacity = '';
+        window.location.href = link.href;
+      }, 12000);
+      activeRequest = xhr;
+      dynamic.style.opacity = '0.55';
+      try { xhr.open('GET', link.href, true); } catch (openError) {
+        window.clearTimeout(timeout);
+        activeRequest = null;
+        dynamic.style.opacity = '';
+        window.location.href = link.href;
+        return false;
+      }
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4 || serial !== requestSerial) return;
+        window.clearTimeout(timeout);
+        activeRequest = null;
+        if (xhr.status >= 200 && xhr.status < 300) {
+          var next = null;
+          try {
+            next = new DOMParser().parseFromString(xhr.responseText, 'text/html').getElementById('publicHomeDynamic');
+          } catch (parseError) {}
+          if (next) {
+            dynamic.innerHTML = next.innerHTML;
+            dynamic.style.opacity = '';
+            if (window.__initPublicAutoScroll) window.__initPublicAutoScroll();
+            for (var j=0;j<tabs.length;j++) tabs[j].className=tabs[j].className.replace(' active','');
+            link.className += ' active';
+            if (window.history && window.history.pushState) window.history.pushState(null,'',link.href);
+            return;
+          }
+        }
+        dynamic.style.opacity = '';
+        window.location.href = link.href;
+      };
+      xhr.onerror = function() {
+        if (serial !== requestSerial) return;
+        window.clearTimeout(timeout);
+        activeRequest = null;
+        dynamic.style.opacity = '';
+        window.location.href = link.href;
+      };
+      try { xhr.send(null); } catch (sendError) {
+        window.clearTimeout(timeout);
+        activeRequest = null;
+        dynamic.style.opacity = '';
+        window.location.href = link.href;
+      }
+      return false;
+    };
+  }
 })();
 
 function togglePublicItem(button) {
@@ -1517,6 +2382,129 @@ function togglePublicItem(button) {
     button.textContent = '展开查看';
   }
 }
+(function() {
+  var sections = document.querySelectorAll('.column-section');
+  function activateTab(section, button) {
+    var name = button.getAttribute('data-pane');
+    var tabs = section.querySelectorAll('.column-tab');
+    var panes = section.querySelectorAll('.column-pane');
+    for (var j = 0; j < tabs.length; j++) {
+      tabs[j].className = tabs[j].className.replace(' active', '');
+      tabs[j].setAttribute('aria-selected', 'false');
+    }
+    for (var k = 0; k < panes.length; k++) panes[k].className = panes[k].className.replace(' active', '');
+    button.className += ' active';
+    button.setAttribute('aria-selected', 'true');
+    var pane = section.querySelector('.column-pane[data-pane="' + name + '"]');
+    if (pane) pane.className += ' active';
+  }
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].onmouseover = sections[i].onclick = function(event) {
+      event = event || window.event;
+      var button = event.target || event.srcElement;
+      while (button && button !== this && button.className.indexOf('column-tab') < 0) button = button.parentNode;
+      if (!button || button === this) return;
+      if (button.className.indexOf('active') < 0) activateTab(this, button);
+    };
+  }
+})();
+(function() {
+  var sections = document.querySelectorAll('.content-type-section');
+  for (var i = 0; i < sections.length; i++) {
+    sections[i].onmouseover = sections[i].onclick = function(event) {
+      event = event || window.event;
+      var button = event.target || event.srcElement;
+      while (button && button !== this && button.className.indexOf('content-tab') < 0) button = button.parentNode;
+      if (!button || button === this || button.className.indexOf('active') >= 0) return;
+      var tabs = this.querySelectorAll('.content-tab');
+      var panes = this.querySelectorAll('.content-pane');
+      for (var j = 0; j < tabs.length; j++) tabs[j].className = tabs[j].className.replace(' active', '');
+      for (var k = 0; k < panes.length; k++) panes[k].className = panes[k].className.replace(' active', '');
+      button.className += ' active';
+      var pane = this.querySelector('.content-pane[data-pane="' + button.getAttribute('data-pane') + '"]');
+      if (pane) pane.className += ' active';
+    };
+  }
+})();
+(function() {
+  /* Delegate tab clicks so tabs replaced by category AJAX remain interactive. */
+  function hasClass(node, name) {
+    return node && ((' ' + (node.className || '') + ' ').indexOf(' ' + name + ' ') >= 0);
+  }
+  function closestByClass(node, name) {
+    while (node && node !== document) {
+      if (hasClass(node, name)) return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
+  function activate(section, button, buttonClass, paneClass) {
+    var paneName = button.getAttribute('data-pane');
+    var tabs = section.querySelectorAll('.' + buttonClass);
+    var panes = section.querySelectorAll('.' + paneClass);
+    var i;
+    for (i = 0; i < tabs.length; i++) {
+      tabs[i].className = tabs[i].className.replace(' active', '');
+      tabs[i].setAttribute('aria-selected', 'false');
+    }
+    for (i = 0; i < panes.length; i++) panes[i].className = panes[i].className.replace(' active', '');
+    button.className += ' active';
+    button.setAttribute('aria-selected', 'true');
+    var pane = section.querySelector('.' + paneClass + '[data-pane="' + paneName + '"]');
+    if (pane) pane.className += ' active';
+    var more = section.querySelector('.module-more');
+    var moreUrl = button.getAttribute('data-more-url');
+    if (more && moreUrl) more.setAttribute('href', moreUrl);
+  }
+  document.addEventListener('click', function(event) {
+    event = event || window.event;
+    var target = event.target || event.srcElement;
+    var columnButton = closestByClass(target, 'column-tab');
+    var contentButton = closestByClass(target, 'content-tab');
+    if (columnButton) {
+      var columnSection = closestByClass(columnButton, 'column-section');
+      if (columnSection) {
+        activate(columnSection, columnButton, 'column-tab', 'column-pane');
+        if (window.__initPublicAutoScroll) window.__initPublicAutoScroll();
+      }
+    } else if (contentButton) {
+      var contentSection = closestByClass(contentButton, 'content-type-section');
+      if (contentSection) {
+        activate(contentSection, contentButton, 'content-tab', 'content-pane');
+        if (window.__initPublicAutoScroll) window.__initPublicAutoScroll();
+      }
+    }
+  }, false);
+})();
+/* Place assignee progress beside the list without covering the source row. */
+(function() {
+  function taskRow(node) {
+    while (node && node !== document) {
+      if (node.className && typeof node.className === 'string' &&
+          ((' ' + node.className + ' ').indexOf(' column-item ') >= 0 ||
+           (' ' + node.className + ' ').indexOf(' item ') >= 0)) return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
+  document.addEventListener('mouseover', function(event) {
+    var row = taskRow(event.target || event.srcElement);
+    if (!row) return;
+    var panel = row.querySelector('.home-task-progress-panel');
+    if (!panel) return;
+    var rect = row.getBoundingClientRect();
+    var viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+    var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+    var width = panel.offsetWidth || 350;
+    var height = panel.offsetHeight || 260;
+    var left = Math.max(8, Math.min(rect.left, viewportWidth - width - 8));
+    var top = rect.bottom + 8;
+    if (top + height > viewportHeight - 8) top = rect.top - height - 8;
+    if (top < 8) top = Math.max(8, rect.bottom + 8);
+    panel.style.left = left + 'px';
+    panel.style.top = top + 'px';
+  }, false);
+})();
 function normalizePublicImages(container) {
   var images = container.getElementsByTagName('img');
   for (var i = 0; i < images.length; i++) {
@@ -1536,6 +2524,7 @@ function normalizePublicImages(container) {
 (function() {
   var storageKey = 'oa_public_list_auto_scroll';
   var stored = null;
+  var cleanups = [];
   try { stored = window.localStorage.getItem(storageKey); } catch (ignore) {}
   var defaultEnabled = stored !== 'off';
   var masterToggle = document.getElementById('portalAutoScrollToggle');
@@ -1544,35 +2533,71 @@ function normalizePublicImages(container) {
   masterToggle.onchange = function() {
     try { window.localStorage.setItem(storageKey, masterToggle.checked ? 'on' : 'off'); } catch (ignore) {}
   };
-  var panels = document.querySelectorAll('.portal-grid .portal-panel');
-  for (var i = 0; i < panels.length; i++) {
-    (function(panel, index) {
-      var body = panel.querySelector('.panel-body');
-      if (!body) return;
-      body.className += ' portal-auto-scroll';
-      var originalItems = body.querySelectorAll('.item');
-      var copyRound = 0;
-      while (originalItems.length && body.scrollHeight <= body.clientHeight + 80 && copyRound < 3) {
-        for (var copyIndex = 0; copyIndex < originalItems.length; copyIndex++) {
-          var copy = originalItems[copyIndex].cloneNode(true);
-          copy.setAttribute('aria-hidden', 'true');
-          body.appendChild(copy);
+
+  window.__initPublicAutoScroll = function() {
+    var i;
+    for (i = 0; i < cleanups.length; i++) cleanups[i]();
+    cleanups = [];
+    var panels = document.querySelectorAll('.portal-grid .portal-panel, .column-portal .column-section');
+    for (i = 0; i < panels.length; i++) {
+      (function(panel) {
+        var body = panel.querySelector('.panel-body');
+        if (!body) body = panel.querySelector('.column-pane.active');
+        if (!body) return;
+        var oldCopies = body.querySelectorAll('[data-auto-scroll-copy="1"]');
+        for (var oldIndex = 0; oldIndex < oldCopies.length; oldIndex++) {
+          if (oldCopies[oldIndex].parentNode) oldCopies[oldIndex].parentNode.removeChild(oldCopies[oldIndex]);
         }
-        copyRound += 1;
-      }
-      var paused = false;
-      body.onmouseenter = function() { paused = true; };
-      body.onmouseleave = function() { paused = false; };
-      window.setInterval(function() {
-        if (!masterToggle.checked || paused || body.scrollHeight <= body.clientHeight) return;
-        if (body.scrollTop + body.clientHeight >= body.scrollHeight - 1) {
-          body.scrollTop = 0;
-        } else {
-          body.scrollTop += 1;
+        if ((' ' + body.className + ' ').indexOf(' portal-auto-scroll ') < 0) body.className += ' portal-auto-scroll';
+        var originalItems = body.querySelectorAll('.item, .column-item');
+        var copyRound = 0;
+        while (originalItems.length && body.scrollHeight <= body.clientHeight + 80 && copyRound < 3) {
+          for (var copyIndex = 0; copyIndex < originalItems.length; copyIndex++) {
+            var copy = originalItems[copyIndex].cloneNode(true);
+            copy.setAttribute('aria-hidden', 'true');
+            copy.setAttribute('data-auto-scroll-copy', '1');
+            body.appendChild(copy);
+          }
+          copyRound += 1;
         }
-      }, 90 + index * 8);
-    })(panels[i], i);
-  }
+        var paused = false;
+        body.onmouseenter = function() { paused = true; };
+        body.onmouseleave = function() { paused = false; };
+        var lastTime = 0;
+        var scrollPosition = body.scrollTop || 0;
+        var stopped = false;
+        var frame = window.requestAnimationFrame || function(callback) {
+          return window.setTimeout(function() { callback(new Date().getTime()); }, 16);
+        };
+        var cancelFrame = window.cancelAnimationFrame || window.clearTimeout;
+        var frameId = null;
+        function smoothScroll(now) {
+          if (stopped) return;
+          if (!lastTime) lastTime = now;
+          var elapsed = Math.min(80, Math.max(0, now - lastTime));
+          lastTime = now;
+          if (masterToggle.checked && !paused && body.scrollHeight > body.clientHeight) {
+            scrollPosition += elapsed * 0.018;
+            var maxScroll = body.scrollHeight - body.clientHeight;
+            if (scrollPosition >= maxScroll) scrollPosition = 0;
+            /* Accumulate sub-pixel movement before assigning integer scrollTop. */
+            body.scrollTop = Math.floor(scrollPosition);
+          } else {
+            scrollPosition = body.scrollTop || 0;
+          }
+          frameId = frame(smoothScroll);
+        }
+        frameId = frame(smoothScroll);
+        cleanups.push(function() {
+          stopped = true;
+          if (frameId !== null) cancelFrame(frameId);
+          body.onmouseenter = null;
+          body.onmouseleave = null;
+        });
+      })(panels[i]);
+    }
+  };
+  window.__initPublicAutoScroll();
 })();
 </script>
 </body>

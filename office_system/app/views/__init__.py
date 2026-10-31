@@ -12,8 +12,6 @@ from app.views.files import files_bp
 from app.views.contacts import contacts_bp
 from app.views.stats import stats_bp
 from app.views.settings import settings_bp
-from app.views.docs import docs_bp
-from app.views.sheets import sheets_bp
 from app.views.cloud import cloud_bp
 
 
@@ -28,8 +26,6 @@ def register_blueprints(app):
     app.register_blueprint(contacts_bp)
     app.register_blueprint(stats_bp)
     app.register_blueprint(settings_bp)
-    app.register_blueprint(docs_bp)
-    app.register_blueprint(sheets_bp)
     app.register_blueprint(cloud_bp)
 
     from flask import session, g
@@ -39,15 +35,6 @@ def register_blueprints(app):
     @app.before_request
     def load_tabs():
         """Load tabs and columns for sidebar (app-wide)."""
-        # Success flashes interrupt the compact OA workflow and can accumulate
-        # across iframe pages. Keep warnings and errors, discard success noise.
-        flashes = session.get('_flashes', [])
-        if flashes:
-            remaining = [item for item in flashes if item[0] != 'success']
-            if remaining:
-                session['_flashes'] = remaining
-            else:
-                session.pop('_flashes', None)
         if 'user_id' not in session:
             return
         user_role = session.get('role', '')
@@ -94,12 +81,13 @@ def register_blueprints(app):
     from flask import Blueprint, render_template, jsonify, session, request, url_for, redirect, flash, current_app
     from app.extensions import db
     from app.decorators import login_required
-    from app.models import Task, TaskAssignee, Bulletin, Memo, User, File, OnlineDocument, Spreadsheet, Column, BulletinCategory, QuickLink
+    from app.models import Task, TaskAssignee, Bulletin, Memo, User, File, FileSearchText, OnlineDocument, Spreadsheet, Column, BulletinCategory, QuickLink, SystemConfig
     from app.utils import check_visible
     from sqlalchemy.orm import joinedload
     from datetime import datetime, timedelta
 
     index_bp = Blueprint('index_bp', __name__)
+    from app.public_comments import detail_comments
 
     def _valid_link_url(url):
         return url.startswith('http://') or url.startswith('https://')
@@ -110,14 +98,45 @@ def register_blueprints(app):
             Task.assignee_links.any(TaskAssignee.user_id == user_id)
         )
 
+    def _public_search_results(keyword):
+        results = {'memos': [], 'tasks': [], 'bulletins': [], 'files': []}
+        if not keyword:
+            return results
+        like = '%' + keyword + '%'
+        memo_candidates = Memo.query.filter(
+            Memo.memo_type == 'public', Memo.is_archived == 0,
+            db.or_(Memo.title.like(like), Memo.content.like(like))
+        ).order_by(Memo.updated_at.desc()).limit(100).all()
+        results['memos'] = [item for item in memo_candidates
+                            if check_visible(item.visible_roles, 'anonymous')][:20]
+        results['tasks'] = Task.query.filter(
+            db.or_(Task.title.like(like), Task.content.like(like))
+        ).order_by(Task.updated_at.desc()).limit(20).all()
+        results['bulletins'] = Bulletin.query.filter(
+            Bulletin.status == 'published', Bulletin.is_active == 1,
+            db.or_(Bulletin.title.like(like), Bulletin.content.like(like))
+        ).order_by(Bulletin.created_at.desc()).limit(20).all()
+        active_files = File.query.filter_by(is_deleted=0).all()
+        from app.file_search import index_missing_files
+        if index_missing_files(active_files):
+            db.session.commit()
+        results['files'] = File.query.outerjoin(
+            FileSearchText, FileSearchText.file_id == File.id
+        ).filter(File.is_deleted == 0, db.or_(
+            File.original_name.like(like), FileSearchText.content.like(like)
+        )).order_by(File.created_at.desc()).limit(20).all()
+        return results
+
     @index_bp.route('/')
     def index():
         """Public category portal."""
         from datetime import date
+        public_search_keyword = request.args.get('q', '').strip()[:100]
 
         categories = BulletinCategory.query.filter_by(is_active=1).order_by(
             BulletinCategory.sort_order.asc(), BulletinCategory.id.asc()
         ).all()
+        category_names = {category.id: category.name for category in categories}
         selected_id = request.args.get('category_id', type=int)
         selected_column_id = request.args.get('column_id', type=int)
         active_category = next((c for c in categories if c.id == selected_id), None) if selected_id else None
@@ -150,7 +169,7 @@ def register_blueprints(app):
         if active_column:
             bulletin_query = bulletin_query.filter(Bulletin.column_id == active_column.id)
 
-        from sqlalchemy import or_
+        from sqlalchemy import or_, true
         pending_count = task_query.filter(Task.status.in_(active_statuses)).count()
         tracking_count = task_query.count()
         bulletin_count = bulletin_query.count()
@@ -180,6 +199,162 @@ def register_blueprints(app):
             scope='public',
             is_active=1
         ).order_by(QuickLink.sort_order.asc(), QuickLink.id.asc()).all()
+        layout_row = SystemConfig.query.filter_by(config_key='public_home_layout').first()
+        public_home_layout = layout_row.config_value if layout_row and layout_row.config_value in ('classic', 'columns', 'content_tabs') else 'classic'
+        if active_category:
+            public_home_layout = 'columns'
+        else:
+            notice_category = next((c for c in categories if c.name == '\u7efc\u5408\u653f\u5de5'), None)
+            notice_columns = [c.id for c in columns if notice_category and
+                              c.category_id == notice_category.id and c.name == '\u901a\u77e5\u516c\u544a']
+            notice_filter = Bulletin.column_id.in_(notice_columns) if notice_columns else true()
+            bulletin_query = bulletin_query.filter(notice_filter)
+            reminders = bulletin_query.filter(
+                or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
+            ).order_by(Bulletin.created_at.desc()).limit(8).all()
+        row_height_row = SystemConfig.query.filter_by(config_key='public_item_row_height').first()
+        try:
+            public_item_row_height = int(row_height_row.config_value) if row_height_row else 50
+        except (TypeError, ValueError):
+            public_item_row_height = 50
+        public_item_row_height = max(40, min(public_item_row_height, 80))
+        ui_rows = SystemConfig.query.filter(SystemConfig.config_key.in_((
+            'public_brand_height', 'public_nav_height', 'public_search_width',
+            'public_page_gutter', 'public_card_gap', 'public_card_radius',
+            'public_card_padding', 'public_brand_color', 'public_page_color',
+            'public_color_scheme', 'public_quick_link_icons',
+            'public_quick_link_display', 'public_show_overview',
+            'public_slideshow_show', 'public_slideshow_position', 'public_slideshow_images',
+            'public_slideshow_background_transparency', 'public_ui_version'
+        ))).all()
+        ui_values = {row.config_key: row.config_value for row in ui_rows}
+        ui_ranges = {
+            'public_slideshow_background_transparency': (100, 0, 100),
+            'public_brand_height': (78, 72, 100),
+            'public_nav_height': (54, 48, 72),
+            'public_search_width': (460, 360, 560),
+            'public_page_gutter': (20, 12, 48),
+            'public_card_gap': (18, 8, 32),
+            'public_card_radius': (9, 4, 20),
+            'public_card_padding': (20, 16, 32)
+        }
+        public_ui = {}
+        for key, limits in ui_ranges.items():
+            try:
+                value = int(ui_values.get(key, limits[0]))
+            except (TypeError, ValueError):
+                value = limits[0]
+            public_ui[key] = max(limits[1], min(value, limits[2]))
+        public_ui['public_brand_color'] = ui_values.get('public_brand_color', '#071d50')
+        if public_ui['public_brand_color'] not in ('#071d50', '#123b6f', '#18395b'):
+            public_ui['public_brand_color'] = '#071d50'
+        public_ui['public_page_color'] = ui_values.get('public_page_color', '#F5F7FA')
+        if public_ui['public_page_color'] not in ('#F5F7FA', '#F1F5F9', '#FAFBFD'):
+            public_ui['public_page_color'] = '#F5F7FA'
+        public_ui['public_color_scheme'] = ui_values.get('public_color_scheme', 'navy_portal')
+        if public_ui['public_color_scheme'] not in ('light', 'navy_portal'):
+            public_ui['public_color_scheme'] = 'navy_portal'
+        public_ui['public_quick_link_icons'] = ui_values.get('public_quick_link_icons', '0') == '1'
+        public_ui['public_quick_link_display'] = 'always' if ui_values.get('public_quick_link_display') == 'always' else 'hover'
+        public_ui['public_show_overview'] = ui_values.get('public_show_overview', '1') != '0'
+        public_ui['public_slideshow_show'] = ui_values.get('public_slideshow_show', '0') == '1'
+        public_ui['public_slideshow_position'] = 'middle' if ui_values.get('public_slideshow_position') == 'middle' else 'bottom'
+        public_ui['public_ui_version'] = ui_values.get('public_ui_version', '2.0')
+        if public_ui['public_ui_version'] not in ('1.0', '2.0'):
+            public_ui['public_ui_version'] = '2.0'
+        from app.slideshow import load_slides
+        public_slides = load_slides(ui_values.get('public_slideshow_images'))
+        column_sections = []
+        content_tab_sections = []
+        if public_home_layout == 'columns':
+            if not active_category:
+                for category_index, category in enumerate(categories):
+                    section_memos = [memo for memo in public_memos_visible
+                                     if memo.category_id == category.id][:6]
+                    section_tasks = Task.query.filter_by(category_id=category.id).order_by(
+                        Task.updated_at.desc()).limit(6).all()
+                    section_bulletins = Bulletin.query.filter_by(
+                        status='published', is_active=1, category_id=category.id
+                    ).filter(notice_filter).order_by(Bulletin.created_at.desc()).limit(6).all()
+                    section_files = File.query.filter_by(
+                        is_deleted=0, category_id=category.id
+                    ).order_by(File.created_at.desc()).limit(6).all()
+                    latest = [
+                        ('memos', section_memos[0].updated_at if section_memos else None),
+                        ('tasks', section_tasks[0].updated_at if section_tasks else None),
+                        ('bulletins', section_bulletins[0].created_at if section_bulletins else None),
+                        ('files', section_files[0].created_at if section_files else None),
+                    ]
+                    latest = [item for item in latest if item[1] is not None]
+                    column_sections.append({
+                        'title': category.name,
+                        'icon': category.icon,
+                        'tone': category_index % 8,
+                        'category_id': category.id,
+                        'column_id': None,
+                        'active_key': max(latest, key=lambda item: item[1])[0] if latest else 'memos',
+                        'memos': section_memos,
+                        'tasks': section_tasks,
+                        'bulletins': section_bulletins,
+                        'files': section_files,
+                    })
+            else:
+                display_columns = category_columns.get(active_category.id, [])
+                for column in display_columns:
+                    section_bulletins = Bulletin.query.filter(
+                        Bulletin.status == 'published', Bulletin.is_active == 1,
+                        Bulletin.column_id == column.id,
+                        or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
+                    ).order_by(Bulletin.created_at.desc()).limit(8).all()
+                    column_sections.append({
+                        'title': column.name, 'icon': 'column',
+                        'tone': categories.index(active_category) % 8,
+                        'category_id': active_category.id, 'column_id': column.id,
+                        'entries': [{'title': item.title, 'date': item.created_at,
+                                     'url': url_for('index_bp.public_bulletin_detail', bulletin_id=item.id)}
+                                    for item in section_bulletins],
+                    })
+
+        if public_home_layout == 'content_tabs':
+            tab_targets = category_columns.get(active_category.id, []) if active_category else []
+            section_defs = [('bulletins', '通知公告', 'bulletin'), ('tasks', '任务提醒', 'task'),
+                            ('memos', '备忘', 'memo'), ('files', '文件', 'folder')]
+            for content_key, content_label, content_icon in section_defs:
+                content_tabs = []
+                if not active_category or not tab_targets:
+                    if content_key == 'memos':
+                        items = [memo for memo in public_memos_visible
+                                 if not active_category or memo.category_id == active_category.id][:12]
+                    elif content_key == 'tasks':
+                        items = task_query.order_by(Task.updated_at.desc()).limit(12).all()
+                    elif content_key == 'bulletins':
+                        items = bulletin_query.filter(
+                            or_(Bulletin.expire_date == None, Bulletin.expire_date >= date.today())
+                        ).order_by(Bulletin.created_at.desc()).limit(12).all()
+                    else:
+                        items = file_query.order_by(File.created_at.desc()).limit(12).all()
+                    content_tab_sections.append({'key': content_key, 'label': content_label,
+                                                 'icon': content_icon, 'items': items, 'tabs': []})
+                    continue
+                for target in tab_targets:
+                    category_id = active_category.id if active_category else target.id
+                    column_id = target.id if active_category else None
+                    if content_key == 'memos':
+                        items = [memo for memo in public_memos_visible
+                                 if (memo.column_id == column_id if column_id else memo.category_id == category_id)][:12]
+                    elif content_key == 'tasks':
+                        query = Task.query.filter_by(column_id=column_id) if column_id else Task.query.filter_by(category_id=category_id)
+                        items = query.order_by(Task.updated_at.desc()).limit(12).all()
+                    elif content_key == 'bulletins':
+                        query = Bulletin.query.filter_by(status='published', is_active=1, column_id=column_id) if column_id else Bulletin.query.filter_by(status='published', is_active=1, category_id=category_id)
+                        items = query.order_by(Bulletin.created_at.desc()).limit(12).all()
+                    else:
+                        query = File.query.filter_by(is_deleted=0, column_id=column_id) if column_id else File.query.filter_by(is_deleted=0, category_id=category_id)
+                        items = query.order_by(File.created_at.desc()).limit(12).all()
+                    content_tabs.append({'label': target.name, 'category_id': category_id,
+                                         'column_id': column_id, 'items': items})
+                content_tab_sections.append({'key': content_key, 'label': content_label,
+                                             'icon': content_icon, 'tabs': content_tabs})
 
         portal_stats = {
             'tasks': tracking_count,
@@ -193,6 +368,7 @@ def register_blueprints(app):
 
         return render_template('public_home.html',
                                categories=categories,
+                               category_names=category_names,
                                category_columns=category_columns,
                                active_category=active_category,
                                active_column=active_column,
@@ -202,7 +378,102 @@ def register_blueprints(app):
                                public_files=public_files,
                                public_memos=public_memos,
                                public_quick_links=public_quick_links,
+                               public_home_layout=public_home_layout,
+                               public_item_row_height=public_item_row_height,
+                               public_ui=public_ui,
+                               public_slides=public_slides,
+                               public_search_keyword=public_search_keyword,
+                               public_search_results=_public_search_results(public_search_keyword),
+                               column_sections=column_sections,
+                               content_tab_sections=content_tab_sections,
+                               recent_cutoffs=(datetime.utcnow() - timedelta(days=3),
+                                               datetime.utcnow() - timedelta(days=7),
+                                               datetime.utcnow() - timedelta(days=15)),
                                portal_stats=portal_stats)
+
+    @index_bp.route('/public/slides/<int:position>')
+    def public_slide_image(position):
+        import os
+        from types import SimpleNamespace
+        from flask import abort, send_file
+        from app.slideshow import load_slides
+        from app.views.files import safe_file_path
+        enabled = SystemConfig.query.filter_by(config_key='public_slideshow_show').first()
+        images = SystemConfig.query.filter_by(config_key='public_slideshow_images').first()
+        if (not enabled or enabled.config_value != '1') and session.get('role') != 'super_admin':
+            abort(404)
+        slides = load_slides(images.config_value if images else '[]')
+        if position >= len(slides):
+            abort(404)
+        path = safe_file_path(SimpleNamespace(file_path=slides[position]['path']))
+        if not os.path.isfile(path):
+            abort(404)
+        response = send_file(path, conditional=True)
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
+
+    @index_bp.route('/public/attachment/<string:kind>/<int:item_id>/<int:position>/<string:action>')
+    def attachment_view(kind, item_id, position, action):
+        import os
+        from flask import abort, send_file
+        from app.office_preview import render_preview
+        from app.config import BASE_DIR
+        from app.utils import content_disposition
+        if action not in ('preview', 'download', 'stream'):
+            abort(404)
+        if kind == 'bulletin':
+            parent = Bulletin.query.get_or_404(item_id)
+            if not (parent.status == 'published' and parent.is_active):
+                if session.get('role') not in ('super_admin', 'dept_admin'):
+                    abort(403)
+            attachments = [{'name': f.original_name, 'path': f.file_path} for f in parent.files.all()]
+        elif kind == 'task':
+            parent = Task.query.get_or_404(item_id)
+            try:
+                attachments = json.loads(parent.attachments or '[]')
+            except (ValueError, TypeError):
+                abort(404)
+        elif kind == 'memo':
+            parent = Memo.query.get_or_404(item_id)
+            if parent.memo_type != 'public' or parent.is_archived or not check_visible(parent.visible_roles, 'anonymous'):
+                if parent.created_by != session.get('user_id') and session.get('role') != 'super_admin':
+                    abort(403)
+            attachments = [{'name': f.original_name, 'path': f.file_path} for f in
+                           File.query.filter_by(related_type='memo', related_id=item_id, is_deleted=0).order_by(File.created_at.asc()).all()]
+        else:
+            abort(404)
+        if position >= len(attachments):
+            abort(404)
+        attachment = attachments[position]
+        stored = (attachment.get('path') or '').replace('\\', '/')
+        root = os.path.realpath(os.path.join(current_app.root_path, 'static', 'uploads')) if stored.startswith('/static/uploads/') else os.path.realpath(os.path.join(BASE_DIR, 'data', 'uploads'))
+        relative = stored[len('/static/uploads/'):] if stored.startswith('/static/uploads/') else stored[len('data/uploads/'):] if stored.startswith('data/uploads/') else ''
+        path = os.path.realpath(os.path.join(root, relative))
+        if not relative or os.path.commonpath([root, path]) != root or not os.path.isfile(path):
+            abort(404)
+        name = attachment.get('original') or attachment.get('name') or os.path.basename(path)
+        args = dict(kind=kind, item_id=item_id, position=position)
+        if action == 'preview':
+            return render_preview(path, name, url_for('index_bp.attachment_view', action='download', **args),
+                                  url_for('index_bp.attachment_view', action='stream', **args))
+        if action == 'download':
+            response = send_file(path, as_attachment=True)
+            response.headers['Content-Disposition'] = content_disposition(name)
+            return response
+        from app.views.files import IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, MEDIA_MIME_TYPES
+        ext = name.rsplit('.', 1)[-1].lower()
+        if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS + ('pdf',):
+            abort(415)
+        response = send_file(path, mimetype=MEDIA_MIME_TYPES.get(ext, 'application/pdf'), conditional=True)
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
+
+    @index_bp.route('/public/search')
+    def public_search():
+        """Search all content exposed by the public portal, including file text."""
+        keyword = request.args.get('q', '').strip()[:100]
+        return render_template('public_search.html', keyword=keyword,
+                               results=_public_search_results(keyword))
 
     @index_bp.route('/public/file/<int:file_id>/download')
     def public_file_download(file_id):
@@ -227,19 +498,18 @@ def register_blueprints(app):
     def public_file_preview(file_id):
         """Public media preview for files already exposed by the portal."""
         import os
-        from app.views.files import IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, VIDEO_EXTENSIONS, safe_file_path
+        from app.views.files import safe_file_path
         file_record = File.query.filter_by(id=file_id, is_deleted=0).first_or_404()
-        ext = (file_record.file_type or '').lower()
-        if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS:
-            return redirect(url_for('index_bp.public_file_download', file_id=file_id))
+        from app.office_preview import render_preview
         try:
             path = safe_file_path(file_record)
         except ValueError:
             return render_template('errors/404.html'), 404
         if not os.path.isfile(path):
             return render_template('errors/404.html'), 404
-        preview_type = 'image' if ext in IMAGE_EXTENSIONS else ('audio' if ext in AUDIO_EXTENSIONS else 'video')
-        return render_template('public_media_preview.html', file=file_record, preview_type=preview_type)
+        return render_preview(path, file_record.original_name,
+                              url_for('index_bp.public_file_download', file_id=file_id),
+                              url_for('index_bp.public_file_stream', file_id=file_id))
 
     @index_bp.route('/public/file/<int:file_id>/stream')
     def public_file_stream(file_id):
@@ -251,7 +521,7 @@ def register_blueprints(app):
         import os
         file_record = File.query.filter_by(id=file_id, is_deleted=0).first_or_404()
         ext = (file_record.file_type or '').lower()
-        if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS:
+        if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS + ('pdf',):
             return jsonify({'success': False, 'message': '该文件类型不支持媒体预览'}), 415
         try:
             path = safe_file_path(file_record)
@@ -270,7 +540,7 @@ def register_blueprints(app):
     @index_bp.route('/public/list/<string:list_type>')
     def public_list(list_type):
         """Public list pages for portal columns."""
-        from datetime import date
+        from datetime import date, datetime, timedelta
         from sqlalchemy import or_
 
         categories = BulletinCategory.query.filter_by(is_active=1).order_by(
@@ -295,19 +565,29 @@ def register_blueprints(app):
 
         titles = {
             'memos': ('公共备忘', 'memo'),
-            'tasks': ('任务跟踪', 'task-flow'),
-            'reminders': ('近期公示提醒要求', 'bell'),
+            'tasks': ('任务提醒', 'task-flow'),
+            'reminders': ('通知公告', 'bell'),
             'files': ('文件资料', 'folder'),
         }
         if list_type not in titles:
             return render_template('errors/404.html'), 404
 
         if list_type == 'memos':
-            query = Memo.query.filter(Memo.memo_type == 'public', Memo.is_archived == 0).order_by(Memo.updated_at.desc())
+            query = Memo.query.filter(
+                Memo.memo_type == 'public', Memo.is_archived == 0,
+                or_(Memo.expires_at == None, Memo.expires_at >= datetime.utcnow())
+            )
+            if active_category:
+                query = query.filter(Memo.category_id == active_category.id)
+            if active_column:
+                query = query.filter(Memo.column_id == active_column.id)
+            query = query.order_by(Memo.updated_at.desc())
         elif list_type == 'tasks':
             query = Task.query
             if active_category:
                 query = query.filter(Task.category_id == active_category.id)
+            if active_column:
+                query = query.filter(Task.column_id == active_column.id)
             query = query.order_by(Task.updated_at.desc())
         elif list_type == 'reminders':
             query = Bulletin.query.filter(
@@ -324,6 +604,8 @@ def register_blueprints(app):
             query = File.query.filter(File.is_deleted == 0)
             if active_category:
                 query = query.filter(File.category_id == active_category.id)
+            if active_column:
+                query = query.filter(File.column_id == active_column.id)
             if keyword:
                 query = query.filter(File.original_name.like('%' + keyword + '%'))
             query = query.order_by(File.created_at.desc())
@@ -339,6 +621,9 @@ def register_blueprints(app):
             keyword=keyword,
             active_category=active_category,
             active_column=active_column,
+            recent_cutoffs=(datetime.utcnow() - timedelta(days=3),
+                            datetime.utcnow() - timedelta(days=7),
+                            datetime.utcnow() - timedelta(days=15)),
             back_url=url_for('index_bp.index', category_id=active_category.id, column_id=active_column.id) if active_column else (url_for('index_bp.index', category_id=active_category.id) if active_category else url_for('index_bp.index'))
         )
 
@@ -578,6 +863,7 @@ def register_blueprints(app):
         except (TypeError, ValueError):
             attachment_items = []
         return render_template('public_detail.html',
+                               comments=detail_comments('task', task.id),
                                detail_type='task',
                                item=task,
                                attachment_items=attachment_items,
@@ -597,6 +883,7 @@ def register_blueprints(app):
             'size': attachment.file_size or 0,
         } for attachment in bulletin.files.all()]
         return render_template('public_detail.html',
+                               comments=detail_comments('bulletin', bulletin.id),
                                detail_type='bulletin',
                                item=bulletin,
                                attachment_items=attachment_items,
@@ -674,7 +961,7 @@ def register_blueprints(app):
             try:
                 from app.nextcloud import is_nextcloud_configured, search_files
                 if is_nextcloud_configured():
-                    results['cloud_files'] = search_files(keyword, 12)
+                    results['cloud_files'] = search_files(keyword, 12, timeout=2)
             except Exception as exc:
                 current_app.logger.warning('Nextcloud dashboard search failed: %s', exc)
 

@@ -4,7 +4,7 @@ Flask application factory (following pear-admin-flask pattern).
 """
 import os
 import sys
-from flask import Flask
+from flask import Flask, Request
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
@@ -12,6 +12,14 @@ if BASE_DIR not in sys.path:
 
 from app.config import Config
 from app.extensions import db
+
+
+class OfficeRequest(Request):
+    @property
+    def max_content_length(self):
+        if self.endpoint in ('admin.ui_settings', 'admin.slideshow') and self.method == 'POST':
+            return None
+        return super().max_content_length
 
 
 def create_app(config_class=Config):
@@ -22,6 +30,9 @@ def create_app(config_class=Config):
                 static_url_path='/static')
 
     app.config.from_object(config_class)
+    app.request_class = OfficeRequest
+    # Keep offline deployments from serving stale templates/styles after an update.
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
     # Ensure data directories exist
     data_dir = os.path.join(BASE_DIR, 'data')
@@ -41,6 +52,8 @@ def create_app(config_class=Config):
     register_error_handlers(app)
     register_context_processors(app)
     register_theme_injector(app)
+    from app.public_comments import register_comments
+    register_comments(app)
     ensure_runtime_tables(app)
 
     return app
@@ -64,6 +77,7 @@ def ensure_runtime_tables(app):
             db.session.execute(db.text('CREATE INDEX IF NOT EXISTS ix_files_column_id ON files(column_id)'))
             db.session.commit()
         runtime_columns = (
+            ('bulletin_polls', 'is_anonymous', 'BOOLEAN NOT NULL DEFAULT 1'),
             ('tasks', 'column_id', 'INTEGER REFERENCES columns(id) ON DELETE SET NULL'),
             ('memos', 'category_id', 'INTEGER REFERENCES bulletin_categories(id)'),
             ('memos', 'column_id', 'INTEGER REFERENCES columns(id) ON DELETE SET NULL'),
@@ -72,6 +86,9 @@ def ensure_runtime_tables(app):
             ('memos', 'nextcloud_url', "VARCHAR(2000) DEFAULT ''"),
             ('bulletin_attachments', 'category_id', 'INTEGER'),
             ('bulletin_attachments', 'column_id', 'INTEGER'),
+            ('task_assignees', 'progress', 'INTEGER DEFAULT 0'),
+            ('task_assignees', 'is_completed', 'INTEGER DEFAULT 0'),
+            ('task_assignees', 'completed_at', 'DATETIME'),
         )
         table_names = inspector.get_table_names()
         for table_name, column_name, column_sql in runtime_columns:
@@ -120,16 +137,38 @@ def register_theme_injector(app):
     @app.after_request
     def inject_theme_script(response):
         content_type = response.headers.get('Content-Type', '')
+        from flask import request
+        if request.endpoint == 'index_bp.index':
+            response.headers['Cache-Control'] = 'no-store, max-age=0'
         if response.direct_passthrough or 'text/html' not in content_type:
             return response
         try:
             html_text = response.get_data(as_text=True)
         except Exception:
             return response
-        if 'css/app.css' not in html_text or 'js/theme.js' in html_text or '</head>' not in html_text:
+        if '</head>' not in html_text or '</body>' not in html_text:
             return response
+        from app.models import SystemConfig
+        from flask import render_template, get_flashed_messages
+        from markupsafe import escape
+        if response.status_code == 200:
+            messages = get_flashed_messages(with_categories=True)
+            missing = [(category, message) for category, message in messages
+                       if str(escape(message)) not in html_text]
+            feedback = render_template('_action_feedback.html', action_messages=missing)
+            html_text = html_text.replace('</body>', feedback + '</body>', 1)
+        setting = SystemConfig.query.filter_by(config_key='public_video_autoplay').first()
+        autoplay = setting and setting.config_value == '1'
+        import re
+        if not autoplay:
+            html_text = re.sub(r'(<video\b[^>]*?)\sautoplay(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+))?', r'\1', html_text, flags=re.I)
+        else:
+            html_text = re.sub(r'<video\b', '<video autoplay muted playsinline', html_text, flags=re.I)
+        media_script = '<script src="/static/js/media_playback.js?v=20261026-2" data-autoplay="%s"></script>' % ('1' if autoplay else '0')
+        html_text = html_text.replace('</body>', render_template('_reply_alert.html') + media_script + '</body>', 1)
         script = '<script src="/static/js/theme.js?v=20260820-auto-filter"></script>\n'
-        html_text = html_text.replace('</head>', script + '</head>', 1)
+        if 'css/app.css' in html_text and 'js/theme.js' not in html_text:
+            html_text = html_text.replace('</head>', script + '</head>', 1)
         response.set_data(html_text)
         response.headers['Content-Length'] = str(len(response.get_data()))
         return response
@@ -179,7 +218,28 @@ def register_context_processors(app):
                 app_name = configured_name.config_value.strip()
         except Exception:
             pass
+        from app.public_comments import unread_replies
+        from app.bulletin_poll import poll_info
+        from app.models import User, SystemConfig, RegistrationRequest
+        user = User.query.get(session.get('user_id')) if session.get('user_id') else None
+        ui_options = {r.config_key: r.config_value for r in SystemConfig.query.filter(
+            (SystemConfig.config_key.like('public_font_%')) |
+            (SystemConfig.config_key == 'public_ui_version')).all()}
+        public_ui_version = ui_options.get('public_ui_version', '2.0')
+        if public_ui_version not in ('1.0', '2.0'):
+            public_ui_version = '2.0'
+        def public_font(key, default):
+            try:
+                return max(12, min(32, int(ui_options.get(key, ui_options.get(key + '_0', default)))))
+            except (ValueError, TypeError):
+                return default
         return {
+            'registration_pending_count': RegistrationRequest.query.filter_by(status='pending').count() if session.get('role') == 'super_admin' else 0,
+            'bulletin_poll': poll_info,
+            'public_font': public_font,
+            'public_ui_version': public_ui_version,
+            'comment_user': user,
+            'unread_reply_count': unread_replies().count() if user else 0,
             'app_name': app_name,
             'app_version': '1.2.0',
             'current_year': '2026',

@@ -134,9 +134,15 @@ def list_share_groups():
         })
         groups = data.get('groups', []) if isinstance(data, dict) else []
         return sorted(set(str(item) for item in groups)), ''
+    except HTTPError as exc:
+        current_app.logger.warning('Nextcloud group list failed with HTTP %s', exc.code)
+        return [], 'Nextcloud 返回 HTTP {}，请检查地址、账号和应用密码'.format(exc.code)
+    except (URLError, ssl.SSLError) as exc:
+        current_app.logger.warning('Nextcloud group list connection failed: %s', exc)
+        return [], '无法连接 Nextcloud，请检查目标电脑地址、端口和网络连通性'
     except Exception as exc:
         current_app.logger.warning('Nextcloud group list failed: %s', exc)
-        return [], '无法读取 Nextcloud 分组，请确认专用账号具有查看分组的权限'
+        return [], '无法读取 Nextcloud 分组，请确认专用账号具有查看分组的权限（{}）'.format(exc)
 
 
 def _load_group_share_state(cfg):
@@ -608,7 +614,7 @@ def mirror_attachment(target_type, target_id, local_path, original_name, user_id
     return record
 
 
-def search_files(keyword, limit=12):
+def search_files(keyword, limit=12, timeout=None):
     """Search Nextcloud filenames with RFC 5323 WebDAV SEARCH."""
     if not is_nextcloud_configured() or not keyword:
         return []
@@ -627,7 +633,7 @@ def search_files(keyword, limit=12):
  </d:basicsearch></d:searchrequest>'''.format(scope=scope, literal=literal)
     response_body, status = _request(
         cfg, cfg['url'] + '/remote.php/dav/', method='SEARCH', data=body.encode('utf-8'),
-        headers={'Content-Type': 'text/xml; charset=utf-8'})
+        headers={'Content-Type': 'text/xml; charset=utf-8'}, timeout=timeout)
     root = ElementTree.fromstring(response_body)
     prefix = '/remote.php/dav/files/' + cfg['username'] + '/'
     results = []

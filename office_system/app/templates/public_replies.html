@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><title>未读回复</title><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">{% if public_ui_version == '2.0' %}<link rel="stylesheet" href="{{ url_for('static', filename='css/public-ui-v2.css') }}">{% endif %}</head>
+<body class="public-replies-page{% if public_ui_version == '2.0' %} public-ui-v2{% endif %}"><main style="max-width:960px;margin:30px auto;padding:20px;">
+<a href="{{ url_for('index_bp.index') }}">返回首页</a><h1>未读回复（{{ replies.total }}）</h1>
+{% for reply in replies.items %}
+<article style="padding:18px;border-bottom:1px solid #ddd;">
+<b>{{ reply.creator.real_name or '账号姓名未设置' }}</b> · {{ reply.created_at|localtime }}
+<p style="white-space:pre-wrap;word-wrap:break-word;">{{ reply.content }}</p>
+{% set endpoint = 'index_bp.public_' + reply.target_type + '_detail' %}
+{% set page_number = ((replies_query_count(reply) // 20) + 1) %}
+<a href="{{ url_for(endpoint, **{reply.target_type + '_id': reply.target_id}) }}?comment_page={{ page_number }}#comment-{{ reply.id }}">查看详情与回复</a>
+</article>
+{% else %}<p>暂无未读回复。</p>{% endfor %}
+{% if replies.has_prev %}<a href="?page={{ replies.prev_num }}">上一页</a>{% endif %}
+{% if replies.has_next %}<a href="?page={{ replies.next_num }}">下一页</a>{% endif %}
+</main></body></html>

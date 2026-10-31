@@ -43,18 +43,12 @@
   </style>
 </head>
 <body>
-  <div class="breadcrumb">
-    <a href="{{ url_for('index_bp.workbench') }}">工作台</a>
-    <span class="breadcrumb-sep">›</span>
-    <span>云文档中心</span>
-  </div>
-
   {% if configured %}
-  <a class="cloud-launch" href="{{ cloud_url }}" target="_blank" title="进入 云盘 云盘">
+  <a class="cloud-launch" href="{{ cloud_url }}" target="_blank" title="进入云盘">
     <span class="cloud-launch-main">
       <span class="cloud-launch-mark"><span class="cloud-launch-mark-inner">{{ icon('folder') }}</span></span>
       <span class="cloud-launch-copy">
-        <span class="cloud-launch-title">进入 云盘 云盘</span>
+        <span class="cloud-launch-title">进入云盘</span>
         <span class="cloud-launch-desc">集中管理、共享和在线编辑云端文件，Office 文档可直接使用 ONLYOFFICE 打开</span>
       </span>
     </span>
@@ -65,7 +59,7 @@
     <span class="cloud-launch-main">
       <span class="cloud-launch-mark"><span class="cloud-launch-mark-inner">{{ icon('folder') }}</span></span>
       <span class="cloud-launch-copy">
-        <span class="cloud-launch-title">云盘 云盘尚未配置</span>
+        <span class="cloud-launch-title">云盘尚未配置</span>
         <span class="cloud-launch-desc">请由管理员在系统设置中填写服务地址、专用账号和应用密码</span>
       </span>
     </span>
@@ -83,12 +77,12 @@
   </div>
 
   {% if not configured %}
-  <div class="alert alert-warning" style="margin-top:12px;">尚未配置 云盘，请由管理员在系统设置中完成连接配置。</div>
+  <div class="alert alert-warning" style="margin-top:12px;">尚未配置云盘，请由管理员在系统设置中完成连接配置。</div>
   {% endif %}
 
   <div class="cloud-search">
     <form method="get">
-      <div class="cloud-search-input"><input class="form-input" name="q" value="{{ keyword }}" placeholder="搜索 云盘 文件或文件夹"></div>
+      <div class="cloud-search-input"><input class="form-input" name="q" value="{{ keyword }}" placeholder="搜索云盘文件或文件夹"></div>
       <div class="cloud-search-button"><button class="btn btn-primary" type="submit">搜索</button></div>
     </form>
   </div>
@@ -103,7 +97,7 @@
       <div class="cloud-meta">{{ f.path }} · {% if f.is_folder %}文件夹{% else %}{{ f.content_type or '文件' }}{% endif %}{% if f.size %} · {{ (f.size/1024)|round(1) }} KB{% endif %}</div>
     </div>
     {% else %}
-    <div class="cloud-empty">没有匹配的 云盘 文件或文件夹</div>
+    <div class="cloud-empty">没有匹配的云盘文件或文件夹</div>
     {% endfor %}
   </div>
   {% endif %}

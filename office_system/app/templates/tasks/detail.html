@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 {% from '_icon.html' import icon %}
 <head>
@@ -85,11 +85,11 @@ body { background: #f1f5f9; }
 </div>
 
 <!-- Progress Bar -->
-{% set p = task.progress|default(0) %}
+{% set p = current_assignment.progress if current_assignment else task.progress|default(0) %}
 <div class="card" style="margin-top:20px;">
   <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-    <div class="card-title">{{ icon('progress') }} 任务进度</div>
-    {% if is_current_assignee or session.get('role') in ('super_admin','dept_admin') %}
+    <div class="card-title">{{ icon('progress') }} {% if current_assignment %}我的进度{% else %}执行者平均进度{% endif %}</div>
+    {% if current_assignment %}
     <div style="display:flex;gap:6px;align-items:center;">
       <button type="button" class="btn btn-sm" onclick="updateProgress(-10)" style="font-size:16px;font-weight:700;padding:2px 10px;">−</button>
       <span id="progressVal" style="font-size:18px;font-weight:700;color:#2563eb;min-width:50px;text-align:center;">{{ p }}%</span>
@@ -97,10 +97,18 @@ body { background: #f1f5f9; }
     </div>
     {% endif %}
   </div>
-  <div class="card-body" style="padding:16px;">
+  <div class="card-body average-progress-wrap" style="padding:16px;position:relative;">
     <div id="progressTrack" style="height:24px;background:#e2e8f0;border-radius:12px;overflow:hidden;{% if is_current_assignee or session.get('role') in ('super_admin','dept_admin') %}cursor:pointer;{% endif %}">
       <div id="progressBar" style="height:100%;width:{{ p }}%;background:linear-gradient(90deg,#3b82f6,#10b981);border-radius:12px;"></div>
     </div>
+    {% if assignment_progress %}
+    <div class="assignee-progress-popover">
+      <strong>执行者进度</strong>
+      {% for link in assignment_progress %}
+      <div class="assignee-progress-row"><span>{{ link.user.real_name or link.user.username }}</span><b>{{ link.progress or 0 }}% · {{ '已完成' if link.is_completed else '进行中' }}</b></div>
+      {% endfor %}
+    </div>
+    {% endif %}
     <div class="meta-hint" style="display:flex;justify-content:space-between;margin-top:6px;">
       <span>0%</span>
       <span>50%</span>
@@ -108,6 +116,14 @@ body { background: #f1f5f9; }
     </div>
   </div>
 </div>
+
+<style>
+.assignee-progress-popover { display:none; position:absolute; z-index:20; right:16px; top:48px; min-width:260px; padding:10px 12px; border:1px solid var(--border); border-radius:6px; color:var(--text-primary); background:var(--bg-card); box-shadow:0 8px 24px rgba(15,23,42,.18); }
+.average-progress-wrap:hover .assignee-progress-popover { display:block; }
+.assignee-progress-row { display:table; width:100%; margin-top:7px; border-top:1px solid var(--border); padding-top:7px; }
+.assignee-progress-row span, .assignee-progress-row b { display:table-cell; }
+.assignee-progress-row b { text-align:right; white-space:nowrap; }
+</style>
 
 <script>
 function setProgress(val) {
@@ -153,6 +169,7 @@ function updateProgress(delta) {
 </div>
 {% endif %}
 
+{% if false %}
 <!-- Related Online Documents/Sheets -->
 <div class="card" style="margin-top:20px;">
   <div class="card-header"><div class="card-title">{{ icon('file') }} 关联在线文档/表格</div></div>
@@ -179,16 +196,18 @@ function updateProgress(delta) {
     {% endif %}
   </div>
 </div>
+{% endif %}
 
 {% if task_attachments %}
 <div class="card" style="margin-top:20px;">
   <div class="card-header"><div class="card-title">{{ icon('attach') }} 附件 ({{ task_attachments|length }})</div></div>
   <div class="card-body" style="padding:16px;">
     {% for af in task_attachments %}
-    <a href="{{ af.path }}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;margin:4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:#2563eb;font-size:13px;">
+    <a href="{{ url_for('index_bp.attachment_view', kind='task', item_id=task.id, position=loop.index0, action='download') }}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;margin:4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:#2563eb;font-size:13px;">
       {{ icon('attach') }} {{ af.original }}
       <span class="file-size">{% if af.size %}{{ (af.size/1024)|round|int }}KB{% endif %}</span>
-    </a>
+    · 下载</a>
+    <a class="btn" href="{{ url_for('index_bp.attachment_view', kind='task', item_id=task.id, position=loop.index0, action='preview') }}" target="_blank" rel="noopener">在线查看</a>
     {% endfor %}
     {% include '_cloud_attachments.html' %}
   </div>
@@ -197,7 +216,7 @@ function updateProgress(delta) {
 
 {% if task.nextcloud_url %}
 <div class="card" style="margin-top:20px;">
-  <div class="card-header"><div class="card-title">{{ icon('folder') }} 云盘 任务资料</div></div>
+  <div class="card-header"><div class="card-title">{{ icon('folder') }}云盘任务资料</div></div>
   <div class="card-body" style="padding:14px 16px;display:table;width:100%;box-sizing:border-box;">
     <div style="display:table-cell;vertical-align:middle;color:#334155;word-break:break-all;">{{ task.nextcloud_url }}</div>
     <div style="display:table-cell;width:150px;vertical-align:middle;text-align:right;">
@@ -241,31 +260,6 @@ function updateProgress(delta) {
 </div>
 {% endif %}
 
-<div class="card" style="margin-top:20px;">
-  <div class="card-header"><div class="card-title">任务评论</div></div>
-  <div class="card-body" style="padding:16px;">
-    {% if comments %}
-    {% for c in comments %}
-    <div class="comment-item">
-      <div class="comment-avatar">{% if c.creator and c.creator.avatar %}<img src="{{ c.creator.avatar }}">{% else %}{{ (c.creator.real_name or c.creator.username or "?")[-1] if c.creator else "?" }}{% endif %}</div>
-      <div class="comment-content">
-        <div class="comment-meta"><span class="name">{{ c.creator.real_name if c.creator else '用户' }} · {{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '' }}</div>
-        <div class="comment-body">{{ c.content }}</div>
-      </div>
-    </div>
-    {% endfor %}
-    {% else %}
-    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px;">暂无评论，可以在这里同步进展或补充说明。</div>
-    {% endif %}
-    <form method="post" action="{{ url_for('tasks.add_comment', task_id=task.id) }}" style="margin-top:14px;">
-      <textarea name="content" class="form-textarea" rows="3" required placeholder="写下评论..." style="width:100%;"></textarea>
-      <div style="margin-top:10px;text-align:right;">
-        <button type="submit" class="btn btn-primary">发表评论</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <div class="detail-actions" style="background:#f8fafc;border-radius:12px;">
   {% if task.status == 'pending' and is_current_assignee %}
   <form method="post" action="{{ url_for('tasks.update_status', task_id=task.id) }}" style="display:inline;">
@@ -280,6 +274,13 @@ function updateProgress(delta) {
     <button type="submit" class="btn btn-success btn-lg">{{ icon('progress') }} 完成任务</button>
   </form>
   <a href="{{ url_for('tasks.transfer_task', task_id=task.id) }}" class="btn btn-lg">{{ icon('task-flow') }} 申请交接</a>
+  {% endif %}
+
+  {% if task.status in ('pending','processing','transferring') and task.creator_id == session.get('user_id') and not is_current_assignee %}
+  <form method="post" action="{{ url_for('tasks.update_status', task_id=task.id) }}" style="display:inline;" onsubmit="return confirm('确认由发布者直接完成此任务？');">
+    <input type="hidden" name="action" value="complete">
+    <button type="submit" class="btn btn-success btn-lg">{{ icon('progress') }} 发布者确认完成</button>
+  </form>
   {% endif %}
 
   {% if task.status in ('pending','processing') and session.get('role') in ('super_admin','dept_admin') %}
@@ -299,12 +300,6 @@ function updateProgress(delta) {
   {% if session.get('role') in ('super_admin','dept_admin') %}
   <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="btn btn-lg">{{ icon('edit') }} 编辑</a>
   <button type="button" class="btn btn-warning btn-lg" onclick="openReassignModal()">{{ icon('user-key') }} 强制分配</button>
-  {% endif %}
-
-  {% if task.status in ('pending','processing','completed') and (is_current_assignee or session.get('user_id') == task.created_by or session.get('role') in ('super_admin','dept_admin')) %}
-  <form method="post" action="{{ url_for('tasks.task_to_memo', task_id=task.id) }}" style="display:inline;">
-    <button type="submit" class="btn btn-lg">{{ icon('memo') }} 转为备忘</button>
-  </form>
   {% endif %}
 
   {% if session.get('role') in ('super_admin','dept_admin') %}

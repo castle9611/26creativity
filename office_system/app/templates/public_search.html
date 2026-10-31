@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+{% from '_icon.html' import icon %}
+<html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>全文搜索 - {{ app_name }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body{padding:20px;background:#eef3f9}.search-shell{max-width:1100px;margin:auto}.search-head{padding:18px;background:#174f9b;color:#fff}.search-form{display:table;width:100%;margin-top:12px}.search-form div{display:table-cell}.search-form .form-input{height:42px}.search-form .actions{width:150px;padding-left:8px}.search-form .btn{width:100%;height:42px}.result-group{margin-top:14px;border:1px solid #d8e2ee;background:#fff}.result-group h2{padding:12px 16px;background:#f1f5fa;font-size:17px}.result{display:table;width:100%;padding:12px 16px;border-top:1px solid #edf2f7;box-sizing:border-box}.result a,.result span{display:table-cell}.result a{color:#123d79;font-weight:700}.result span{width:130px;color:#64748b;text-align:right}.empty{padding:20px;color:#64748b}
+</style>{% if public_ui_version == '2.0' %}<link rel="stylesheet" href="{{ url_for('static', filename='css/public-ui-v2.css') }}">{% endif %}</head><body class="public-search-page{% if public_ui_version == '2.0' %} public-ui-v2{% endif %}"><main class="search-shell">
+<div class="search-head"><a href="{{ url_for('index_bp.index') }}" style="color:#fff">← 返回首页</a><h1 style="margin:12px 0 0">全部公开内容搜索</h1>
+<form class="search-form" method="get"><div><label class="sr-only" for="q">搜索词</label><input id="q" name="q" class="form-input" value="{{ keyword }}" placeholder="搜索标题、正文、文件名及文件内文字" required></div><div class="actions"><button class="btn" type="submit">{{ icon('search') }} 搜索</button></div></form></div>
+{% if keyword %}{% for key,title in [('memos','备忘'),('tasks','任务'),('bulletins','公示'),('files','文件')] %}
+<section class="result-group"><h2>{{ title }}（{{ results[key]|length }}）</h2>
+{% for item in results[key] %}<div class="result">
+{% if key=='memos' %}<a href="{{ url_for('index_bp.public_memo_detail', memo_id=item.id) }}">{{ item.title }}</a><span>{{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</span>
+{% elif key=='tasks' %}<a href="{{ url_for('index_bp.public_task_detail', task_id=item.id) }}">{{ item.title }}</a><span>{{ item.updated_at.strftime('%Y-%m-%d') if item.updated_at else '' }}</span>
+{% elif key=='bulletins' %}<a href="{{ url_for('index_bp.public_bulletin_detail', bulletin_id=item.id) }}">{{ item.title }}</a><span>{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</span>
+{% else %}<a href="{{ url_for('index_bp.public_file_preview', file_id=item.id) }}">{{ item.original_name }}</a><span>{{ item.file_type|upper }}</span>{% endif %}
+</div>{% else %}<div class="empty">没有匹配内容</div>{% endfor %}</section>{% endfor %}{% endif %}
+</main></body></html>

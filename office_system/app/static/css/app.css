@@ -877,13 +877,13 @@ a:hover { color: var(--primary-dark); }
     font-size: 18px;
 }
 
-.stat-icon.blue { background: var(--primary-bg); color: var(--primary); }
-.stat-icon.green { background: var(--success-bg); color: var(--success); }
-.stat-icon.orange { background: var(--warning-bg); color: var(--warning); }
-.stat-icon.red { background: var(--danger-bg); color: var(--danger); }
-.stat-icon.purple { background: #f5f3ff; color: #7c3aed; }
-.stat-icon.cyan { background: var(--info-bg); color: var(--info); }
-.stat-icon.teal { background: #ecfdf5; color: #0d9488; }
+.stat-icon.blue { background: transparent; color: var(--primary); }
+.stat-icon.green { background: transparent; color: var(--success); }
+.stat-icon.orange { background: transparent; color: var(--warning); }
+.stat-icon.red { background: transparent; color: var(--danger); }
+.stat-icon.purple { background: transparent; color: #7c3aed; }
+.stat-icon.cyan { background: transparent; color: var(--info); }
+.stat-icon.teal { background: transparent; color: #0d9488; }
 
 .stat-info { flex: 1; }
 .stat-value { font-size: var(--text-hero); font-weight: 700; color: var(--text-primary); line-height: 1; }
@@ -1210,6 +1210,21 @@ table.table .empty-row td {
     justify-content: center;
     gap: var(--space-xs);
     padding: var(--space-md) 0;
+}
+
+/* Keep list pagination in a stable footer band while the list scrolls. */
+.pagination,
+.oa-pagination,
+.public-pagination {
+    min-height: 64px;
+    box-sizing: border-box;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    background: rgba(255, 255, 255, .96);
+    border-top: 1px solid #e6edf6;
+    margin-top: 16px;
+    padding: 12px 0;
 }
 
 .pagination a,
@@ -1595,12 +1610,16 @@ table.table .empty-row td {
 .detail-meta-item strong { color: var(--text-primary); }
 
 .detail-content {
+    overflow-x: auto;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: var(--space-xl);
     line-height: 1.8;
 }
+
+.detail-content table { table-layout: auto; max-width: none; border-collapse: collapse; }
+.detail-content video { max-width: 100%; height: auto; }
 
 .detail-actions {
     display: flex;
@@ -2398,7 +2417,8 @@ html[data-theme="night"] .main-content {
 .sidebar .nav-item {
     color: var(--theme-sidebar-text) !important;
     border-radius: 0 999px 999px 0;
-    margin: 1px 8px 1px 0;
+    margin: 1px 0 1px 0;
+    padding-right: 20px;
 }
 
 .sidebar .nav-item:hover,
@@ -3741,7 +3761,7 @@ body.workbench-shell .sidebar .nav-item[title] {
     justify-content: center;
     align-items: center;
     gap: 8px;
-    padding: 14px 0 2px;
+    padding: 12px 0;
 }
 
 .page-size-control {
@@ -4456,7 +4476,7 @@ table.table tr:hover td,
 .memo-card {
     float: none !important;
     width: auto !important;
-    min-height: 210px !important;
+    min-height: 0 !important;
     margin: 0 !important;
     border: 1px solid #d9e5f4 !important;
     border-radius: 10px !important;
@@ -4475,7 +4495,7 @@ table.table tr:hover td,
 
 .bulletin-card-header,
 .memo-card-header {
-    padding: 16px 18px 12px !important;
+    padding: 8px 12px 6px !important;
     border-bottom: 1px solid #edf2f8 !important;
     background:
         radial-gradient(circle at 95% 0%, rgba(54,132,255,.10), transparent 24%),
@@ -4499,8 +4519,8 @@ table.table tr:hover td,
 
 .bulletin-card-footer,
 .memo-card-footer {
-    min-height: 48px !important;
-    padding: 12px 18px !important;
+    min-height: 34px !important;
+    padding: 7px 12px !important;
     border-top: 1px solid #edf2f8 !important;
     background: #f8fbff !important;
     color: #60708a !important;
@@ -4723,6 +4743,12 @@ table.table tr:hover td,
     border-radius: 0 !important; background: transparent !important; box-shadow: none !important;
     outline: none !important;
 }
+.breadcrumb > a:first-child:focus-visible,
+.oa-list-crumb > a:first-child:focus-visible,
+.task-crumb > a:first-child:focus-visible {
+    outline: 2px solid #1266f3 !important;
+    outline-offset: 3px !important;
+}
 .breadcrumb > a:first-child:before,
 .oa-list-crumb > a:first-child:before,
 .task-crumb > a:first-child:before {
@@ -4771,8 +4797,6 @@ input[type="button"], input[type="submit"], input[type="reset"],
     border-radius: 0 !important;
 }
 
-/* Successful operations continue silently; warnings and errors stay visible. */
-.alert-success { display: none !important; }
 
 /* Compact spacing shared by business pages loaded in the workbench. */
 html body:not(.workbench-shell):not(.embedded-workbench) .main-content {
@@ -5295,7 +5319,8 @@ html body.oa-list-page .memo-grid {
 
 html body.oa-list-page .memo-card {
     width: 33.333333% !important;
-    min-height: 150px !important;
+    min-height: 0 !important;
+    height: auto !important;
     margin: 0 !important;
     border-width: 0 1px 1px 0 !important;
 }
@@ -5451,7 +5476,7 @@ html[data-theme] body:not(.workbench-shell) .badge-info,
 html[data-theme] body:not(.workbench-shell) .stats-icon,
 html[data-theme] body:not(.workbench-shell) .oa-list-title-icon {
     color: var(--primary) !important;
-    background: var(--primary-bg) !important;
+    background: transparent !important;
 }
 
 html[data-theme] body:not(.workbench-shell) .stats-bar > a {
@@ -5492,6 +5517,10 @@ a:focus, button:focus, input:focus, select:focus, textarea:focus,
 }
 .skip-link { position: fixed; left: 12px; top: -100px; z-index: 20000; padding: 12px; background: #fff; color: #123d79; }
 .skip-link:focus { top: 12px; }
+.stat-card[onclick], .stat-card[data-entry-card] { cursor: pointer; }
+.stat-card[onclick]:focus-visible, .stat-card[data-entry-card]:focus-visible { outline: 2px solid #1266f3; outline-offset: 3px; }
+.stat-card.stat-add { border: 0; font: inherit; text-align: left; }
+.entry-editor-close, .memo-modal-close, .bulletin-modal-close { min-width: 44px; min-height: 44px; }
 .oa-dialog { overflow-y: auto; padding: 32px 16px; }
 .oa-dialog > div { margin: 0 auto; max-width: 100% !important; }
 .oa-dialog button { margin: 6px 8px 0 0; }
@@ -5517,4 +5546,501 @@ a:focus, button:focus, input:focus, select:focus, textarea:focus,
 }
 @media (prefers-reduced-motion: reduce) {
     *, *:before, *:after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+@media (min-width: 1500px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { width: calc(20% - 8px) !important; }
+}
+@media (min-width: 1100px) and (max-width: 1499px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { width: calc(25% - 8px) !important; }
+}
+@media (min-width: 760px) and (max-width: 1099px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { width: calc(33.333333% - 8px) !important; }
+}
+@media (min-width: 521px) and (max-width: 759px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { width: calc(50% - 8px) !important; }
+}
+
+/* Bulletin and memo cards must size to their content, never to a forced row height. */
+html body.oa-list-page .bulletin-card,
+html body.oa-list-page .memo-card {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+}
+html body.oa-list-page .bulletin-card.oa-record-card .oa-record-preview {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+}
+html body.oa-list-page .bulletin-card.oa-record-card .bulletin-card-footer {
+    margin-top: 0 !important;
+}
+
+/* Use the full sidebar width for each navigation row. */
+body.workbench-shell .sidebar .nav-item {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-right: 20px !important;
+    min-height: 45px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Header actions are lightweight controls, not boxed toolbar tiles. */
+body.workbench-shell .header-back,
+body.workbench-shell .header-right .btn,
+body.workbench-shell .header-right .btn-ghost {
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--theme-sidebar-text) !important;
+}
+body.workbench-shell .header-back:hover,
+body.workbench-shell .header-right .btn:hover,
+body.workbench-shell .header-right .btn-ghost:hover,
+body.workbench-shell .header-back:focus-visible,
+body.workbench-shell .header-right .btn:focus-visible,
+body.workbench-shell .header-right .btn-ghost:focus-visible {
+    background: var(--theme-sidebar-hover) !important;
+    color: var(--primary) !important;
+}
+
+/* Card actions use quiet textless icon controls instead of boxed buttons. */
+.oa-icon-btn,
+.btn.oa-icon-btn,
+.btn.btn-danger.oa-icon-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: auto !important;
+    min-width: 30px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 4px 6px !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #60708a !important;
+}
+.oa-icon-btn:hover,
+.oa-icon-btn:focus-visible {
+    background: #eef4ff !important;
+    color: #1266f3 !important;
+}
+.btn.btn-danger.oa-icon-btn:hover,
+.btn.btn-danger.oa-icon-btn:focus-visible {
+    background: #fff1f2 !important;
+    color: #dc2626 !important;
+}
+
+/* Dense management cards: five columns on desktop; ten records form two rows. */
+html body.oa-list-page .bulletin-grid .bulletin-card,
+html body.oa-list-page .memo-grid .memo-card {
+    display: inline-block !important;
+    vertical-align: top !important;
+    width: calc(20% - 8px) !important;
+    margin: 0 8px 8px 0 !important;
+}
+@media (max-width: 780px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card {
+        display: block !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+    }
+}
+
+/* Final responsive column rules, placed after legacy compatibility overrides. */
+@media (min-width: 1500px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { display: inline-block !important; width: calc(20% - 8px) !important; }
+}
+@media (min-width: 1100px) and (max-width: 1499px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { display: inline-block !important; width: calc(25% - 8px) !important; }
+}
+@media (min-width: 760px) and (max-width: 1099px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { display: inline-block !important; width: calc(33.333333% - 8px) !important; }
+}
+@media (min-width: 521px) and (max-width: 759px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { display: inline-block !important; width: calc(50% - 8px) !important; }
+}
+@media (max-width: 520px) {
+    html body.oa-list-page .bulletin-grid .bulletin-card,
+    html body.oa-list-page .memo-grid .memo-card { display: block !important; width: 100% !important; margin-right: 0 !important; }
+}
+
+/* Icon containers stay transparent; color is carried by the icon itself. */
+.stat-icon,
+.stats-icon,
+.quick-action-icon,
+.activity-icon,
+.web-link-icon,
+.oa-list-title-icon,
+.oa-stat-card > span:first-child {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+.stat-icon.blue,
+.stat-icon.green,
+.stat-icon.orange,
+.stat-icon.red,
+.stat-icon.purple,
+.stat-icon.cyan,
+.stat-icon.teal,
+.oa-stat-card .stats-icon {
+    background: transparent !important;
+}
+
+/* All reusable icon glyphs render without a colored background plate. */
+.svg-icon,
+.category-tab-icon,
+.stat-mini-icon,
+.stat-icon,
+.stats-icon,
+.quick-action-icon,
+.activity-icon,
+.web-link-icon,
+.oa-list-title-icon {
+    background: transparent !important;
+}
+.category-tab-icon,
+.stat-mini-icon,
+.stat-icon,
+.stats-icon,
+.quick-action-icon,
+.activity-icon,
+.web-link-icon,
+.oa-list-title-icon {
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* List-page headers: title stays left and creation actions stay at the far right. */
+html body.oa-list-page .oa-list-head {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+}
+html body.oa-list-page .oa-list-head-main {
+    display: table-cell !important;
+    width: auto !important;
+    vertical-align: middle !important;
+}
+html body.oa-list-page .oa-list-actions {
+    display: table-cell !important;
+    width: 30% !important;
+    vertical-align: middle !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+}
+html body.oa-list-page,
+html body.oa-list-page .oa-list-shell,
+html body.oa-list-page .oa-list-head,
+html body.oa-list-page .oa-category-panel,
+html body.oa-list-page .oa-filter-panel,
+html body.oa-list-page .bulletin-grid,
+html body.oa-list-page .memo-grid {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+}
+html body.oa-list-page .memo-grid { font-size: 0 !important; }
+html body.oa-list-page .oa-list-actions .btn {
+    display: inline-block !important;
+    border-radius: 999px !important;
+    white-space: nowrap !important;
+}
+@media (max-width: 680px) {
+    html body.oa-list-page .oa-list-head,
+    html body.oa-list-page .oa-list-head-main,
+    html body.oa-list-page .oa-list-actions {
+        display: block !important;
+        width: 100% !important;
+    }
+    html body.oa-list-page .oa-list-actions {
+        margin-top: 6px !important;
+        text-align: right !important;
+    }
+}
+
+/* Workbench header: one calm, aligned command bar. */
+body.workbench-shell .header {
+    display: table !important;
+    width: 100% !important;
+    height: 64px !important;
+    min-height: 64px !important;
+    box-sizing: border-box;
+    padding: 0 16px 0 0 !important;
+    background: rgba(255, 255, 255, .98) !important;
+    border-bottom: 1px solid #dbe5f2 !important;
+    box-shadow: 0 3px 14px rgba(27, 61, 105, .08) !important;
+}
+body.workbench-shell .header .logo,
+body.workbench-shell .header-center,
+body.workbench-shell .header-right {
+    display: table-cell !important;
+    height: 64px !important;
+    box-sizing: border-box;
+    vertical-align: middle !important;
+}
+body.workbench-shell .header .logo {
+    width: var(--workbench-sidebar-width) !important;
+    min-width: var(--workbench-sidebar-width) !important;
+    margin: 0 !important;
+    padding: 0 10px 0 14px !important;
+    background: linear-gradient(135deg, #123d91, #1d5ed8) !important;
+    white-space: nowrap;
+}
+body.workbench-shell .header .logo-icon {
+    display: inline-flex !important;
+    vertical-align: middle;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 11px !important;
+    background: rgba(255,255,255,.16) !important;
+}
+body.workbench-shell .header .logo-title {
+    display: inline-block !important;
+    vertical-align: middle;
+    max-width: calc(100% - 84px) !important;
+    margin-left: 8px;
+    color: #fff !important;
+    font-size: 16px !important;
+    line-height: 36px !important;
+}
+body.workbench-shell .header .sidebar-toggle {
+    float: right;
+    margin-top: 17px;
+    color: rgba(255,255,255,.86) !important;
+}
+body.workbench-shell .header-center {
+    width: auto !important;
+    padding: 0 14px !important;
+    white-space: nowrap;
+}
+body.workbench-shell .header-back {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle;
+    min-width: 88px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    box-sizing: border-box;
+    padding: 0 16px !important;
+    border: 1px solid #cfe0f7 !important;
+    border-radius: 21px !important;
+    background: #eef5ff !important;
+    color: #1d5ed8 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 40px !important;
+}
+body.workbench-shell .header-back .svg-icon {
+    width: 17px !important;
+    height: 17px !important;
+    margin-right: 6px !important;
+}
+body.workbench-shell .header-center .breadcrumb {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    min-height: 0 !important;
+    margin: 0 0 0 10px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #263f61 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    line-height: 42px !important;
+}
+body.workbench-shell .header-right {
+    width: 1% !important;
+    padding-left: 12px;
+    text-align: right;
+    white-space: nowrap;
+}
+body.workbench-shell .header-right > *,
+body.workbench-shell .header-right .user-switch-form,
+body.workbench-shell .header-right .avatar,
+body.workbench-shell .header-right .user-info {
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+/* Inline scripts may sit beside the header controls; never render their source. */
+body.workbench-shell .header-right > script {
+    display: none !important;
+}
+body.workbench-shell .header-right .btn,
+body.workbench-shell .header-right .btn-ghost {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 13px !important;
+    border: 0 !important;
+    border-radius: 20px !important;
+    color: #314866 !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 40px !important;
+}
+body.workbench-shell .header-right .btn:hover,
+body.workbench-shell .header-right .btn-ghost:hover {
+    background: #eef5ff !important;
+    color: #1d5ed8 !important;
+}
+body.workbench-shell .user-switch-form {
+    margin: 0 6px !important;
+}
+body.workbench-shell .user-switcher-select {
+    width: 142px !important;
+    height: 40px !important;
+    min-width: 142px !important;
+    box-sizing: border-box;
+    padding: 0 12px !important;
+    border: 1px solid #d6e2f1 !important;
+    border-radius: 20px !important;
+    background: #f8fbff !important;
+    color: #314866 !important;
+    font-size: 13px !important;
+    line-height: 38px !important;
+}
+body.workbench-shell .header-right .avatar,
+body.workbench-shell .header-right .avatar img {
+    width: 38px !important;
+    height: 38px !important;
+}
+body.workbench-shell .header-right .avatar {
+    margin-left: 4px;
+    border: 2px solid #e3edfb;
+}
+body.workbench-shell .header-right .user-info {
+    margin: 0 0 0 8px !important;
+    color: #314866 !important;
+    font-size: 13px !important;
+    line-height: 40px !important;
+    white-space: nowrap;
+}
+body.workbench-shell .header-right .user-name,
+body.workbench-shell .header-right .user-role {
+    display: inline !important;
+    font-size: 13px !important;
+    color: #314866 !important;
+    line-height: 40px !important;
+}
+body.workbench-shell .header-right .user-role:before {
+    content: " · ";
+    color: #9aacc3;
+}
+body.workbench-shell .header-right > .btn:last-child {
+    margin-left: 4px !important;
+}
+
+/* Final override for icon plates used by iframe pages and themed list pages. */
+html body .category-tab-icon,
+html body .stats-icon,
+html body .stat-icon,
+html body .stat-mini-icon,
+html body .nav-item .nav-icon,
+html body .column-icon,
+html body .task-title-icon,
+html body .quick-action-icon,
+html body .activity-icon,
+html body .web-link-icon,
+html body .oa-list-title-icon {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+html body .category-tab-icon .svg-icon,
+html body .stats-icon .svg-icon,
+html body .stat-icon .svg-icon,
+html body .stat-mini-icon .svg-icon,
+html body .nav-item .nav-icon .svg-icon,
+html body .column-icon .svg-icon,
+html body .task-title-icon .svg-icon,
+html body .quick-action-icon .svg-icon,
+html body .activity-icon .svg-icon,
+html body .web-link-icon .svg-icon,
+html body .oa-list-title-icon .svg-icon {
+    background: transparent !important;
+}
+/* Theme selectors previously used higher-specificity !important backgrounds. */
+html[data-theme] body:not(.workbench-shell) .category-tab-icon,
+html[data-theme] body:not(.workbench-shell) .stats-icon,
+html[data-theme] body:not(.workbench-shell) .stat-icon,
+html[data-theme] body:not(.workbench-shell) .stat-mini-icon,
+html[data-theme] body:not(.workbench-shell) .nav-item .nav-icon,
+html[data-theme] body:not(.workbench-shell) .column-icon,
+html[data-theme] body:not(.workbench-shell) .task-title-icon,
+html[data-theme] body:not(.workbench-shell) .quick-action-icon,
+html[data-theme] body:not(.workbench-shell) .activity-icon,
+html[data-theme] body:not(.workbench-shell) .web-link-icon,
+html[data-theme] body:not(.workbench-shell) .oa-list-title-icon {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+html[data-theme] body:not(.workbench-shell) .category-tab-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .stats-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .stat-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .stat-mini-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .nav-item .nav-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .column-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .task-title-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .quick-action-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .activity-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .web-link-icon .svg-icon,
+html[data-theme] body:not(.workbench-shell) .oa-list-title-icon .svg-icon {
+    background: transparent !important;
+}
+@media (max-width: 1100px) {
+    body.workbench-shell .header-right .user-info { display: none !important; }
+    body.workbench-shell .header-right .user-switcher-select { width: 120px !important; min-width: 120px !important; }
+    body.workbench-shell .header-center { padding-left: 8px !important; }
+}
+@media (max-width: 760px) {
+    body.workbench-shell .header { padding-right: 6px !important; }
+    body.workbench-shell .header .logo { width: 72px !important; min-width: 72px !important; padding: 0 8px !important; }
+    body.workbench-shell .header .logo-title { display: none !important; }
+    body.workbench-shell .header-center { padding: 0 6px !important; }
+    body.workbench-shell .header-center .breadcrumb { font-size: 14px !important; margin-left: 5px !important; }
+    body.workbench-shell .header-back { min-width: 78px !important; padding: 0 12px !important; }
+    body.workbench-shell .header-right .btn { padding: 0 8px !important; }
+    body.workbench-shell .header-right .user-switch-form { display: none !important; }
+}
+
+/* The workbench header already provides page navigation. Keep the public
+   listing's own return link because it is used outside the workbench. */
+body:not(.workbench-shell):not(.public-list-page) .breadcrumb,
+body:not(.workbench-shell):not(.public-list-page) .oa-list-crumb,
+body:not(.workbench-shell):not(.public-list-page) .task-crumb {
+    display: none !important;
+}
+
+/* The compact header must follow the collapsed sidebar width as well. */
+body.workbench-shell.sidebar-collapsed .header .logo {
+    width: 72px !important;
+    min-width: 72px !important;
+    padding: 0 5px !important;
+}
+body.workbench-shell.sidebar-collapsed .header .logo-title {
+    display: none !important;
+}
+body.workbench-shell.sidebar-collapsed .header .logo-icon {
+    width: 32px !important;
+    height: 32px !important;
+}
+body.workbench-shell.sidebar-collapsed .header .sidebar-toggle {
+    width: 24px;
+    margin-top: 17px;
 }

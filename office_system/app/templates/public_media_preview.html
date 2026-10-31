@@ -16,7 +16,7 @@ body { margin:0; padding:20px; background:#edf3fb; }
 .media-stage audio { display:block; width:90%; max-width:760px; margin:70px auto; }
 .media-tip { color:#cbd5e1; margin-top:16px; font-size:13px; }
 @media(max-width:640px){ body{padding:10px}.media-title,.media-actions{display:block}.media-actions{text-align:left;margin-top:10px}.media-stage{padding:10px} }
-</style></head><body>
+</style>{% if public_ui_version == '2.0' %}<link rel="stylesheet" href="{{ url_for('static', filename='css/public-ui-v2.css') }}">{% endif %}</head><body class="public-media-page{% if public_ui_version == '2.0' %} public-ui-v2{% endif %}">
 <div class="media-shell"><div class="media-head"><div class="media-title">{{ icon('file') }} {{ file.original_name }}</div><div class="media-actions"><a class="btn btn-sm nav-text-link" href="{{ url_for('index_bp.index') }}">返回首页</a> <a class="btn btn-primary btn-sm" href="{{ url_for('index_bp.public_file_download', file_id=file.id) }}">下载</a></div></div>
 <div class="media-stage">
 {% if preview_type=='image' %}<img src="{{ url_for('index_bp.public_file_stream', file_id=file.id) }}" alt="{{ file.original_name }}">

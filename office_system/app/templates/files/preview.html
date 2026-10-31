@@ -90,7 +90,7 @@ body { background: #f1f5f9; padding: 24px; }
       </div>
     </div>
     <div class="preview-actions">
-      {% if session.get('role') in ('super_admin','dept_admin') %}
+      {% if false and session.get('role') in ('super_admin','dept_admin') %}
       {% if file.file_type in ('txt','csv','md','json','xml','yaml','yml','log') %}
       <a href="{{ url_for('docs.import_from_file', file_id=file.id) }}" class="btn btn-sm" style="border-color:#2563eb;color:#2563eb;">{{ icon('file') }} 导入到在线文档</a>
       {% endif %}
@@ -140,7 +140,7 @@ body { background: #f1f5f9; padding: 24px; }
       <div class="office-title">文件在线编辑</div>
       <div class="office-desc">选择以下方式在线编辑此文件</div>
       <div class="import-actions">
-        {% if session.get('role') in ('super_admin','dept_admin') %}
+        {% if false and session.get('role') in ('super_admin','dept_admin') %}
         <a href="{{ url_for('docs.import_from_file', file_id=file.id) }}" class="btn btn-primary office-download-btn">{{ icon('file') }} 导入到在线文档编辑</a>
         {% if file.file_type in ('xls','xlsx','csv') %}
         <a href="{{ url_for('sheets.import_from_file', file_id=file.id) }}" class="btn btn-success office-download-btn">{{ icon('memo') }} 导入到在线表格编辑</a>
@@ -156,7 +156,7 @@ body { background: #f1f5f9; padding: 24px; }
       <div class="office-title">无法预览此文件类型</div>
       <div class="office-desc">请下载后查看，或导入到在线文档/表格进行编辑</div>
       <div class="import-actions">
-        {% if session.get('role') in ('super_admin','dept_admin') %}
+        {% if false and session.get('role') in ('super_admin','dept_admin') %}
         <a href="{{ url_for('docs.import_from_file', file_id=file.id) }}" class="btn btn-primary">{{ icon('file') }} 导入到在线文档</a>
         <a href="{{ url_for('sheets.import_from_file', file_id=file.id) }}" class="btn btn-success">{{ icon('memo') }} 导入到在线表格</a>
         {% endif %}

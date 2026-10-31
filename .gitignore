@@ -15,3 +15,55 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local business data and deployment credentials
+/office_system/data/
+/office_system/app/static/uploads/
+/office_system/app/static/avatars/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+/office_system/nextcloud_config.bat
+.env
+.env.*
+!.env.example
+
+# Audio and video files (case-insensitive extensions)
+*.[mM][pP]3
+*.[mM][pP]4
+*.[mM]4[aAvV]
+*.[wW][aA][vV]
+*.[wW][mM][aAvV]
+*.[aA][vV][iI]
+*.[mM][oO][vV]
+*.[mM][kK][vV]
+*.[wW][eE][bB][mM]
+*.[fF][lL][vV]
+*.[fF][lL][aA][cC]
+*.[aA][aA][cC]
+*.[oO][gG][gG]
+*.[oO][pP][uU][sS]
+*.[mM][pP][gG]
+*.[mM][pP][eE][gG]
+
+# Runtime output and diagnostics
+*.log
+/office_system/logs/
+/office_system/diagnose_output/
+
+# Offline runtimes, dependency caches and temporary builds
+/.build-kylin-runtime/
+/office_system/python/
+/office_system/python-linux/
+/office_system/wheels/
+/office_system/tmp_wheels/
+/office_system/tmp_wheels2/
+/office_system/runtime_packages/
+/office_system/portable_dist/
+/office_system/runtime_install/*.exe
+/office_system/runtime_install/*.msu
+/office_system/tools/ffmpeg/*.exe
+/office_system/tools/ffmpeg/ffmpeg
+/office_system/微信图片_*.jpg
