@@ -57,6 +57,9 @@ def safe_file_path(file_record):
     from app.config import BASE_DIR
     root = os.path.realpath(BASE_DIR)
     relative = (file_record.file_path or '').replace('\\', '/')
+    if relative.startswith('/static/uploads/'):
+        root = os.path.realpath(os.path.join(BASE_DIR, 'app', 'static', 'uploads'))
+        relative = relative[len('/static/uploads/'):]
     if not relative or os.path.isabs(relative) or '..' in relative.split('/'):
         raise ValueError('Invalid file path')
     path = os.path.realpath(os.path.join(root, *relative.split('/')))
@@ -333,10 +336,14 @@ def upload():
         return redirect(request.referrer or url_for('files.list_files'))
 
     relations = parse_request_relations()
+    requested_column_id = request.form.get('column_id', 0, type=int)
+    selected_column = Column.query.filter_by(id=requested_column_id, is_active=1).first() if requested_column_id else None
     category_id = infer_category_from_relations(
         relations,
         request.form.get('category_id', 0, type=int)
     )
+    if selected_column:
+        category_id = selected_column.category_id
 
     # Determine file type category
     file_type = ext
@@ -348,6 +355,7 @@ def upload():
         file_size=file_size,
         file_type=file_type,
         category_id=category_id,
+        column_id=selected_column.id if selected_column else None,
         related_type='',
         related_id=0,
         uploaded_by=session['user_id']
@@ -356,6 +364,13 @@ def upload():
     db.session.flush()
     sync_file_relations(file_record, relations)
     db.session.commit()
+
+    try:
+        from app.file_search import index_file
+        index_file(file_record)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     add_log('upload_file', 'file', file_record.id,
             'Uploaded: ' + original_name)
@@ -460,45 +475,10 @@ def preview(file_id):
     if not os.path.exists(full_path):
         return jsonify({'success': False, 'message': '文件不存在'}), 404
 
-    ext = file_record.file_type.lower() if file_record.file_type else ''
-
-    # Images, audio and video share the preview page; bytes come from /stream.
-    if ext in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS:
-        preview_type = 'image' if ext in IMAGE_EXTENSIONS else ('audio' if ext in AUDIO_EXTENSIONS else 'video')
-        return render_template('files/preview.html', file=file_record,
-                               relation_labels=relation_labels_for([file_record]).get(file_record.id, []),
-                               content='', preview_type=preview_type)
-
-    # PDF
-    if ext == 'pdf':
-        return send_file(full_path, mimetype='application/pdf')
-
-    # Text files: read and return as plain text
-    if ext in ('txt', 'csv', 'log', 'md', 'json', 'xml', 'yaml', 'yml'):
-        try:
-            with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
-                content = f.read()
-            return render_template('files/preview.html',
-                                   file=file_record,
-                                   relation_labels=relation_labels_for([file_record]).get(file_record.id, []),
-                                   content=content,
-                                   preview_type='text')
-        except Exception as e:
-            return jsonify({'success': False, 'message': '无法读取文件: ' + str(e)}), 500
-
-    # Office documents: show info page
-    if ext in ('doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'):
-        return render_template('files/preview.html',
-                               file=file_record,
-                               relation_labels=relation_labels_for([file_record]).get(file_record.id, []),
-                               content='',
-                               preview_type='office')
-
-    return render_template('files/preview.html',
-                           file=file_record,
-                           relation_labels=relation_labels_for([file_record]).get(file_record.id, []),
-                           content='',
-                           preview_type='unknown')
+    from app.office_preview import render_preview
+    return render_preview(full_path, file_record.original_name,
+                          url_for('files.download', file_id=file_id),
+                          url_for('files.stream', file_id=file_id))
 
 
 @files_bp.route('/<int:file_id>/stream')
@@ -509,7 +489,7 @@ def stream(file_id):
     if not require_file_access(file_record):
         return jsonify({'success': False, 'message': '无权访问此文件'}), 403
     ext = (file_record.file_type or '').lower()
-    if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS:
+    if ext not in IMAGE_EXTENSIONS + AUDIO_EXTENSIONS + VIDEO_EXTENSIONS + ('pdf',):
         return jsonify({'success': False, 'message': '该文件类型不支持媒体预览'}), 415
     try:
         full_path = safe_file_path(file_record)
@@ -524,24 +504,6 @@ def stream(file_id):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['Content-Disposition'] = 'inline'
     return response
-
-
-@files_bp.route('/<int:file_id>/save-text', methods=['POST'])
-@login_required
-def save_text(file_id):
-    """Save edited text content back to file (AJAX)."""
-    file_record = File.query.get_or_404(file_id)
-    from app.config import Config, BASE_DIR
-    full_path = os.path.join(BASE_DIR, file_record.file_path.replace('/', os.sep))
-    if not os.path.exists(full_path):
-        return jsonify({'success': False, 'message': '文件不存在'}), 404
-    content = request.form.get('content', '')
-    try:
-        with open(full_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        return jsonify({'success': True, 'message': '保存成功'})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 @files_bp.route('/<int:file_id>/delete', methods=['POST'])

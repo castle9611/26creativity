@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI 设置</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+html body.ui-settings-page { margin:0 !important; padding:20px !important; background:#F5F7FA !important; color:#24344c; }
+.ui-shell { max-width:1000px; margin:0 auto; }
+.ui-breadcrumb { margin-bottom:18px; color:#758399; font-size:13px; }
+.ui-breadcrumb a { color:#4c668a; text-decoration:none; }
+.ui-shell h1 { margin:0 0 6px; font-size:24px; }
+.ui-subtitle { margin:0 0 20px; color:#64748b; }
+.ui-card { margin-bottom:18px; padding:22px; background:#fff; border:1px solid #E5EAF0; border-radius:9px; box-shadow:0 2px 10px rgba(20,50,90,.08); }
+.ui-card h2 { margin:0 0 18px; padding-left:12px; border-left:4px solid #246fe5; font-size:17px; }
+.ui-field { display:inline-block; width:calc(50% - 12px); margin:0 20px 18px 0; vertical-align:top; box-sizing:border-box; }
+.ui-field:nth-child(2n) { margin-right:0; }
+.ui-field.wide { display:block; width:100%; }
+.ui-field label { display:block; margin-bottom:7px; font-weight:600; }
+.ui-field input, .ui-field select { width:100%; max-width:420px; box-sizing:border-box; }
+.ui-help { margin-top:5px; color:#7b8798; font-size:12px; }
+.ui-actions { text-align:right; }
+.ui-alert { margin:0 0 16px; padding:11px 14px; border-radius:7px; background:#eaf4ff; color:#245282; }
+@media (max-width:650px) { .ui-field { display:block; width:100%; margin-right:0; } }
+</style>
+</head>
+<body class="ui-settings-page">
+<main class="ui-shell">
+  <div class="ui-breadcrumb"><a href="{{ url_for('index_bp.workbench') }}">首页</a> › 管理设置 › UI 设置</div>
+  <h1>UI 设置</h1>
+  <p class="ui-subtitle">调整公开首页的布局、尺寸与配色；保存后刷新首页即可查看效果。</p>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}<div class="ui-alert">{{ message }}</div>{% endfor %}
+  {% endwith %}
+  <form method="post" enctype="multipart/form-data">
+    <section class="ui-card">
+      <h2>界面版本</h2>
+      <div class="ui-field wide"><label for="uiVersion">公开页面 UI 版本</label>
+        <select id="uiVersion" name="config_public_ui_version" class="form-select">
+          <option value="2.0" {% if configs.public_ui_version == '2.0' %}selected{% endif %}>UI 2.0（推荐，更紧凑清晰）</option>
+          <option value="1.0" {% if configs.public_ui_version == '1.0' %}selected{% endif %}>UI 1.0（保留当前版本）</option>
+        </select>
+        <div class="ui-help">控制公开首页、列表、搜索、详情与媒体预览页面。切换到 1.0 可完整恢复原界面，内容和功能不会改变。</div>
+      </div>
+    </section>
+    <section class="ui-card">
+      <h2>视频与首页字号</h2>
+      <div class="ui-field wide"><label>页面内视频自动播放</label><select name="config_public_video_autoplay" class="form-select"><option value="0" {% if configs.public_video_autoplay != '1' %}selected{% endif %}>关闭（默认，手动播放）</option><option value="1" {% if configs.public_video_autoplay == '1' %}selected{% endif %}>开启</option></select><div class="ui-help">开启后仍受浏览器自动播放策略限制。字号范围为12至32像素。</div></div>
+      <div class="ui-field"><label>分类标签字号（所有分类及“全部”）</label><input class="form-input" type="number" min="12" max="32" required name="config_public_font_tab" value="{{ configs.public_font_tab }}"></div>
+      <div class="ui-field"><label>内容字号（所有分类及“全部”）</label><input class="form-input" type="number" min="12" max="32" required name="config_public_font_content" value="{{ configs.public_font_content }}"></div>
+      <div class="ui-help">同一位置统一调整，无需逐个分类设置。自动播放开启时视频静音开始，可使用播放器开启声音。</div>
+    </section>
+    <section class="ui-card">
+      <h2>布局与列表</h2>
+      <div class="ui-field wide"><label for="homeLayout">首页内容布局</label>
+        <select id="homeLayout" name="config_public_home_layout" class="form-select">
+          <option value="classic" {% if configs.public_home_layout == 'classic' %}selected{% endif %}>原四区块模式</option>
+          <option value="columns" {% if configs.public_home_layout == 'columns' %}selected{% endif %}>按栏目分区</option>
+          <option value="content_tabs" {% if configs.public_home_layout == 'content_tabs' %}selected{% endif %}>四区块分类标签模式（2×2）</option>
+        </select>
+      </div>
+      <div class="ui-field"><label for="rowHeight">区块条目行高</label><input id="rowHeight" class="form-input" type="number" name="config_public_item_row_height" min="40" max="80" value="{{ configs.public_item_row_height }}" required><div class="ui-help">40–80 像素，默认 50</div></div>
+      <div class="ui-field"><label for="cardGap">四区块间距</label><input id="cardGap" class="form-input" type="number" name="config_public_card_gap" min="8" max="32" value="{{ configs.public_card_gap }}" required><div class="ui-help">适用于分类标签模式；8–32 像素，默认 18</div></div>
+      <div class="ui-field"><label for="pageGutter">页面左右留白</label><input id="pageGutter" class="form-input" type="number" name="config_public_page_gutter" min="12" max="48" value="{{ configs.public_page_gutter }}" required><div class="ui-help">12–48 像素，默认 20</div></div>
+      <div class="ui-field"><label for="cardPadding">卡片内边距</label><input id="cardPadding" class="form-input" type="number" name="config_public_card_padding" min="16" max="32" value="{{ configs.public_card_padding }}" required><div class="ui-help">16–32 像素，默认 20</div></div>
+    </section>
+    <section class="ui-card">
+      <h2>首页图片展播</h2>
+      <div class="ui-field"><label for="slideshowShow">是否显示</label><select id="slideshowShow" name="config_public_slideshow_show" class="form-select"><option value="0" {% if configs.public_slideshow_show != '1' %}selected{% endif %}>隐藏</option><option value="1" {% if configs.public_slideshow_show == '1' %}selected{% endif %}>显示</option></select></div>
+      <div class="ui-field"><label for="slideshowPosition">显示位置</label><select id="slideshowPosition" name="config_public_slideshow_position" class="form-select"><option value="middle" {% if configs.public_slideshow_position == 'middle' %}selected{% endif %}>四栏目中间（两行之间）</option><option value="bottom" {% if configs.public_slideshow_position != 'middle' %}selected{% endif %}>四栏目下方</option></select></div>
+      <div class="ui-field wide"><label for="slideshowTransparency">图片底色透明度（%）</label><input id="slideshowTransparency" type="number" class="form-input" name="config_public_slideshow_background_transparency" min="0" max="100" value="{{ configs.public_slideshow_background_transparency }}" required><div class="ui-help">100 为完全透明（默认），0 为不透明白色；仅调整图片框底色，不改变图片本身的清晰度。</div></div>
+      <div class="ui-field wide"><a class="btn btn-primary" href="{{ url_for('admin.slideshow') }}">管理展播图片（{{ slideshow_images|length }} 张）</a><div class="ui-help">在独立管理页上传、预览、拖动排序和批量移除图片，无需重复保存 UI 设置。</div></div>
+    </section>
+    <section class="ui-card">
+      <h2>顶部与搜索</h2>
+      <div class="ui-field wide"><label for="quickLinkDisplay">快捷链接显示方式</label><select id="quickLinkDisplay" class="form-select" name="config_public_quick_link_display"><option value="hover" {% if configs.public_quick_link_display == 'hover' %}selected{% endif %}>悬停显示（默认）</option><option value="always" {% if configs.public_quick_link_display == 'always' %}selected{% endif %}>始终显示</option></select><div class="ui-help">悬停模式下，鼠标移入快捷链接栏时展开，也可点击展开。</div></div>
+      <div class="ui-field wide"><label for="showOverview">首页概览区域</label><select id="showOverview" class="form-select" name="config_public_show_overview"><option value="1" {% if configs.public_show_overview != '0' %}selected{% endif %}>显示（默认）</option><option value="0" {% if configs.public_show_overview == '0' %}selected{% endif %}>隐藏</option></select><div class="ui-help">控制快捷链接下方的公共信息（当前类别／栏目）和任务提醒、通知公告、备忘数量整个区域。</div></div>
+      <div class="ui-field wide"><label for="colorScheme">首页配色方案</label><select id="colorScheme" class="form-select" name="config_public_color_scheme"><option value="light" {% if configs.public_color_scheme == 'light' %}selected{% endif %}>清爽浅色（当前方案）</option><option value="navy_portal" {% if configs.public_color_scheme == 'navy_portal' %}selected{% endif %}>深蓝门户（参考示例图片）</option></select><div class="ui-help">切换顶部、导航与快捷链接的整套配色；下方尺寸设置保持不变。</div></div>
+      <div class="ui-field wide"><label for="quickLinkIcons">快捷链接图标</label><select id="quickLinkIcons" class="form-select" name="config_public_quick_link_icons"><option value="0" {% if configs.public_quick_link_icons != '1' %}selected{% endif %}>不显示（默认）</option><option value="1" {% if configs.public_quick_link_icons == '1' %}selected{% endif %}>显示</option></select><div class="ui-help">控制首页快捷链接栏中名称前的小图标，不影响链接功能。</div></div>
+      <div class="ui-field"><label for="brandHeight">品牌栏高度</label><input id="brandHeight" class="form-input" type="number" name="config_public_brand_height" min="72" max="100" value="{{ configs.public_brand_height }}" required><div class="ui-help">72–100 像素，默认 78</div></div>
+      <div class="ui-field"><label for="navHeight">一级导航高度</label><input id="navHeight" class="form-input" type="number" name="config_public_nav_height" min="48" max="72" value="{{ configs.public_nav_height }}" required><div class="ui-help">48–72 像素，默认 54</div></div>
+      <div class="ui-field"><label for="searchWidth">搜索框宽度</label><input id="searchWidth" class="form-input" type="number" name="config_public_search_width" min="360" max="560" value="{{ configs.public_search_width }}" required><div class="ui-help">360–560 像素，默认 460</div></div>
+      <div class="ui-field"><label for="brandColor">品牌栏配色</label><select id="brandColor" class="form-select" name="config_public_brand_color"><option value="#071d50" {% if configs.public_brand_color == '#071d50' %}selected{% endif %}>经典深蓝</option><option value="#123b6f" {% if configs.public_brand_color == '#123b6f' %}selected{% endif %}>明亮蓝</option><option value="#18395b" {% if configs.public_brand_color == '#18395b' %}selected{% endif %}>灰蓝</option></select><div class="ui-help">用于清爽浅色方案；深蓝门户方案使用固定渐变。</div></div>
+    </section>
+    <section class="ui-card">
+      <h2>卡片与背景</h2>
+      <div class="ui-field"><label for="cardRadius">卡片圆角</label><input id="cardRadius" class="form-input" type="number" name="config_public_card_radius" min="4" max="20" value="{{ configs.public_card_radius }}" required><div class="ui-help">4–20 像素，默认 9</div></div>
+      <div class="ui-field"><label for="pageColor">页面背景</label><select id="pageColor" class="form-select" name="config_public_page_color"><option value="#F5F7FA" {% if configs.public_page_color == '#F5F7FA' %}selected{% endif %}>柔和浅灰</option><option value="#F1F5F9" {% if configs.public_page_color == '#F1F5F9' %}selected{% endif %}>冷调浅灰</option><option value="#FAFBFD" {% if configs.public_page_color == '#FAFBFD' %}selected{% endif %}>近白</option></select><div class="ui-help">用于清爽浅色方案；深蓝门户方案的整页背景固定为深蓝。</div></div>
+    </section>
+    <div class="ui-actions"><button class="btn btn-primary" type="submit">{{ icon('save') }} 保存 UI 设置</button></div>
+  </form>
+</main>
+</body>
+</html>

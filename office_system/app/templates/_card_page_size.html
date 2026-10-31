@@ -1,0 +1,16 @@
+<form method="get" class="page-size-control card-page-size-control">
+  {% for key, value in request.args.items() %}
+  {% if key not in ('page', 'per_page', 'rows', 'columns', 'partial') %}
+  <input type="hidden" name="{{ key }}" value="{{ value }}">
+  {% endif %}
+  {% endfor %}
+  {% if columns is defined %}<input type="hidden" name="columns" value="{{ columns }}">{% endif %}
+  <span>每页显示</span>
+  {% set current_rows = request.args.get('rows', 2)|int %}
+  <select name="rows" onchange="this.form.submit()" aria-label="每页显示行数">
+    {% for size in [2, 5, 10] %}
+    <option value="{{ size }}" {% if current_rows == size %}selected{% endif %}>{{ size }}</option>
+    {% endfor %}
+  </select>
+  <span>行</span>
+</form>

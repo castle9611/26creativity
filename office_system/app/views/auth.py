@@ -6,11 +6,57 @@ from flask import (Blueprint, render_template, request, redirect,
                    url_for, flash, session)
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
-from app.models import User
+from app.models import User, RegistrationRequest
 from app.decorators import login_required
 from app.utils import add_log, add_login_log
 
 auth_bp = Blueprint('auth', __name__)
+
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    """Accept a named account application without creating a usable user."""
+    import re
+    import secrets
+    from flask import abort
+    from sqlalchemy.exc import IntegrityError
+    if session.get('user_id'):
+        return redirect(url_for('index_bp.workbench'))
+    if 'registration_token' not in session:
+        session['registration_token'] = secrets.token_hex(24)
+    if request.method == 'POST':
+        if not secrets.compare_digest(request.form.get('registration_token', '').encode('utf-8'), session['registration_token'].encode('utf-8')):
+            abort(400)
+        username = request.form.get('username', '').strip()
+        real_name = request.form.get('real_name', '').strip()
+        department = request.form.get('department', '').strip()
+        password = request.form.get('password', '').strip()
+        confirm = request.form.get('confirm_password', '').strip()
+        note = request.form.get('application_note', '').strip()
+        if not re.fullmatch(r'[A-Za-z0-9_]{3,50}', username):
+            flash('\u7528\u6237\u540d\u9700\u4e3a3\u81f350\u4f4d\u5b57\u6bcd\u3001\u6570\u5b57\u6216\u4e0b\u5212\u7ebf', 'warning')
+        elif not real_name or len(real_name) > 50 or not department or len(department) > 100:
+            flash('\u8bf7\u586b\u5199\u771f\u5b9e\u59d3\u540d\uff0850\u5b57\u4ee5\u5185\uff09\u548c\u90e8\u95e8\uff08100\u5b57\u4ee5\u5185\uff09', 'warning')
+        elif not 6 <= len(password) <= 128 or password != confirm:
+            flash('\u5bc6\u7801\u9700\u4e3a6\u81f3128\u4f4d\uff0c\u4e24\u6b21\u8f93\u5165\u987b\u4e00\u81f4', 'warning')
+        elif len(note) > 500:
+            flash('\u7533\u8bf7\u8bf4\u660e\u4e0d\u80fd\u8d85\u8fc7500\u5b57', 'warning')
+        elif User.query.filter_by(username=username).first() or RegistrationRequest.query.filter_by(username=username).first():
+            flash('\u8be5\u7528\u6237\u540d\u5df2\u88ab\u4f7f\u7528\u6216\u5df2\u63d0\u4ea4\u7533\u8bf7\uff0c\u8bf7\u8054\u7cfb\u7ba1\u7406\u5458', 'warning')
+        else:
+            application = RegistrationRequest(username=username, real_name=real_name, department=department,
+                                              password_hash=generate_password_hash(password), application_note=note)
+            db.session.add(application)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                flash('\u8be5\u7528\u6237\u540d\u5df2\u63d0\u4ea4\u7533\u8bf7\uff0c\u8bf7\u52ff\u91cd\u590d\u63d0\u4ea4', 'warning')
+            else:
+                add_log('request_registration', 'registration_request', application.id, 'Registration requested: ' + username)
+                flash('\u6ce8\u518c\u7533\u8bf7\u5df2\u63d0\u4ea4\uff0c\u8bf7\u7b49\u5f85\u7ba1\u7406\u5458\u5ba1\u6838\u901a\u8fc7\u540e\u518d\u767b\u5f55', 'success')
+                return redirect(url_for('auth.login'))
+    return render_template('register.html', registration_token=session['registration_token'])
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -30,7 +76,16 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         if not user:
-            flash('用户名或密码错误', 'danger')
+            application = RegistrationRequest.query.filter_by(username=username).first()
+            if application and check_password_hash(application.password_hash, password):
+                if application.status == 'pending':
+                    flash('\u6ce8\u518c\u7533\u8bf7\u5f85\u5ba1\u6838\uff0c\u901a\u8fc7\u540e\u624d\u80fd\u767b\u5f55', 'warning')
+                elif application.status == 'rejected':
+                    flash('\u6ce8\u518c\u7533\u8bf7\u672a\u901a\u8fc7\uff1a' + (application.review_note or '\u8bf7\u8054\u7cfb\u7ba1\u7406\u5458'), 'warning')
+                else:
+                    flash('\u8d26\u53f7\u4e0d\u5b58\u5728\uff0c\u8bf7\u8054\u7cfb\u7ba1\u7406\u5458', 'warning')
+            else:
+                flash('用户名或密码错误', 'danger')
             return render_template('login.html')
 
         if not user.is_active:

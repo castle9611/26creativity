@@ -34,6 +34,23 @@ class User(db.Model):
         }
 
 
+class RegistrationRequest(db.Model):
+    """Account applications stay separate from usable accounts until approval."""
+    __tablename__ = 'registration_requests'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), nullable=False, unique=True)
+    real_name = db.Column(db.String(50), nullable=False)
+    department = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    application_note = db.Column(db.String(500), default='')
+    status = db.Column(db.String(20), nullable=False, default='pending', index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    reviewed_at = db.Column(db.DateTime)
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    review_note = db.Column(db.String(500), default='')
+    reviewer = db.relationship('User')
+
+
 class LoginLog(db.Model):
     """Login audit log."""
     __tablename__ = 'login_logs'
@@ -159,6 +176,27 @@ class Bulletin(db.Model):
         }
 
 
+class BulletinPoll(db.Model):
+    """Per-bulletin voting switch; existing bulletins default to disabled."""
+    __tablename__ = 'bulletin_polls'
+    bulletin_id = db.Column(db.Integer, db.ForeignKey('bulletins.id', ondelete='CASCADE'), primary_key=True)
+    enabled = db.Column(db.Boolean, nullable=False, default=False)
+    is_anonymous = db.Column(db.Boolean, nullable=False, default=True, server_default='1')
+    bulletin = db.relationship('Bulletin', backref=db.backref('poll', uselist=False, cascade='all, delete-orphan'))
+
+
+class BulletinVote(db.Model):
+    """One real-name vote per account and bulletin."""
+    __tablename__ = 'bulletin_votes'
+    bulletin_id = db.Column(db.Integer, db.ForeignKey('bulletins.id', ondelete='CASCADE'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    choice = db.Column(db.String(10), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.CheckConstraint("choice IN ('agree', 'disagree', 'abstain')", name='ck_bulletin_vote_choice'),)
+    bulletin = db.relationship('Bulletin', backref=db.backref('poll_votes', lazy='dynamic', cascade='all, delete-orphan'))
+    user = db.relationship('User')
+
+
 class BulletinAttachment(db.Model):
     """Bulletin attachment files."""
     __tablename__ = 'bulletin_attachments'
@@ -237,6 +275,7 @@ class Task(db.Model):
             'priority': self.priority,
             'department': self.department,
             'category_id': self.category_id,
+            'column_id': self.column_id,
             'assignee_id': self.assignee_id,
             'assignee_ids': self.assignee_ids,
             'creator_id': self.creator_id,
@@ -255,6 +294,9 @@ class TaskAssignee(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id', ondelete='CASCADE'), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    progress = db.Column(db.Integer, default=0)
+    is_completed = db.Column(db.Integer, default=0, index=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (db.UniqueConstraint('task_id', 'user_id', name='uq_task_assignee'),)
@@ -418,6 +460,8 @@ class Memo(db.Model):
             'nextcloud_url': self.nextcloud_url,
             'memo_type': self.memo_type,
             'group_id': self.group_id,
+            'category_id': self.category_id,
+            'column_id': self.column_id,
             'visible_roles': self.visible_roles,
             'is_archived': self.is_archived,
             'expires_at': self.expires_at.strftime('%Y-%m-%d %H:%M:%S') if self.expires_at else '',

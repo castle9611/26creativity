@@ -1,0 +1,8 @@
+#!/bin/sh
+# Source after BASE_DIR has been resolved by the calling script.
+unset PYTHONHOME PYTHONPATH PYTHONUSERBASE LD_PRELOAD
+PYTHONNOUSERSITE=1
+PIP_CONFIG_FILE=/dev/null
+LD_LIBRARY_PATH="$BASE_DIR/python-linux/lib"
+export PYTHONNOUSERSITE PIP_CONFIG_FILE LD_LIBRARY_PATH
+RUNTIME_PYTHON="$BASE_DIR/python-linux/bin/python3.8"

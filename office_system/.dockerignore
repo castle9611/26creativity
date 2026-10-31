@@ -1,0 +1,10 @@
+data/**
+app/static/uploads/**
+app/static/avatars/**
+logs/**
+python/
+**/__pycache__/
+*.pyc
+*.pyo
+*.log
+.git/

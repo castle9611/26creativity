@@ -1,0 +1,10 @@
+{% if action_messages %}
+<div id="oaActionFeedback" role="status" aria-live="polite" style="position:fixed;top:18px;left:50%;width:360px;max-width:90%;margin-left:-180px;z-index:10000;">
+{% for category, message in action_messages %}
+  <div style="padding:14px 18px;margin-bottom:8px;border:1px solid {{ '#a7f3d0' if category == 'success' else '#f5bf63' }};border-radius:6px;background:{{ '#ecfdf5' if category == 'success' else '#fff7e6' }};color:#24523c;box-shadow:0 3px 14px rgba(0,0,0,.15);word-wrap:break-word;">
+    <button type="button" aria-label="关闭提示" onclick="this.parentNode.parentNode.removeChild(this.parentNode);" style="float:right;border:0;background:transparent;cursor:pointer;margin-left:12px;">×</button>
+    {{ message }}
+  </div>
+{% endfor %}
+</div>
+{% endif %}

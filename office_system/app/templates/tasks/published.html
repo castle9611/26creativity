@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+{% from '_icon.html' import icon %}
+<head>
+<meta charset="utf-8"><title>我发布的任务</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20260910-cardfix3') }}">
+<style>
+body { background:var(--bg-page); }
+.average-cell { position:relative; min-width:180px; }
+.average-track { display:inline-block; width:120px; height:9px; margin-right:7px; overflow:hidden; border-radius:5px; background:#e2e8f0; vertical-align:middle; }
+.average-bar { display:block; height:100%; background:var(--primary); }
+.progress-popover { display:none; position:fixed; z-index:1000; left:0; top:0; width:420px; max-width:calc(100vw - 24px); max-height:260px; overflow-y:auto; box-sizing:border-box; padding:10px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg-card); box-shadow:0 8px 24px rgba(15,23,42,.18); }
+.progress-person { display:table; width:100%; padding:6px 0; border-bottom:1px solid var(--border); }
+.progress-person span,.progress-person b { display:table-cell; vertical-align:top; }
+.progress-person span { width:55%; padding-right:10px; white-space:normal; word-break:break-all; overflow-wrap:break-word; }
+.progress-person b { text-align:right; white-space:nowrap; }
+.oa-list-shell > .oa-pagination { min-height:48px; margin-top:8px; padding:6px 0; }
+@media (max-width:700px) { .progress-popover { width:calc(100vw - 24px); } }
+</style>
+</head>
+<body class="oa-list-page">
+<div class="oa-list-shell">
+  <div class="oa-list-head"><div class="oa-list-head-main"><div class="oa-list-title"><span class="oa-list-title-icon">{{ icon('task-flow') }}</span><div class="oa-list-title-text"><h2>我发布的任务</h2><p>查看每位执行者的完成情况和平均进度</p></div></div></div></div>
+  <div class="oa-data-panel published-task-panel">
+    <table class="oa-data-table">
+      <thead><tr><th>任务</th><th style="width:130px;">执行者</th><th style="width:220px;">平均进度</th><th style="width:110px;">状态</th><th style="width:190px;">操作</th></tr></thead>
+      <tbody>
+      {% for task in tasks %}
+        <tr>
+          <td><a href="{{ url_for('tasks.detail_task', task_id=task.id) }}">{{ task.title }}</a></td>
+          <td>{{ task.assignee_names or '未指定' }}</td>
+          {% set shown_progress = 100 if task.status == 'completed' else task.progress or 0 %}
+          <td><div class="average-cell" tabindex="0" aria-label="查看执行者进度"><span class="average-track"><i class="average-bar" style="width:{{ shown_progress }}%;"></i></span><b>{{ shown_progress }}%</b><div class="progress-popover"><strong>执行者进度</strong>{% for link in task.assignee_links.all() %}<div class="progress-person"><span>{{ link.user.real_name or link.user.username }}</span><b>{{ 100 if task.status == 'completed' else link.progress or 0 }}% · {{ '已完成' if task.status == 'completed' or link.is_completed else '进行中' }}</b></div>{% else %}<div class="empty">暂无执行者</div>{% endfor %}</div></div></td>
+          <td>{{ task.status|status_label }}</td>
+          <td><a class="btn btn-sm" href="{{ url_for('tasks.detail_task', task_id=task.id) }}">查看</a>{% if task.status in ('pending','processing','transferring') %}<form method="post" action="{{ url_for('tasks.update_status', task_id=task.id) }}" style="display:inline;" onsubmit="return confirm('确认完成此任务？');"><input type="hidden" name="action" value="complete"><button class="btn btn-sm btn-success" type="submit">完成</button></form>{% endif %}</td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="empty-row">暂无已发布任务</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pagination and pagination.pages > 1 %}<div class="oa-pagination">{% if pagination.has_prev %}<a class="btn" href="{{ url_for('tasks.published_tasks', page=pagination.prev_num) }}">上一页</a>{% endif %}<span class="record-count">第 {{ pagination.page }}/{{ pagination.pages }} 页，共 {{ pagination.total }} 条</span>{% if pagination.has_next %}<a class="btn" href="{{ url_for('tasks.published_tasks', page=pagination.next_num) }}">下一页</a>{% endif %}</div>{% endif %}
+</div>
+<script>
+(function() {
+  var cells = document.querySelectorAll('.average-cell');
+  var activePanel = null;
+  var hideTimer = null;
+  function hide() {
+    if (hideTimer) window.clearTimeout(hideTimer);
+    hideTimer = null;
+    if (activePanel) activePanel.style.display = 'none';
+    activePanel = null;
+  }
+  function scheduleHide() {
+    if (hideTimer) window.clearTimeout(hideTimer);
+    hideTimer = window.setTimeout(hide, 120);
+  }
+  function show(cell) {
+    if (hideTimer) window.clearTimeout(hideTimer);
+    if (activePanel) activePanel.style.display = 'none';
+    var panel = cell._progressPanel;
+    if (!panel) return;
+    if (panel.parentNode !== document.body) document.body.appendChild(panel);
+    panel.style.left = '-9999px';
+    panel.style.top = '0';
+    panel.style.display = 'block';
+    panel.style.maxHeight = Math.min(260, (window.innerHeight || document.documentElement.clientHeight) - 16) + 'px';
+    var rect = cell.getBoundingClientRect();
+    var viewWidth = window.innerWidth || document.documentElement.clientWidth;
+    var viewHeight = window.innerHeight || document.documentElement.clientHeight;
+    var panelWidth = panel.offsetWidth;
+    var panelHeight = panel.offsetHeight;
+    var left = Math.max(8, Math.min(rect.left, viewWidth - panelWidth - 8));
+    var below = rect.bottom + 6;
+    var above = rect.top - panelHeight - 6;
+    var top = below + panelHeight <= viewHeight - 8 ? below : above;
+    if (top < 8) top = Math.max(8, viewHeight - panelHeight - 8);
+    panel.style.left = left + 'px';
+    panel.style.top = top + 'px';
+    activePanel = panel;
+  }
+  for (var i = 0; i < cells.length; i++) {
+    (function(cell) {
+      var panel = cell.querySelector('.progress-popover');
+      cell._progressPanel = panel;
+      cell.addEventListener('mouseenter', function() { show(cell); }, false);
+      cell.addEventListener('mouseleave', scheduleHide, false);
+      cell.addEventListener('focus', function() { show(cell); }, false);
+      cell.addEventListener('blur', scheduleHide, false);
+      panel.addEventListener('mouseenter', function() {
+        if (hideTimer) window.clearTimeout(hideTimer);
+      }, false);
+      panel.addEventListener('mouseleave', scheduleHide, false);
+    })(cells[i]);
+  }
+  window.addEventListener('scroll', function(event) {
+    if (activePanel && (event.target === activePanel || activePanel.contains(event.target))) return;
+    hide();
+  }, true);
+  window.addEventListener('resize', hide, false);
+})();
+</script>
+</body></html>

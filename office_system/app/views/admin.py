@@ -11,7 +11,7 @@ from flask import (Blueprint, render_template, request, redirect,
 from werkzeug.security import generate_password_hash
 from app.extensions import db
 from app.models import (User, Tab, Column, BulletinCategory,
-                        OperationLog, SharedFolder, SystemConfig, QuickLink)
+                        OperationLog, SharedFolder, SystemConfig, QuickLink, RegistrationRequest)
 from app.decorators import login_required, require_super_admin, require_admin
 from app.utils import add_log, get_pagination
 
@@ -31,6 +31,63 @@ def _valid_link_url(link_url):
 
 
 # ==================== User Management ====================
+
+@admin_bp.route('/registrations')
+@login_required
+@require_super_admin
+def registrations():
+    """Review account applications using the existing user-management permission."""
+    import secrets
+    status = request.args.get('status', 'pending')
+    if status not in ('pending', 'approved', 'rejected'):
+        status = 'pending'
+    if 'registration_token' not in session:
+        session['registration_token'] = secrets.token_hex(24)
+    page, per_page = get_pagination()
+    applications = RegistrationRequest.query.filter_by(status=status).order_by(
+        RegistrationRequest.created_at.desc(), RegistrationRequest.id.desc()).paginate(
+            page=page, per_page=per_page, error_out=False)
+    return render_template('admin/registrations.html', applications=applications, status=status,
+                           registration_token=session['registration_token'])
+
+
+@admin_bp.route('/registrations/<int:application_id>/review', methods=['POST'])
+@login_required
+@require_super_admin
+def review_registration(application_id):
+    """Atomically approve an application and create an ordinary account, or reject it."""
+    import secrets
+    from flask import abort
+    from sqlalchemy.exc import IntegrityError
+    if not secrets.compare_digest(request.form.get('registration_token', '').encode('utf-8'), (session.get('registration_token', '') or 'missing').encode('utf-8')):
+        abort(400)
+    application = RegistrationRequest.query.get_or_404(application_id)
+    action = request.form.get('action', '')
+    note = request.form.get('review_note', '').strip()
+    if action not in ('approve', 'reject') or len(note) > 500 or (action == 'reject' and not note):
+        flash('\u8bf7\u9009\u62e9\u6709\u6548\u64cd\u4f5c\uff0c\u9a73\u56de\u65f6\u9700\u586b\u5199\u539f\u56e0\uff08500\u5b57\u4ee5\u5185\uff09', 'warning')
+        return _redirect(url_for('admin.registrations'))
+    changed = RegistrationRequest.query.filter_by(id=application_id, status='pending').update({
+        'status': 'approved' if action == 'approve' else 'rejected', 'reviewed_at': datetime.utcnow(),
+        'reviewed_by': session['user_id'], 'review_note': note}, synchronize_session=False)
+    if not changed:
+        db.session.rollback()
+        flash('\u8be5\u7533\u8bf7\u5df2\u5ba1\u6838\uff0c\u8bf7\u52ff\u91cd\u590d\u64cd\u4f5c', 'warning')
+        return _redirect(url_for('admin.registrations'))
+    if action == 'approve':
+        db.session.add(User(username=application.username, real_name=application.real_name,
+                            department=application.department, password_hash=application.password_hash,
+                            role='user', is_active=1))
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash('\u8be5\u7528\u6237\u540d\u5df2\u5b58\u5728\uff0c\u672a\u901a\u8fc7\u7533\u8bf7\uff0c\u8bf7\u6838\u5bf9\u540e\u5904\u7406', 'warning')
+        return _redirect(url_for('admin.registrations'))
+    add_log('approve_registration' if action == 'approve' else 'reject_registration',
+            'registration_request', application_id, 'Registration reviewed: ' + application.username)
+    flash('\u5df2\u901a\u8fc7\u6ce8\u518c\u7533\u8bf7\uff0c\u7533\u8bf7\u4eba\u73b0\u53ef\u767b\u5f55' if action == 'approve' else '\u5df2\u9a73\u56de\u6ce8\u518c\u7533\u8bf7', 'success')
+    return _redirect(url_for('admin.registrations'))
 
 @admin_bp.route('/users')
 @login_required
@@ -72,6 +129,47 @@ def users():
                            super_admin_count=super_admin_count,
                            dept_admin_count=dept_admin_count,
                            normal_user_count=normal_user_count)
+
+
+@admin_bp.route('/users/export')
+@login_required
+@require_super_admin
+def users_export():
+    """Export filtered user information as an Excel-compatible UTF-8 CSV."""
+    import csv
+    import io
+    from flask import make_response
+
+    search = request.args.get('search', '').strip()
+    role_filter = request.args.get('role', '').strip()
+    query = User.query
+    if search:
+        query = query.filter(db.or_(
+            User.username.like('%' + search + '%'),
+            User.real_name.like('%' + search + '%'),
+            User.department.like('%' + search + '%')
+        ))
+    if role_filter:
+        query = query.filter(User.role == role_filter)
+
+    role_labels = {'super_admin': '超级管理员', 'dept_admin': '部门管理员', 'user': '普通用户'}
+    output = io.StringIO()
+    writer = csv.writer(output, lineterminator='\r\n')
+    writer.writerow(['用户ID', '用户名', '姓名', '角色', '部门', '状态', '创建时间', '更新时间'])
+    rows = query.order_by(User.role.asc(), User.created_at.desc()).all()
+    for user in rows:
+        writer.writerow([
+            user.id, user.username, user.real_name or '', role_labels.get(user.role, user.role),
+            user.department or '', '启用' if user.is_active else '禁用',
+            user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else '',
+            user.updated_at.strftime('%Y-%m-%d %H:%M:%S') if user.updated_at else '',
+        ])
+    add_log('export_users', 'user', 0, 'Exported {} users'.format(len(rows)))
+    response = make_response('\ufeff' + output.getvalue())
+    response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    response.headers['Content-Disposition'] = 'attachment; filename=users_{}.csv'.format(
+        datetime.now().strftime('%Y%m%d_%H%M%S'))
+    return response
 
 
 @admin_bp.route('/users/add', methods=['POST'])
@@ -685,12 +783,210 @@ def batch_delete_logs():
 
 # ==================== System Config ====================
 
+UI_DEFAULTS = {
+    'public_ui_version': '2.0',
+    'public_color_scheme': 'navy_portal',
+    'public_quick_link_icons': '0',
+    'public_quick_link_display': 'hover',
+    'public_show_overview': '1',
+    'public_slideshow_show': '0',
+    'public_slideshow_position': 'bottom',
+    'public_slideshow_background_transparency': '100',
+    'public_slideshow_images': '[]',
+    'public_video_autoplay': '0',
+    'public_home_layout': 'classic',
+    'public_item_row_height': '50',
+    'public_brand_height': '78',
+    'public_nav_height': '54',
+    'public_search_width': '460',
+    'public_page_gutter': '20',
+    'public_card_gap': '18',
+    'public_card_radius': '9',
+    'public_card_padding': '20',
+    'public_brand_color': '#071d50',
+    'public_page_color': '#F5F7FA'
+}
+UI_RANGES = {
+    'public_slideshow_background_transparency': (0, 100),
+    'public_item_row_height': (40, 80),
+    'public_brand_height': (72, 100),
+    'public_nav_height': (48, 72),
+    'public_search_width': (360, 560),
+    'public_page_gutter': (12, 48),
+    'public_card_gap': (8, 32),
+    'public_card_radius': (4, 20),
+    'public_card_padding': (16, 32)
+}
+UI_COLORS = {
+    'public_brand_color': ('#071d50', '#123b6f', '#18395b'),
+    'public_page_color': ('#F5F7FA', '#F1F5F9', '#FAFBFD')
+}
+
+
+@admin_bp.route('/ui-settings', methods=['GET', 'POST'])
+@login_required
+@require_super_admin
+def ui_settings():
+    """Manage public homepage appearance without changing system settings."""
+    font_defaults = {'public_font_tab': '16', 'public_font_content': '17'}
+    if request.method == 'POST':
+        values = {}
+        ui_version = request.form.get('config_public_ui_version', UI_DEFAULTS['public_ui_version']).strip()
+        if ui_version not in ('1.0', '2.0'):
+            flash('请选择有效的 UI 版本', 'warning')
+            return redirect(url_for('admin.ui_settings'))
+        values['public_ui_version'] = ui_version
+        for key, default in font_defaults.items():
+            value = request.form.get('config_' + key, default)
+            if not value.isdigit() or not 12 <= int(value) <= 32:
+                flash('\u5b57\u53f7\u5e94\u4e3a12\u81f332\u50cf\u7d20', 'warning')
+                return redirect(url_for('admin.ui_settings'))
+            values[key] = value
+        scheme = request.form.get('config_public_color_scheme', '').strip()
+        if scheme not in ('light', 'navy_portal'):
+            flash('请选择有效的首页配色方案', 'warning')
+            return redirect(url_for('admin.ui_settings'))
+        values['public_color_scheme'] = scheme
+        quick_link_icons = request.form.get('config_public_quick_link_icons', '').strip()
+        if quick_link_icons not in ('0', '1'):
+            flash('请选择是否显示快捷链接图标', 'warning')
+            return redirect(url_for('admin.ui_settings'))
+        values['public_quick_link_icons'] = quick_link_icons
+        for key, choices in (
+                ('public_quick_link_display', ('hover', 'always')),
+                ('public_slideshow_show', ('0', '1')),
+                ('public_slideshow_position', ('middle', 'bottom')),
+                ('public_video_autoplay', ('0', '1')),
+                ('public_show_overview', ('0', '1'))):
+            value = request.form.get('config_' + key, UI_DEFAULTS[key]).strip()
+            if value not in choices:
+                flash('请选择有效的首页区域显示设置', 'warning')
+                return redirect(url_for('admin.ui_settings'))
+            values[key] = value
+        layout = request.form.get('config_public_home_layout', '').strip()
+        if layout not in ('classic', 'columns', 'content_tabs'):
+            flash('请选择有效的首页内容布局', 'warning')
+            return redirect(url_for('admin.ui_settings'))
+        values['public_home_layout'] = layout
+        for key, limits in UI_RANGES.items():
+            value = request.form.get('config_' + key, UI_DEFAULTS[key]).strip()
+            if not value.isdigit() or not limits[0] <= int(value) <= limits[1]:
+                flash('UI 参数超出允许范围', 'warning')
+                return redirect(url_for('admin.ui_settings'))
+            values[key] = value
+        for key, choices in UI_COLORS.items():
+            value = request.form.get('config_' + key, '').strip()
+            if value not in choices:
+                flash('请选择有效的配色方案', 'warning')
+                return redirect(url_for('admin.ui_settings'))
+            values[key] = value
+        from app.slideshow import load_slides, store_images
+        images_row = SystemConfig.query.filter_by(config_key='public_slideshow_images').first()
+        slides = load_slides(images_row.config_value if images_row else '[]')
+        removed = request.form.getlist('remove_slide')
+        slides = [item for item in slides if item['path'] not in removed]
+        uploads = [upload for upload in request.files.getlist('slideshow_images') if upload.filename]
+        try:
+            new_slides = store_images(uploads)
+        except ValueError as exc:
+            flash('图片“{}”无法识别，请使用 JPG、PNG、GIF、BMP 或 WebP 图片'.format(str(exc)), 'warning')
+            return redirect(url_for('admin.ui_settings'))
+        slides.extend(new_slides)
+        values['public_slideshow_images'] = json.dumps(slides, ensure_ascii=False)
+        for key, value in values.items():
+            cfg = SystemConfig.query.filter_by(config_key=key).first()
+            if cfg:
+                cfg.config_value = value
+            else:
+                db.session.add(SystemConfig(config_key=key, config_value=value))
+        db.session.commit()
+        add_log('update_config', 'system_config', 0, 'UI settings updated')
+        flash('UI 设置已保存', 'success')
+        return redirect(url_for('admin.ui_settings'))
+    configs = dict(UI_DEFAULTS)
+    configs.update(font_defaults)
+    configs.update({item.config_key: item.config_value for item in
+                    SystemConfig.query.filter(SystemConfig.config_key.in_(configs)).all()})
+    from app.slideshow import load_slides
+    return render_template('admin/ui_settings.html', configs=configs,
+                           slideshow_images=load_slides(configs['public_slideshow_images']))
+
+@admin_bp.route('/slideshow', methods=['GET', 'POST'])
+@login_required
+@require_super_admin
+def slideshow():
+    """Manage image uploads and paginated ordering independently of UI settings."""
+    import hashlib
+    from app.slideshow import load_slides, store_images
+    row = SystemConfig.query.filter_by(config_key='public_slideshow_images').first()
+    stored = row.config_value if row else '[]'
+    images = load_slides(stored)
+    revision = hashlib.sha256(stored.encode('utf-8')).hexdigest()
+    page = max(1, request.values.get('page', 1, type=int))
+    per_page = 12
+    page = min(page, max(1, (len(images) + per_page - 1) // per_page))
+    offset = (page - 1) * per_page
+    if request.method == 'POST':
+        action = request.form.get('action', '')
+        if action != 'upload' and request.form.get('revision') != revision:
+            flash('图片列表已发生变化，请刷新后重新操作', 'warning')
+            return redirect(url_for('admin.slideshow', page=page))
+        if action == 'upload':
+            errors = []
+            try:
+                additions = store_images(request.files.getlist('slideshow_images'), errors=errors)
+            except OSError:
+                from flask import current_app
+                current_app.logger.exception('Slideshow image storage failed')
+                flash('图片保存失败，请检查上传目录是否可写及磁盘剩余空间', 'warning')
+                return redirect(url_for('admin.slideshow', page=page))
+            if errors:
+                flash('已添加 {} 张图片；{} 张无法识别：{}。支持 JPG、PNG、GIF、BMP、WebP。'.format(
+                    len(additions), len(errors), '、'.join(errors[:3])), 'warning')
+            if not additions:
+                if not errors:
+                    flash('请先选择需要添加的图片', 'warning')
+                return redirect(url_for('admin.slideshow', page=page))
+            images.extend(additions)
+            page = max(1, (len(images) + per_page - 1) // per_page)
+        elif action == 'remove':
+            removed = set(request.form.getlist('selected'))
+            if not removed:
+                flash('请先勾选需要移除的图片', 'warning')
+                return redirect(url_for('admin.slideshow', page=page))
+            images = [image for image in images if image['path'] not in removed]
+        elif action == 'reorder':
+            try:
+                order = json.loads(request.form.get('order', '[]'))
+            except ValueError:
+                order = []
+            current = images[offset:offset + per_page]
+            by_path = {image['path']: image for image in current}
+            if not isinstance(order, list) or not all(isinstance(path, str) for path in order) or len(order) != len(current) or set(order) != set(by_path):
+                flash('排序信息无效，请刷新后重试', 'warning')
+                return redirect(url_for('admin.slideshow', page=page))
+            images[offset:offset + per_page] = [by_path[path] for path in order]
+        else:
+            return jsonify({'success': False, 'message': '操作无效'}), 400
+        if row is None:
+            row = SystemConfig(config_key='public_slideshow_images')
+            db.session.add(row)
+        row.config_value = json.dumps(images, ensure_ascii=False)
+        db.session.commit()
+        add_log('update_slideshow', 'system_config', row.id, 'Slideshow images: ' + action)
+        return redirect(url_for('admin.slideshow', page=page))
+    return render_template('admin/slideshow.html', images=images[offset:offset + per_page],
+                           total=len(images), page=page, pages=max(1, (len(images) + per_page - 1) // per_page),
+                           offset=offset, revision=revision)
+
+
 @admin_bp.route('/config', methods=['GET', 'POST'])
 @login_required
 @require_super_admin
 def config():
     """System configuration page."""
     if request.method == 'POST':
+        load_groups = request.form.get('load_groups') == '1'
         share_groups = request.form.getlist('config_nextcloud_share_groups')
         file_share_groups = request.form.getlist('config_nextcloud_file_share_groups')
         nextcloud_url = request.form.get('config_nextcloud_url', '').strip().rstrip('/')
@@ -700,6 +996,8 @@ def config():
         for key, value in request.form.items():
             if key.startswith('config_'):
                 cfg_key = key[7:]
+                if cfg_key in UI_DEFAULTS:
+                    continue
                 if cfg_key in ('nextcloud_share_groups', 'nextcloud_file_share_groups'):
                     continue
                 if cfg_key == 'nextcloud_app_password' and not value.strip():
@@ -732,6 +1030,10 @@ def config():
 
         db.session.commit()
         add_log('update_config', 'system_config', 0, 'System config updated')
+        if load_groups:
+            # The group picker must use the credentials currently visible in
+            # the form, including a newly entered application password.
+            return redirect(url_for('admin.config', load_groups=1))
         flash('系统配置已保存', 'success')
         return redirect(url_for('admin.config'))
 
@@ -747,8 +1049,11 @@ def config():
             config_dict.get('nextcloud_file_share_groups', '[]'))
     except (TypeError, ValueError):
         selected_file_share_groups = []
-    from app.nextcloud import list_share_groups
-    nextcloud_groups, nextcloud_groups_error = list_share_groups()
+    nextcloud_groups = []
+    nextcloud_groups_error = ''
+    if request.args.get('load_groups') == '1':
+        from app.nextcloud import list_share_groups
+        nextcloud_groups, nextcloud_groups_error = list_share_groups()
     nextcloud_groups = sorted(set(
         nextcloud_groups + selected_share_groups + selected_file_share_groups))
 

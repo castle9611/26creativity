@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 {% from '_icon.html' import icon %}
 <head>
@@ -74,7 +74,7 @@ body { background: #f1f5f9; }
 <div class="breadcrumb">
   <a href="{{ url_for('index_bp.workbench') }}">首页</a>
   <span class="breadcrumb-sep">›</span>
-  <a href="{{ url_for('bulletin.index') }}">{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</a>
+  <a href="{{ url_for('bulletin.index') }}">{% if session.get('role') in ('super_admin','dept_admin') %}信息发布{% else %}信息公示{% endif %}</a>
   <span class="breadcrumb-sep">›</span>
   <span>详情</span>
 </div>
@@ -116,7 +116,7 @@ body { background: #f1f5f9; }
   <div style="line-height:1.9;font-size:15px;color:#334155;">{{ bulletin.content|safe }}</div>
 </div>
 
-{% if related_docs or related_sheets %}
+{% if false and (related_docs or related_sheets) %}
 <div class="card" style="margin-top:24px;">
   <div class="card-header"><div class="card-title">{{ icon('file') }} 关联在线文档/表格</div></div>
   <div class="card-body" style="padding:16px;">
@@ -143,7 +143,7 @@ body { background: #f1f5f9; }
 
 {% if bulletin.nextcloud_url %}
 <div class="card" style="margin-top:20px;">
-  <div class="card-header"><div class="card-title">{{ icon('folder') }} 云盘 公示资料</div></div>
+  <div class="card-header"><div class="card-title">{{ icon('folder') }}云盘公示资料</div></div>
   <div class="card-body" style="padding:14px 16px;display:table;width:100%;box-sizing:border-box;">
     <div style="display:table-cell;vertical-align:middle;color:#334155;word-break:break-all;">{{ bulletin.nextcloud_url }}</div>
     <div style="display:table-cell;width:150px;vertical-align:middle;text-align:right;"><a href="{{ bulletin.nextcloud_url }}" target="_blank" rel="noopener" class="btn btn-primary">打开资料 ↗</a></div>
@@ -160,10 +160,11 @@ body { background: #f1f5f9; }
   </div>
   <div class="card-body" style="padding:16px;">
     {% for f in attachment_list %}
-    <a href="{{ f.file_path }}" class="btn" style="margin:4px;" target="_blank">
+    <a href="{{ url_for('index_bp.attachment_view', kind='bulletin', item_id=bulletin.id, position=loop.index0, action='download') }}" class="btn" style="margin:4px;" target="_blank">
       {{ icon('attach') }} {{ f.original_name }}
       <span style="color:#94a3b8;margin-left:4px;">({{ (f.file_size/1024)|round|int }}KB)</span>
-    </a>
+    · 下载</a>
+    <a class="btn" href="{{ url_for('index_bp.attachment_view', kind='bulletin', item_id=bulletin.id, position=loop.index0, action='preview') }}" target="_blank" rel="noopener">在线查看</a>
     {% endfor %}
     {% include '_cloud_attachments.html' %}
   </div>
@@ -206,32 +207,7 @@ body { background: #f1f5f9; }
 </div>
 {% endif %}
 
-<div class="card" style="margin-top:24px;">
-  <div class="card-header">
-    <div class="card-title">评论交流</div>
-  </div>
-  <div class="card-body" style="padding:16px;">
-    {% if comments %}
-    {% for c in comments %}
-    <div class="comment-item">
-      <div class="comment-avatar">{% if c.creator and c.creator.avatar %}<img src="{{ c.creator.avatar }}">{% else %}{{ (c.creator.real_name or c.creator.username or "?")[-1] if c.creator else "?" }}{% endif %}</div>
-      <div class="comment-content">
-        <div class="comment-meta"><span class="name">{{ c.creator.real_name if c.creator else '用户' }} · {{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '' }}</div>
-        <div class="comment-body">{{ c.content }}</div>
-      </div>
-    </div>
-    {% endfor %}
-    {% else %}
-    <div style="color:#94a3b8;font-size:13px;margin-bottom:12px;">暂无评论，可以补充说明或反馈。</div>
-    {% endif %}
-    <form method="post" action="{{ url_for('bulletin.add_comment', bulletin_id=bulletin.id) }}" style="margin-top:14px;">
-      <textarea name="content" class="form-textarea" rows="3" required placeholder="写下评论..." style="width:100%;"></textarea>
-      <div style="margin-top:10px;text-align:right;">
-        <button type="submit" class="btn btn-primary">发表评论</button>
-      </div>
-    </form>
-  </div>
-</div>
+{% set poll_bulletin = bulletin %}{% include '_bulletin_poll.html' %}
 
 <!-- Actions -->
 <div class="detail-actions" style="background:#f8fafc;border-radius:12px;">

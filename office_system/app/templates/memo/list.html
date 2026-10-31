@@ -5,7 +5,7 @@
 <meta charset="utf-8"><title>工作备忘</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20260820-auto-filter') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20260910-cardfix3') }}">
 <style>
 body { background: #f1f5f9; }
 .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: #64748b; margin-bottom: 16px; }
@@ -262,8 +262,21 @@ body.oa-list-page .memo-card-header,
 body.oa-list-page .memo-card-preview,
 body.oa-list-page .memo-card-footer { padding: 10px 12px; }
 body.oa-list-page .memo-card-preview { min-height: 42px; max-height: 58px; }
-@media (max-width: 1280px) { body.oa-list-page .memo-card { width: 50% !important; } }
-@media (max-width: 768px) { body.oa-list-page .memo-card { float: none !important; width: 100% !important; } }
+body.oa-list-page .memo-card { min-height: 112px; }
+body.oa-list-page .memo-card-header,
+body.oa-list-page .memo-card-preview,
+body.oa-list-page .memo-card-footer { padding: 7px 10px; }
+body.oa-list-page .memo-card-title { font-size: 14px; }
+body.oa-list-page .memo-card-preview { min-height: 34px; max-height: 48px; }
+body.oa-list-page .memo-grid { align-items: start; }
+body.oa-list-page #memo-list-container .memo-card { min-height: 0 !important; height: auto !important; max-height: none !important; }
+/* The page-size selector counts visual rows, so the card columns must match
+   the bulletin page at every responsive breakpoint. */
+body.oa-list-page .memo-card { width: calc(20% - 8px) !important; margin: 0 8px 8px 0 !important; }
+@media (min-width: 1100px) and (max-width: 1499px) { body.oa-list-page .memo-card { width: calc(25% - 8px) !important; } }
+@media (min-width: 760px) and (max-width: 1099px) { body.oa-list-page .memo-card { width: calc(33.333333% - 8px) !important; } }
+@media (min-width: 521px) and (max-width: 759px) { body.oa-list-page .memo-card { width: calc(50% - 8px) !important; } }
+@media (max-width: 520px) { body.oa-list-page .memo-card { float: none !important; width: 100% !important; margin-right: 0 !important; } }
 </style>
 </head>
 <body class="oa-list-page">
@@ -301,9 +314,9 @@ body.oa-list-page .memo-card-preview { min-height: 42px; max-height: 58px; }
   <div class="oa-filter-row">
     <!-- Type Toggle Buttons -->
     <div class="type-toggle">
-      <a href="{{ url_for('memo.list_memos', type='private', keyword=keyword) }}" class="btn {% if memo_type=='private' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('lock') }} 个人备忘</a>
-      <a href="{{ url_for('memo.list_memos', type='public', keyword=keyword) }}" class="btn {% if memo_type=='public' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('globe') }} 公共备忘</a>
-      <a href="{{ url_for('memo.list_memos', type='past', keyword=keyword) }}" class="btn {% if memo_type=='past' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('archive') }} 过往备忘</a>
+      <a href="{{ url_for('memo.list_memos', type='private', keyword=keyword, rows=rows, columns=columns) }}" class="btn {% if memo_type=='private' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('lock') }} 个人备忘</a>
+      <a href="{{ url_for('memo.list_memos', type='public', keyword=keyword, rows=rows, columns=columns) }}" class="btn {% if memo_type=='public' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('globe') }} 公共备忘</a>
+      <a href="{{ url_for('memo.list_memos', type='past', keyword=keyword, rows=rows, columns=columns) }}" class="btn {% if memo_type=='past' %}btn-primary{% endif %}" onclick="return filterMemos(this)">{{ icon('archive') }} 过往备忘</a>
     </div>
     <!-- Search -->
     <form method="get" class="oa-filter-row">
@@ -341,6 +354,39 @@ body.oa-list-page .memo-card-preview { min-height: 42px; max-height: 58px; }
   {% include 'memo/_list_content.html' %}
 </div>
 </div>
+
+<script>
+/* Keep the selected page size equal to the actual responsive card rows. */
+(function () {
+    function cardColumns() {
+        var width = window.innerWidth || document.documentElement.clientWidth || 1024;
+        if (width >= 1500) return 5;
+        if (width >= 1100) return 4;
+        if (width >= 760) return 3;
+        if (width >= 521) return 2;
+        return 1;
+    }
+
+    function syncCardColumns() {
+        var expected = String(cardColumns());
+        var match = window.location.search.match(/[?&]columns=(\d+)/);
+        var current = match ? match[1] : '';
+        if (current === expected) return;
+        var search = window.location.search;
+        if (match) search = search.replace(/([?&])columns=\d+/, '$1columns=' + expected);
+        else search += (search ? '&' : '?') + 'columns=' + expected;
+        search = search.replace(/([?&])page=\d+/, '$1page=1');
+        window.location.replace(window.location.pathname + search + window.location.hash);
+    }
+
+    syncCardColumns();
+    var resizeTimer = null;
+    window.onresize = function () {
+        if (resizeTimer) window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(syncCardColumns, 180);
+    };
+}());
+</script>
 
 <!-- Memo Detail Modal -->
 <div id="memoModal" class="memo-modal">

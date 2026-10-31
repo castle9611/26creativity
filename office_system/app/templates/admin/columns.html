@@ -43,6 +43,22 @@ body { background: #f1f5f9; }
   color: white; text-decoration: none; border-radius: 6px; cursor: pointer;
 }
 .batch-bar .b-btn.danger { background: #dc2626; border-color: #dc2626; }
+.column-list-card { border-radius:8px; overflow:hidden; box-shadow:0 4px 14px rgba(15,23,42,.05); }
+.column-list-card .table { width:100%; table-layout:fixed; }
+.column-list-card .table th { height:44px; padding:0 12px !important; background:var(--primary-bg); vertical-align:middle; }
+.column-list-card .table tbody tr { height:52px; }
+.column-list-card .table td { height:52px; max-height:52px; padding:4px 12px !important; border-bottom:1px solid var(--border); vertical-align:middle; }
+.column-list-card .table tbody tr:hover { background:var(--primary-bg); }
+.column-list-card .table th:nth-child(3) { width:220px; }
+.column-list-card .table td:nth-child(3) { font-weight:700 !important; }
+.column-list-card .table td:nth-child(4) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.column-list-card .table td:nth-child(5),
+.column-list-card .table td:nth-child(6) { text-align:center; white-space:nowrap; }
+.column-list-card .table td:last-child { white-space:nowrap; }
+.column-list-card .table td:last-child .column-actions { display:inline-flex !important; align-items:center; gap:6px; white-space:nowrap; }
+.column-list-card .table td:last-child .column-actions form { display:inline-block !important; margin:0; padding:0; }
+.column-list-card .table td:last-child .btn { display:inline-flex !important; align-items:center; justify-content:center; width:34px; height:32px; margin:0; padding:5px !important; }
+.column-list-card .badge { display:inline-block; min-width:42px; padding:4px 7px; border-radius:4px; white-space:nowrap; }
 </style>
 </head>
 <body style="padding:24px;background:#f1f5f9;">
@@ -94,7 +110,7 @@ body { background: #f1f5f9; }
   </div>
 </div>
 
-<div class="card">
+<div class="card column-list-card">
   {% if columns %}
   <table class="table">
     <thead>
@@ -117,12 +133,12 @@ body { background: #f1f5f9; }
         <td style="color:#64748b;font-size:12px;">{{ c.description or '-' }}</td>
         <td>{{ c.sort_order }}</td>
         <td>{% if c.is_active %}<span class="badge badge-success">启用</span>{% else %}<span class="badge badge-gray">禁用</span>{% endif %}</td>
-        <td>
+        <td><div class="column-actions">
           <button class="btn btn-sm" onclick="openEditModal({{ c.id }}, '{{ c.name|e }}', '{{ c.description|e }}', {{ c.sort_order }}, {{ c.is_active }}, '{{ c.visible_roles|e }}')">{{ icon('edit') }}</button>
           <form method="post" action="/admin/columns/{{ c.id }}/delete" style="display:inline;" onsubmit="return confirm('确认删除？');">
             <button type="submit" class="btn btn-sm btn-danger">{{ icon('trash') }}</button>
           </form>
-        </td>
+        </div></td>
       </tr>
       {% endfor %}
     </tbody>

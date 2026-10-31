@@ -102,7 +102,7 @@ body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","M
 
   // Manual save
   window.saveSheet = function(cb) {
-    if (saving) { if (cb) cb(); return; }
+    if (saving) { if (cb) cb(false); return; }
     var d = xs.getData();
     saving = true;
     saveStatus.textContent = '⏳ 保存中...';
@@ -113,7 +113,10 @@ body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","M
     xhr2.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr2.onload = function() {
       saving = false;
-      if (xhr2.status === 200) {
+      var result = {};
+      try { result = JSON.parse(xhr2.responseText); } catch (ignore) {}
+      var saved = xhr2.status === 200 && result.success === true;
+      if (saved) {
         dirty = false;
         saveStatus.textContent = '✓ 已保存';
         saveStatus.style.color = '#059669';
@@ -122,9 +125,9 @@ body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","M
         saveStatus.textContent = '✗ 保存失败';
         saveStatus.style.color = '#dc2626';
       }
-      if (cb) cb();
+      if (cb) cb(saved);
     };
-    xhr2.onerror = function() { saving = false; saveStatus.textContent = '✗ 网络错误'; saveStatus.style.color = '#dc2626'; if (cb) cb(); };
+    xhr2.onerror = function() { saving = false; saveStatus.textContent = '✗ 网络错误'; saveStatus.style.color = '#dc2626'; if (cb) cb(false); };
     xhr2.send(JSON.stringify(d));
   };
 
@@ -137,13 +140,16 @@ body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","M
   window.publishSheet = function() {
     if (!confirm('确认发布此表格？发布后所有人(按权限设置)可查看。')) return;
     // First auto-save current data
-    window.saveSheet(function() {
+    window.saveSheet(function(saved) {
+      if (!saved) { alert('表格尚未保存成功，请稍后重试发布。'); return; }
       var xhr = new XMLHttpRequest();
       xhr.open('POST', '{{ url_for("sheets.publish_sheet", sheet_id=sheet.id) }}', true);
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
       xhr.onload = function() {
-        if (xhr.status === 200) {
+        var result = {};
+        try { result = JSON.parse(xhr.responseText); } catch (ignore) {}
+        if (xhr.status === 200 && result.success === true) {
           alert('已发布！');
           saveStatus.textContent = '✓ 已发布';
           saveStatus.style.color = '#059669';

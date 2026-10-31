@@ -33,6 +33,52 @@ html body.file-list-page .oa-data-table td:nth-child(7) { white-space: normal !i
 .relation-badges .badge { max-width: 100%; white-space: normal !important; word-break: break-word; }
 .file-actions { white-space: nowrap; }
 .file-actions .btn { min-width: 28px; padding-left: 5px; padding-right: 5px; }
+/* Compact horizontal filter and upload toolbars. */
+html body.file-list-page .oa-filter-panel .oa-filter-row {
+    display: block !important;
+    white-space: nowrap;
+    overflow-x: auto;
+    padding: 0 !important;
+}
+html body.file-list-page .oa-filter-panel .form-select,
+html body.file-list-page .oa-filter-panel .form-input,
+html body.file-list-page .oa-filter-panel .btn {
+    display: inline-block !important;
+    width: auto !important;
+    min-width: 0 !important;
+    vertical-align: middle;
+    margin: 0 8px 0 0 !important;
+}
+html body.file-list-page .oa-filter-panel .form-select { width: 190px !important; }
+html body.file-list-page .oa-filter-panel .form-input { width: 220px !important; }
+html body.file-list-page .card-body > form {
+    display: block !important;
+    white-space: nowrap;
+    overflow-x: auto;
+    padding: 0 !important;
+}
+html body.file-list-page .card-body > form > input[type="file"] {
+    display: inline-block !important;
+    width: 36% !important;
+    min-width: 240px !important;
+    box-sizing: border-box;
+    vertical-align: middle;
+    margin: 0 8px 0 0 !important;
+}
+html body.file-list-page .card-body > form > select,
+html body.file-list-page .card-body > form > .relation-picker,
+html body.file-list-page .card-body > form > .btn {
+    display: inline-block !important;
+    width: auto !important;
+    min-width: 150px;
+    vertical-align: middle;
+    margin: 0 8px 0 0 !important;
+}
+html body.file-list-page .card-body > form > .relation-picker { min-width: 170px; }
+html body.file-list-page .card-body > form > .btn { min-width: 78px; }
+@media (max-width: 760px) {
+    html body.file-list-page .card-body > form > input[type="file"] { width: 300px !important; }
+}
 </style>
 </head>
 <body class="oa-list-page file-list-page">
@@ -182,8 +228,8 @@ html body.file-list-page .oa-data-table td:nth-child(7) { white-space: normal !i
         <td>
           <div class="file-actions">
             <a href="{{ url_for('files.edit_file', file_id=f.id) }}" class="btn btn-sm" title="编辑文件信息">{{ icon('edit') }}</a>
-            <a href="{{ url_for('files.download', file_id=f.id) }}" class="btn btn-sm btn-success" title="下载">⬇</a>
-            <a href="{{ url_for('files.preview', file_id=f.id) }}" class="btn btn-sm" title="预览">{{ icon('search') }}</a>
+            <a href="{{ url_for('files.download', file_id=f.id) }}" class="btn btn-sm btn-success" title="下载">⬇ 下载</a>
+            <a href="{{ url_for('files.preview', file_id=f.id) }}" class="btn btn-sm" title="在线查看">{{ icon('search') }} 在线查看</a>
             <form method="post" action="{{ url_for('files.delete_file', file_id=f.id) }}" style="display:inline;" onsubmit="return confirm('确认删除该文件？');">
               <button type="submit" class="btn btn-sm btn-danger" title="删除">{{ icon('trash') }}</button>
             </form>

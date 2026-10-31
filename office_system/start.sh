@@ -8,17 +8,15 @@ if [ "$(uname -s)" != "Linux" ] || ! uname -m | grep -Eq '^(aarch64|arm64)$'; th
     exit 1
 fi
 
-PYTHON_EXE="$BASE_DIR/python/bin/python3"
-if [ ! -x "$PYTHON_EXE" ]; then
-    PYTHON_EXE=$(command -v python3 || true)
-fi
-if [ -z "$PYTHON_EXE" ]; then
-    echo "[ERROR] Python 3 was not found. See KYLIN_ARM64_DEPLOY.md."
-    exit 1
+. "$BASE_DIR/runtime_env.sh"
+if [ ! -x "$RUNTIME_PYTHON" ] || [ ! -f "$BASE_DIR/python-linux/.oa-dependencies-ready" ]; then
+    echo "[INFO] First start: preparing bundled Python and dependencies offline."
+    sh "$BASE_DIR/install_dependencies.sh"
 fi
 
 mkdir -p "$BASE_DIR/data/uploads" "$BASE_DIR/logs"
-"$PYTHON_EXE" "$BASE_DIR/health_check.py"
+"$RUNTIME_PYTHON" -I "$BASE_DIR/check_portable.py"
+"$RUNTIME_PYTHON" -I "$BASE_DIR/health_check.py"
 if [ -f "$BASE_DIR/logs/server.pid" ]; then
     OLD_PID=$(cat "$BASE_DIR/logs/server.pid")
     if kill -0 "$OLD_PID" 2>/dev/null; then
@@ -26,7 +24,7 @@ if [ -f "$BASE_DIR/logs/server.pid" ]; then
         exit 0
     fi
 fi
-nohup "$PYTHON_EXE" "$BASE_DIR/run.py" >>"$BASE_DIR/logs/server.log" 2>>"$BASE_DIR/logs/server-error.log" &
+nohup "$RUNTIME_PYTHON" -I "$BASE_DIR/run.py" >>"$BASE_DIR/logs/server.log" 2>>"$BASE_DIR/logs/server-error.log" &
 echo $! > "$BASE_DIR/logs/server.pid"
 echo "[OK] OA system started, PID $!."
 echo "[INFO] Open http://127.0.0.1:5000"

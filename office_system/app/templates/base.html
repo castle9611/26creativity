@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 {% from '_icon.html' import icon %}
 <html lang="zh-CN">
 <head>
@@ -7,8 +7,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20260820-auto-sidebar') }}">
-<script src="{{ url_for('static', filename='js/theme.js', v='20260820-global-theme') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='20261006-sidebar-collapse') }}">
 <script>
 /* Stop an accidentally nested shell before the browser paints it. */
 if (window.top !== window.self) {
@@ -23,7 +22,7 @@ if (window.top !== window.self) {
 <!-- Header -->
 <div class="header">
   <div class="logo">
-    <span class="logo-icon logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon.png') }}" alt=""></span>
+    <span class="logo-icon logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon-transparent.png') }}" alt=""></span>
     <span class="logo-title" id="workbenchLogoTitle">{{ app_name }}</span>
     <button type="button" class="sidebar-toggle" id="sidebarToggle" title="折叠导航" aria-label="折叠导航">&#9776;</button>
   </div>
@@ -39,11 +38,6 @@ if (window.top !== window.self) {
     <a href="{{ url_for('index_bp.index') }}" target="_top" class="btn btn-ghost btn-sm" title="返回首页">{{ icon('public-home') }} 返回首页</a>
     <a href="{{ url_for('index_bp.help_page') }}" target="mainFrame" class="btn btn-ghost btn-sm">帮助</a>
     <a href="{{ url_for('auth.profile') }}" target="mainFrame" class="btn btn-ghost btn-sm">设置</a>
-    <select id="themeSelect" class="theme-select" title="切换色彩皮肤" aria-label="切换色彩皮肤">
-      <option value="blue">蓝灰</option>
-      <option value="forest">松林</option>
-      <option value="sepia">暖砂</option>
-    </select>
     {% if session.get('role')=='super_admin' %}
     <form id="userSwitchForm" class="user-switch-form" method="post" action="{{ url_for('auth.switch_user') }}">
       <input type="hidden" name="user_id" id="userSwitchId">
@@ -85,7 +79,7 @@ if (window.top !== window.self) {
     });
     </script>
     {% endif %}
-    <div class="avatar"{% if session.get('avatar') %} style="background:transparent;padding:0;"{% endif %}>{% if session.get('avatar') %}<img src="{{ session['avatar'] }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">{% else %}{{ (session.get('real_name','') or session.get('username',''))[-1] if (session.get('real_name','') or session.get('username','')) else 'U' }}{% endif %}</div>
+    <div class="avatar"{% if session.get('avatar') %} style="background:transparent;padding:0;"{% endif %}>{% if session.get('avatar') %}<img src="{{ session['avatar'] }}" alt="{{ session.get('real_name','') or session.get('username','') }}的头像" width="36" height="36" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">{% else %}{{ (session.get('real_name','') or session.get('username',''))[-1] if (session.get('real_name','') or session.get('username','')) else 'U' }}{% endif %}</div>
     <div class="user-info">
       <div class="user-name">{{ session.get('real_name','') or session.get('username','') }}</div>
       <div class="user-role">{% if session.get('role')=='super_admin' %}超级管理员{% elif session.get('role')=='dept_admin' %}监区管理员{% else %}干警{% endif %}</div>
@@ -115,9 +109,13 @@ if (window.top !== window.self) {
       <span class="nav-icon">{{ icon('task') }}</span>
       <span>任务管理</span>
     </a>
-    <a href="{{ url_for('bulletin.index') }}" class="nav-item" data-url="{{ url_for('bulletin.index') }}" data-title="公示管理" data-id="bulletin">
+    <a href="{{ url_for('tasks.published_tasks') }}" class="nav-item" data-url="{{ url_for('tasks.published_tasks') }}" data-title="我发布的任务" data-id="published-tasks">
+      <span class="nav-icon">{{ icon('task-flow') }}</span>
+      <span>我发布的任务</span>
+    </a>
+    <a href="{{ url_for('bulletin.index') }}" class="nav-item" data-url="{{ url_for('bulletin.index') }}" data-title="信息发布" data-id="bulletin">
       <span class="nav-icon">{{ icon('bulletin') }}</span>
-      <span>{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</span>
+      <span>{% if session.get('role') in ('super_admin','dept_admin') %}信息发布{% else %}信息公示{% endif %}</span>
     </a>
 
     <a href="{{ url_for('memo.list_memos') }}" class="nav-item" data-url="{{ url_for('memo.list_memos') }}" data-title="工作备忘" data-id="memos">
@@ -136,10 +134,6 @@ if (window.top !== window.self) {
       <span class="nav-icon">{{ icon('file') }}</span>
       <span>云文档中心</span>
     </a>
-    <a href="{{ url_for('stats.story') }}" class="nav-item" data-url="{{ url_for('stats.story') }}" data-title="数据故事" data-id="data_story">
-      <span class="nav-icon">{{ icon('chart') }}</span>
-      <span>数据故事</span>
-    </a>
   </div>
 
   {% if session.get('role') in ('super_admin','dept_admin') %}
@@ -149,6 +143,9 @@ if (window.top !== window.self) {
     <a href="{{ url_for('admin.users') }}" class="nav-item" data-url="{{ url_for('admin.users') }}" data-title="用户管理" data-id="admin_users">
       <span class="nav-icon">{{ icon('users') }}</span>
       <span>用户管理</span>
+    </a>
+    <a href="{{ url_for('admin.registrations') }}" class="nav-item" data-url="{{ url_for('admin.registrations') }}" data-title="注册审核" data-id="admin_registrations">
+      <span class="nav-icon">{{ icon('user-add') }}</span><span>注册审核{% if registration_pending_count %}（{{ registration_pending_count }}）{% endif %}</span>
     </a>
     {% endif %}
     <a href="{{ url_for('settings.task_categories') }}" class="nav-item" data-url="{{ url_for('settings.task_categories') }}" data-title="分类设置" data-id="category_settings">
@@ -163,6 +160,14 @@ if (window.top !== window.self) {
     <a href="{{ url_for('admin.logs') }}" class="nav-item" data-url="{{ url_for('admin.logs') }}" data-title="操作日志" data-id="admin_logs">
       <span class="nav-icon">{{ icon('audit-log') }}</span>
       <span>操作日志</span>
+    </a>
+    <a href="{{ url_for('admin.ui_settings') }}" class="nav-item" data-url="{{ url_for('admin.ui_settings') }}" data-title="UI 设置" data-id="ui_settings">
+      <span class="nav-icon">{{ icon('settings') }}</span>
+      <span>UI 设置</span>
+    </a>
+    <a href="{{ url_for('admin.slideshow') }}" class="nav-item" data-url="{{ url_for('admin.slideshow') }}" data-title="展播图片" data-id="slideshow">
+      <span class="nav-icon">{{ icon('file') }}</span>
+      <span>展播图片</span>
     </a>
     <a href="{{ url_for('admin.config') }}" class="nav-item" data-url="{{ url_for('admin.config') }}" data-title="系统设置" data-id="system_config">
       <span class="nav-icon">{{ icon('settings') }}</span>
@@ -191,7 +196,6 @@ if (window.top !== window.self) {
     var sidebarToggle = document.getElementById('sidebarToggle');
     var currentPageTitle = document.getElementById('currentPageTitle');
     var headerBack = document.getElementById('headerBack');
-    var themeSelect = document.getElementById('themeSelect');
     var workbenchLogoTitle = document.getElementById('workbenchLogoTitle');
 
     function updateWorkbenchWidth() {
@@ -231,14 +235,6 @@ if (window.top !== window.self) {
                 break;
             }
         }
-    }
-
-    function applyFrameTheme(theme) {
-        try {
-            var frameDocument = mainFrame.contentWindow.document;
-            frameDocument.documentElement.setAttribute('data-theme', theme);
-            if (frameDocument.body) frameDocument.body.setAttribute('data-theme', theme);
-        } catch (e) {}
     }
 
     function syncNavigation() {
@@ -296,15 +292,6 @@ if (window.top !== window.self) {
     }
     mainFrame.addEventListener('load', function() {
         syncNavigation();
-        applyFrameTheme(window.OATheme ? window.OATheme.current() : themeSelect.value);
-    });
-    if (window.OATheme) themeSelect.value = window.OATheme.current();
-    themeSelect.addEventListener('change', function() {
-        var selectedTheme = window.OATheme ? window.OATheme.apply(this.value) : this.value;
-        applyFrameTheme(selectedTheme);
-        try {
-            mainFrame.contentWindow.postMessage({ type: 'oa-theme-change', theme: selectedTheme }, '*');
-        } catch (e) {}
     });
     headerBack.addEventListener('click', function() {
         try {

@@ -1,0 +1,103 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>展播图片管理</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body { margin:0; padding:24px; background:#f5f7fa; color:#24344c; }
+.image-manager { max-width:1180px; margin:auto; }
+.manager-head { margin-bottom:18px; overflow:hidden; }
+.manager-head h1 { margin:10px 0; font-size:24px; }
+.manager-help { color:#64748b; line-height:1.8; }
+.manager-box { padding:18px; margin-bottom:18px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; }
+.manager-toolbar { margin:0 0 16px; overflow:hidden; }
+.manager-toolbar .btn { margin:4px 6px; }
+.manager-grid { padding:0; margin:0 -7px; list-style:none; font-size:0; }
+.manage-image { display:inline-block; width:calc(25% - 14px); margin:0 7px 16px; padding:10px; box-sizing:border-box; vertical-align:top; border:1px solid #dbe3ef; border-radius:7px; background:#fff; font-size:13px; cursor:move; }
+.manage-image.dragging { opacity:.45; border-color:#246fe5; }
+.manage-preview { display:block; height:130px; margin:8px 0; background:#f1f5f9; background-position:center; background-repeat:no-repeat; background-size:contain; }
+.manage-name { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:10px; }
+.manage-actions { text-align:center; }
+.manage-actions button, .manage-actions a { margin:0 3px; }
+.manager-pages { padding-top:12px; text-align:center; }
+.manager-pages .btn { margin:0 10px; }
+.manager-message { padding:10px; margin-bottom:12px; background:#fff5db; color:#835b13; }
+#uploadStatus, #sortStatus { margin-left:12px; color:#64748b; }
+@media(max-width:800px) { .manage-image { width:calc(50% - 14px); } }
+</style></head><body><main class="image-manager">
+<header class="manager-head"><a href="{{ url_for('admin.ui_settings') }}">返回 UI 设置</a><h1>展播图片管理 <small style="font-size:14px;color:#64748b;">共 {{ total }} 张</small></h1><p class="manager-help">拖动图片，或使用上移、下移按钮调整当前页顺序，然后保存排序。勾选图片可批量移除，点击缩略图可查看大图。</p><a class="btn" href="{{ url_for('index_bp.index') }}" target="_blank" rel="noopener">查看首页效果</a></header>
+{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="manager-message">{{ message }}</div>{% endfor %}{% endwith %}
+<section class="manager-box"><form method="post" enctype="multipart/form-data" id="uploadForm">
+<input type="hidden" name="action" value="upload"><input type="hidden" name="page" value="{{ page }}">
+<label for="imageFiles">添加图片：</label><input id="imageFiles" type="file" name="slideshow_images" multiple accept="image/jpeg,image/png,image/gif,image/bmp,image/webp" required>
+<button class="btn btn-primary" type="submit" id="uploadButton">上传图片</button><span id="uploadStatus"></span>
+<p class="manager-help">支持多选；新图片追加到末尾。不限制图片数量、大小和尺寸，支持 JPG、PNG、GIF、BMP、WebP。无法识别的文件会单独提示，不影响其他图片上传。</p>
+</form></section>
+<section class="manager-box"><form method="post" id="imageForm">
+<input type="hidden" name="action" id="imageAction" value="reorder"><input type="hidden" name="page" value="{{ page }}"><input type="hidden" name="revision" value="{{ revision }}"><input type="hidden" name="order" id="imageOrder">
+<div class="manager-toolbar"><label><input type="checkbox" id="selectAll"> 本页全选</label><button type="button" class="btn" onclick="removeImages()">移除所选图片</button><button type="button" class="btn btn-primary" onclick="saveOrder()">保存排序</button><span id="sortStatus"></span></div>
+<ul class="manager-grid" id="imageGrid">
+{% for image in images %}<li class="manage-image" draggable="true" data-path="{{ image.path }}">
+<label><input type="checkbox" name="selected" value="{{ image.path }}"> <span class="manage-index">{{ offset + loop.index }}</span></label>
+<a class="manage-preview" href="{{ url_for('index_bp.public_slide_image', position=offset + loop.index0, v=image.path) }}" target="_blank" rel="noopener" aria-label="查看 {{ image.name }}" style="background-image:url('{{ url_for('index_bp.public_slide_image', position=offset + loop.index0, v=image.path) }}');"></a>
+<span class="manage-name" title="{{ image.name }}">{{ image.name }}</span><div class="manage-actions"><button type="button" class="btn btn-sm" onclick="moveImage(this, -1)">上移</button><button type="button" class="btn btn-sm" onclick="moveImage(this, 1)">下移</button><button type="button" class="btn btn-sm" onclick="removeOne(this)">移除</button></div>
+</li>{% else %}<li style="padding:40px;font-size:15px;text-align:center;color:#64748b;">暂无图片，请先上传。</li>{% endfor %}
+</ul></form>
+<nav class="manager-pages">{% if page > 1 %}<a class="btn" href="{{ url_for('admin.slideshow', page=page-1) }}">上一页</a>{% endif %}第 {{ page }} / {{ pages }} 页{% if page < pages %}<a class="btn" href="{{ url_for('admin.slideshow', page=page+1) }}">下一页</a>{% endif %}</nav>
+</section></main>
+<script>
+var grid = document.getElementById('imageGrid');
+var dragged = null;
+function imageItem(node) { while (node && node !== grid && !node.getAttribute('data-path')) node = node.parentNode; return node === grid ? null : node; }
+function markOrder() {
+  var items = grid.querySelectorAll('.manage-image');
+  for (var i = 0; i < items.length; i++) items[i].querySelector('.manage-index').innerHTML = {{ offset }} + i + 1;
+  document.getElementById('sortStatus').innerHTML = '排序已调整，请点击保存排序';
+}
+function moveImage(button, direction) {
+  var item = imageItem(button);
+  var neighbor = direction < 0 ? item.previousElementSibling : item.nextElementSibling;
+  if (!neighbor) return;
+  if (direction < 0) grid.insertBefore(item, neighbor); else grid.insertBefore(neighbor, item);
+  markOrder();
+}
+function saveOrder() {
+  var items = grid.querySelectorAll('.manage-image');
+  var order = [];
+  for (var i = 0; i < items.length; i++) order.push(items[i].getAttribute('data-path'));
+  document.getElementById('imageOrder').value = JSON.stringify(order);
+  document.getElementById('imageAction').value = 'reorder';
+  document.getElementById('imageForm').submit();
+}
+function removeImages() {
+  if (!grid.querySelector('input[name="selected"]:checked')) { document.getElementById('sortStatus').innerHTML = '请先勾选图片'; return; }
+  document.getElementById('imageAction').value = 'remove';
+  document.getElementById('imageForm').submit();
+}
+function removeOne(button) {
+  var checkboxes = grid.querySelectorAll('input[name="selected"]');
+  for (var i = 0; i < checkboxes.length; i++) checkboxes[i].checked = false;
+  imageItem(button).querySelector('input[name="selected"]').checked = true;
+  removeImages();
+}
+document.getElementById('selectAll').onchange = function() {
+  var checkboxes = grid.querySelectorAll('input[name="selected"]');
+  for (var i = 0; i < checkboxes.length; i++) checkboxes[i].checked = this.checked;
+};
+grid.ondragstart = function(event) {
+  dragged = imageItem(event.target);
+  if (!dragged) return;
+  event.dataTransfer.setData('Text', dragged.getAttribute('data-path'));
+  event.dataTransfer.effectAllowed = 'move';
+  dragged.className += ' dragging';
+};
+grid.ondragover = function(event) { if (dragged) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } };
+grid.ondrop = function(event) {
+  event.preventDefault();
+  var target = imageItem(event.target);
+  if (dragged && target && dragged !== target) { grid.insertBefore(dragged, target); markOrder(); }
+};
+grid.ondragend = function() { if (dragged) dragged.className = dragged.className.replace(' dragging', ''); dragged = null; };
+document.getElementById('uploadForm').onsubmit = function() {
+  document.getElementById('uploadButton').disabled = true;
+  document.getElementById('uploadStatus').innerHTML = '正在上传，请稍候…';
+};
+</script></body></html>

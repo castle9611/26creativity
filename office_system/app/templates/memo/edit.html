@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 {% from '_icon.html' import icon %}
 <html lang="zh-CN">
 <head>
@@ -6,6 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/oa-rich-editor.css') }}">
 <style>
 html, body { width: 100%; margin: 0; background: var(--bg-page, #f1f5f9); }
 .breadcrumb {
@@ -122,7 +123,9 @@ html, body { width: 100%; margin: 0; background: var(--bg-page, #f1f5f9); }
 
     <div class="form-group">
       <label class="form-label">内容</label>
-      <div class="editor-toolbar">
+      {% include '_rich_editor_image.html' %}
+      <textarea id="richContent" class="form-textarea oa-rich-field" rows="10" placeholder="请输入备忘内容...">{% if is_edit and memo %}{{ memo.content if memo.content else '' }}{% endif %}</textarea>
+      <div class="editor-toolbar" style="display:none;">
         <button type="button" class="btn" onclick="formatText('bold')" title="加粗">B</button>
         <button type="button" class="btn" onclick="formatText('italic')" title="斜体">I</button>
         <button type="button" class="btn" onclick="formatText('underline')" title="下划线">U</button>
@@ -131,23 +134,40 @@ html, body { width: 100%; margin: 0; background: var(--bg-page, #f1f5f9); }
         <button type="button" class="btn" onclick="document.getElementById('imageInput').click()" title="插入图片">{{ icon('file') }} 图片</button>
         <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
       </div>
-      <div class="editor-wrapper">
-        <div id="editorContent" class="editor-content" contenteditable="true" data-placeholder="请输入备忘内容..." onpaste="handlePaste(event)">{% if is_edit and memo %}{{ memo.content|safe if memo.content else '' }}{% endif %}</div>
+      <div class="editor-wrapper" style="display:none;">
+        <div id="editorContent" class="editor-content" contenteditable="true" data-placeholder="请输入备忘内容..." onpaste="handlePaste(event)"></div>
       </div>
       <input type="hidden" name="content" id="hiddenContent">
     </div>
 
     <div class="form-group">
-      <label class="form-label">云盘 资料链接（可选）</label>
+      <label class="form-label">云盘资料链接（可选）</label>
       <div style="display:table;width:100%;table-layout:fixed;">
         <div style="display:table-cell;padding-right:6px;vertical-align:middle;">
-          <input type="url" name="nextcloud_url" class="form-input" maxlength="2000" style="height:44px;" placeholder="可粘贴 云盘 文件、文件夹或共享链接" value="{{ memo.nextcloud_url if is_edit and memo else '' }}">
+          <input type="url" name="nextcloud_url" class="form-input" maxlength="2000" style="height:44px;" placeholder="可粘贴云盘文件、文件夹或共享链接" value="{{ memo.nextcloud_url if is_edit and memo else '' }}">
         </div>
         <div style="display:table-cell;width:228px;vertical-align:middle;">
-          {% if nextcloud_url %}<a href="{{ nextcloud_url }}" target="_blank" rel="noopener" class="btn" style="display:block;height:44px;line-height:28px;box-sizing:border-box;text-align:center;">{{ icon('folder') }} 前往 云盘 获取链接 ↗</a>{% else %}<span class="btn" style="display:block;height:44px;line-height:28px;box-sizing:border-box;text-align:center;cursor:not-allowed;">云盘 尚未配置</span>{% endif %}
+          {% if nextcloud_url %}<a href="{{ nextcloud_url }}" target="_blank" rel="noopener" class="btn" style="display:block;height:44px;line-height:28px;box-sizing:border-box;text-align:center;">{{ icon('folder') }} 前往云盘获取链接 ↗</a>{% else %}<span class="btn" style="display:block;height:44px;line-height:28px;box-sizing:border-box;text-align:center;cursor:not-allowed;">云盘尚未配置</span>{% endif %}
         </div>
       </div>
       <div style="margin-top:5px;font-size:12px;color:#475569;">链接和附件均为可选项，可以稍后编辑补充。</div>
+    </div>
+
+    <div style="overflow:hidden;">
+      <div class="form-group" style="float:left;width:49%;margin-right:2%;">
+        <label class="form-label">类别</label>
+        <select name="category_id" id="memoCategory" class="form-select" onchange="filterMemoColumns()">
+          <option value="">未分类</option>
+          {% for category in categories %}<option value="{{ category.id }}" {% if is_edit and memo and memo.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="float:left;width:49%;">
+        <label class="form-label">栏目</label>
+        <select name="column_id" id="memoColumn" class="form-select">
+          <option value="">未归栏</option>
+          {% for category in categories %}{% for column in cols_by_cat.get(category.id, []) %}<option value="{{ column.id }}" data-category="{{ category.id }}" {% if is_edit and memo and memo.column_id == column.id %}selected{% endif %}>{{ column.name }}</option>{% endfor %}{% endfor %}
+        </select>
+      </div>
     </div>
 
     <div style="overflow:hidden;">
@@ -161,7 +181,7 @@ html, body { width: 100%; margin: 0; background: var(--bg-page, #f1f5f9); }
 
       <div class="form-group" style="float:left;width:32%;margin-right:2%;">
         <label class="form-label">到期日期（可选）</label>
-        <input type="date" name="expires_at" class="form-input" style="height:48px;" title="到期后自动转入过往备忘" value="{% if is_edit and memo and memo.expires_at %}{{ memo.expires_at.strftime('%Y-%m-%d') }}{% endif %}">
+        <div style="display:table;width:100%;table-layout:fixed;"><input type="date" name="expires_at" id="memoExpiresAt" class="form-input" style="height:48px;display:table-cell;width:62%;" title="到期后自动转入过往备忘" value="{% if is_edit and memo and memo.expires_at %}{{ memo.expires_at.strftime('%Y-%m-%d') }}{% endif %}"><select class="form-select" style="height:48px;display:table-cell;width:38%;" onchange="setMemoExpiry(this.value)"><option value="">快捷设置</option><option value="uncertain">不确定</option><option value="long_term">长期有效</option></select></div>
       </div>
 
       <div class="form-group" style="float:left;width:32%;">
@@ -174,7 +194,7 @@ html, body { width: 100%; margin: 0; background: var(--bg-page, #f1f5f9); }
       </div>
     </div>
 
-    <!-- Link Online Docs/Sheets (collapsible) -->
+    {% if false %}<!-- Link Online Docs/Sheets (removed) -->
     <div class="form-group" style="margin-top:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="var b=document.getElementById('memoLinkBody');var t=document.getElementById('memoLinkToggle');if(b.style.display==='none'){b.style.display='block';t.textContent='收起 ↑'}else{b.style.display='none';t.textContent='展开选择 →'}">
         <label style="font-size:14px;font-weight:600;cursor:pointer;margin:0;">{{ icon('file') }} 关联在线文档/表格</label>
@@ -216,6 +236,7 @@ html, body { width: 100%; margin: 0; background: var(--bg-page, #f1f5f9); }
       </div>
     </div>
 
+    {% endif %}
     {% if is_edit and memo_attachments %}
     <div class="form-group" style="margin-top:16px;">
       <label class="form-label">当前附件</label>
@@ -270,8 +291,7 @@ function updateMemoAttachmentColumns() {
 updateMemoAttachmentColumns();
 
 function submitForm() {
-    var editor = document.getElementById('editorContent');
-    document.getElementById('hiddenContent').value = editor.innerHTML;
+    OARichEditor.sync();
     document.getElementById('deleteAttachments').value = deletedAttachmentIds.join(',');
     var input = document.getElementById('attachmentInput');
     if (input && window.DataTransfer) {
@@ -459,7 +479,24 @@ dropArea.addEventListener('drop', function(e) {
 });
 
 </script>
+<script>
+function setMemoExpiry(value) {
+  if (value === 'uncertain' || value === 'long_term') document.getElementById('memoExpiresAt').value = '';
+}
+function filterMemoColumns() {
+  var category = document.getElementById('memoCategory').value;
+  var select = document.getElementById('memoColumn');
+  for (var i = 1; i < select.options.length; i++) {
+    select.options[i].disabled = !!category && select.options[i].getAttribute('data-category') !== category;
+    select.options[i].style.display = select.options[i].disabled ? 'none' : '';
+  }
+  if (select.selectedIndex > 0 && select.options[select.selectedIndex].disabled) select.value = '';
+}
+filterMemoColumns();
+</script>
 
+<script src="{{ url_for('static', filename='kindeditor/kindeditor-all-min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/oa-rich-editor.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ux.js') }}"></script>
 </body>
 </html>

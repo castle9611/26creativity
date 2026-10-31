@@ -70,7 +70,7 @@ body { background: #f1f5f9; margin: 0; padding: 0; }
     border: none;
     cursor: pointer;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: color 0.2s, background-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
 .header-right .btn:hover {
@@ -162,7 +162,7 @@ body { background: #f1f5f9; margin: 0; padding: 0; }
     color: #cbd5e1;
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: color 0.2s, background-color 0.2s, box-shadow 0.2s, transform 0.2s;
     border-left: 3px solid transparent;
 }
 
@@ -263,7 +263,7 @@ body { background: #f1f5f9; margin: 0; padding: 0; }
     display: flex;
     align-items: center;
     gap: 16px;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     cursor: pointer;
 }
 
@@ -394,7 +394,7 @@ body { background: #f1f5f9; margin: 0; padding: 0; }
     text-decoration: none;
     font-size: 13px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .quick-action:hover {
@@ -451,7 +451,7 @@ body { background: #f1f5f9; margin: 0; padding: 0; }
     background: linear-gradient(135deg, #ffffff, #f8fbfa);
     text-decoration: none;
     box-shadow: 0 8px 20px rgba(15,23,42,.045);
-    transition: all .2s ease;
+    transition: color .2s ease, background-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
 
 .web-link-card:hover {
@@ -1997,6 +1997,49 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
     stroke-width: 2 !important;
     opacity: 1 !important;
 }
+.dashboard-grid > .card > .card-header {
+    display: table !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+.dashboard-grid > .card > .card-header > .card-title {
+    display: table-cell !important;
+    vertical-align: middle;
+}
+.dashboard-grid > .card > .card-header > .btn {
+    display: table-cell !important;
+    width: 1%;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+</style>
+<style>
+.main-content { width:auto !important; max-width:none !important; box-sizing:border-box; overflow-x:hidden; }
+.dashboard-grid, .stats-grid, .card, .toolbar { max-width:100%; box-sizing:border-box; }
+@media (max-width: 900px) {
+    .main-content { margin-left:0 !important; padding:10px !important; }
+    .sidebar { display:none !important; }
+    .header { left:0 !important; }
+    .dashboard-grid { display:block !important; }
+    .dashboard-grid > .card, .dashboard-grid > .card + .card { float:none !important; width:100% !important; margin:0 0 10px !important; }
+    .stats-grid { display:block !important; }
+    .stat-card { float:none !important; display:inline-flex; width:calc(50% - 8px) !important; margin:0 8px 8px 0 !important; box-sizing:border-box; }
+}
+@media (max-width: 480px) {
+    .main-content { padding:6px !important; }
+    .stat-card { width:100% !important; margin-right:0 !important; }
+    .quick-actions { grid-template-columns:1fr !important; padding:10px !important; }
+}
+.quick-actions .featured-task, .quick-actions .featured-memo, .quick-actions .featured-bulletin { min-height:58px; font-size:15px; font-weight:700; border-width:2px; text-align:center; }
+.quick-actions .featured-task { color:#fff; background:#2563eb; border-color:#2563eb; }
+.quick-actions .featured-memo { color:#fff; background:#059669; border-color:#059669; }
+.quick-actions .featured-bulletin { color:#fff; background:#d97706; border-color:#d97706; }
+.quick-actions .featured-task:hover, .quick-actions .featured-memo:hover, .quick-actions .featured-bulletin:hover { color:#fff; filter:brightness(.92); }
+body.embedded-workbench .dashboard-grid { display:block !important; }
+body.embedded-workbench .dashboard-grid > .card { float:none !important; width:100% !important; margin-right:0 !important; }
+/* B-style pictograms need a neutral dark silhouette and enough pixels to show their blue details. */
+html body.embedded-workbench .stats-grid .stat-card .stat-icon { width:42px !important; height:42px !important; color:#0b2d60 !important; background:transparent !important; }
+html body.embedded-workbench .stats-grid .stat-card .stat-icon .svg-icon { width:29px !important; height:29px !important; min-width:29px !important; stroke-width:3 !important; }
 </style>
 </head>
 <body class="embedded-workbench">
@@ -2005,7 +2048,7 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
 <!-- Header with User Switcher -->
 <div class="header">
   <div class="logo">
-    <span class="logo-icon logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon.png') }}" alt=""></span>
+    <span class="logo-icon logo-image-wrap"><img class="brand-logo-img" src="{{ url_for('static', filename='brand-icon-transparent.png') }}" alt=""></span>
     <span class="logo-title">{{ app_name }}</span>
   </div>
 
@@ -2085,9 +2128,13 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
       <span class="nav-icon">{{ icon('task') }}</span>
       <span>任务管理</span>
     </a>
-    <a href="{{ url_for('bulletin.index') }}" class="nav-item" title="{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}">
+    <a href="{{ url_for('tasks.published_tasks') }}" class="nav-item" title="我发布的任务">
+      <span class="nav-icon">{{ icon('task-flow') }}</span>
+      <span>我发布的任务</span>
+    </a>
+    <a href="{{ url_for('bulletin.index') }}" class="nav-item" title="{% if session.get('role') in ('super_admin','dept_admin') %}信息发布{% else %}信息公示{% endif %}">
       <span class="nav-icon">{{ icon('bulletin') }}</span>
-      <span>{% if session.get('role') in ('super_admin','dept_admin') %}公示管理{% else %}信息公示{% endif %}</span>
+      <span>{% if session.get('role') in ('super_admin','dept_admin') %}信息发布{% else %}信息公示{% endif %}</span>
     </a>
     <a href="{{ url_for('memo.list_memos') }}" class="nav-item" title="工作备忘">
       <span class="nav-icon">{{ icon('memo') }}</span>
@@ -2101,13 +2148,9 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
 
   <div class="nav-section">
     <div class="nav-section-title">协同工具</div>
-    <a href="{{ url_for('cloud.index') }}" class="nav-item" title="云盘 + ONLYOFFICE 云文档中心">
+    <a href="{{ url_for('cloud.index') }}" class="nav-item" title="云盘+ ONLYOFFICE 云文档中心">
       <span class="nav-icon">{{ icon('file') }}</span>
       <span>云文档中心</span>
-    </a>
-    <a href="{{ url_for('stats.story') }}" class="nav-item" title="数据故事">
-      <span class="nav-icon">{{ icon('chart') }}</span>
-      <span>数据故事</span>
     </a>
   </div>
 
@@ -2233,13 +2276,6 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
       </div>
     </div>
     {% else %}
-    <div class="stat-card" data-entry-card data-entry-id="data-story" data-entry-label="数据故事" data-entry-default="1" onclick="location.href='{{ url_for('stats.story') }}'" style="cursor:pointer;">
-      <div class="stat-icon orange">{{ icon('chart') }}</div>
-      <div class="stat-info">
-        <div class="stat-value">›</div>
-        <div class="stat-label">数据故事</div>
-      </div>
-    </div>
     {% endif %}
     {% if session.get('role') in ('super_admin','dept_admin') %}
     <div class="stat-card entry-extra" data-entry-card data-entry-id="public-memos-extra" data-entry-label="公开备忘" data-entry-default="0" onclick="location.href='{{ url_for('memo.list_memos', type='public') }}'" style="cursor:pointer;">
@@ -2257,7 +2293,7 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
         <div class="stat-label">文件总数</div>
       </div>
     </div>
-    <div class="stat-card entry-extra" data-entry-card data-entry-id="docs" data-entry-label="在线文档" data-entry-default="0" onclick="location.href='{{ url_for('docs.list_docs') }}'" style="cursor:pointer;">
+    {% if false %}<div class="stat-card entry-extra" data-entry-card data-entry-id="docs" data-entry-label="在线文档" data-entry-default="0" onclick="location.href='{{ url_for('docs.list_docs') }}'" style="cursor:pointer;">
       <div class="stat-icon blue">{{ icon('file') }}</div>
       <div class="stat-info">
         <div class="stat-value">{{ total_docs }}</div>
@@ -2270,7 +2306,7 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
         <div class="stat-value">{{ total_sheets }}</div>
         <div class="stat-label">在线表格</div>
       </div>
-    </div>
+    </div>{% endif %}
     {% if session.get('role') in ('super_admin','dept_admin') %}
     <div class="stat-card entry-extra" data-entry-card data-entry-id="columns" data-entry-label="栏目总数" data-entry-default="0" onclick="location.href='{{ url_for('admin.columns') }}'" style="cursor:pointer;">
       <div class="stat-icon teal">{{ icon('column') }}</div>
@@ -2288,21 +2324,14 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
         <div class="stat-label">活跃用户</div>
       </div>
     </div>
-    <div class="stat-card entry-extra" data-entry-card data-entry-id="data-story-extra" data-entry-label="数据故事" data-entry-default="0" onclick="location.href='{{ url_for('stats.story') }}'" style="cursor:pointer;">
-      <div class="stat-icon orange">{{ icon('chart') }}</div>
-      <div class="stat-info">
-        <div class="stat-value">›</div>
-        <div class="stat-label">数据故事</div>
-      </div>
-    </div>
     {% endif %}
-    <div class="stat-card stat-add" id="editEntryButton" onclick="openEntryEditor()" style="cursor:pointer;">
+    <button type="button" class="stat-card stat-add" id="editEntryButton" onclick="openEntryEditor()" style="cursor:pointer;">
       <div class="stat-icon">{{ icon('add') }}</div>
       <div class="stat-info">
         <div class="stat-value">⋯</div>
         <div class="stat-label">编辑入口</div>
       </div>
-    </div>
+    </button>
   </div>
 
   <div class="entry-editor-mask" id="entryEditorMask">
@@ -2360,58 +2389,6 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
       </div>
     </div>
 
-    <!-- Right Column: Quick Actions -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">快捷操作</div>
-      </div>
-      <div class="card-body">
-        <div class="quick-actions">
-          {% if session.get('role')!='user' %}
-          <a href="{{ url_for('tasks.create_task') }}" class="quick-action primary">
-            <span class="quick-action-icon">{{ icon('add') }}</span>
-            <span>创建任务</span>
-          </a>
-          {% endif %}
-          <a href="{{ url_for('memo.create_memo') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('memo') }}</span>
-            <span>新建备忘</span>
-          </a>
-          <a href="{{ url_for('bulletin.index') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('bulletin') }}</span>
-            <span>查看公示</span>
-          </a>
-          <a href="{{ url_for('files.list_files') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('folder') }}</span>
-            <span>文件管理</span>
-          </a>
-          <a href="{{ url_for('cloud.index') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('file') }}</span>
-            <span>云文档/表格/演示</span>
-          </a>
-          {% if session.get('role') in ('super_admin','dept_admin') %}
-          <a href="{{ url_for('settings.task_categories') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('category') }}</span>
-            <span>任务类别</span>
-          </a>
-          <a href="{{ url_for('settings.bulletin_categories') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('cat-notice') }}</span>
-            <span>公示分类</span>
-          </a>
-          {% endif %}
-          {% if session.get('role')=='super_admin' %}
-          <a href="{{ url_for('admin.users') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('users') }}</span>
-            <span>用户管理</span>
-          </a>
-          <a href="{{ url_for('admin.logs') }}" class="quick-action">
-            <span class="quick-action-icon">{{ icon('chart') }}</span>
-            <span>操作日志</span>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
   </div>
 
   <div class="card web-link-panel">
@@ -2440,7 +2417,7 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
 
   {% set task_chart_total = pending_count + processing_count + completed_count + overdue_count %}
   {% set task_chart_base = task_chart_total if task_chart_total > 0 else 1 %}
-  {% set asset_chart_max = [total_bulletins, total_files, total_docs, total_sheets, my_memos, public_memos]|max %}
+  {% set asset_chart_max = [total_bulletins, total_files, my_memos, public_memos]|max %}
   {% set asset_chart_base = asset_chart_max if asset_chart_max > 0 else 1 %}
   <div class="dashboard-charts">
     <div class="dashboard-chart">
@@ -2454,8 +2431,6 @@ body.embedded-workbench .web-link-panel .web-link-icon .svg-icon {
       <div class="dashboard-chart-title">内容与文件概览</div>
       <div class="chart-line"><span class="chart-label">公示</span><span class="chart-track"><span class="chart-bar" style="display:block;width:{{ (total_bulletins * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ total_bulletins }}</span></div>
       <div class="chart-line"><span class="chart-label">文件</span><span class="chart-track"><span class="chart-bar green" style="display:block;width:{{ (total_files * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ total_files }}</span></div>
-      <div class="chart-line"><span class="chart-label">在线文档</span><span class="chart-track"><span class="chart-bar purple" style="display:block;width:{{ (total_docs * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ total_docs }}</span></div>
-      <div class="chart-line"><span class="chart-label">在线表格</span><span class="chart-track"><span class="chart-bar orange" style="display:block;width:{{ (total_sheets * 100 / asset_chart_base)|round(1) }}%;"></span></span><span class="chart-value">{{ total_sheets }}</span></div>
     </div>
     <div class="dashboard-chart">
       <div class="dashboard-chart-title">工作效率概览</div>
@@ -2612,6 +2587,18 @@ function ackTaskAlerts() {
 
     document.addEventListener('DOMContentLoaded', function() {
         cards = Array.prototype.slice.call(document.querySelectorAll('[data-entry-card]'));
+        for (var c = 0; c < cards.length; c++) {
+            if (cards[c].tagName.toLowerCase() !== 'button' && cards[c].getAttribute('onclick')) {
+                cards[c].setAttribute('tabindex', '0');
+                cards[c].setAttribute('role', 'link');
+                cards[c].addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            }
+        }
         optionGrid = document.getElementById('entryOptionGrid');
         errorEl = document.getElementById('entryEditorError');
         applyEntries(selectedIds());

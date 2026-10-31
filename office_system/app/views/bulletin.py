@@ -5,10 +5,10 @@ Tab + Column two-level navigation / content publishing /
 pinned + expiration / role visibility / multi-filter search.
 """
 import json
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from urllib.parse import urlsplit
 from flask import (Blueprint, render_template, request, redirect,
-                   url_for, flash, session)
+                   url_for, flash, session, abort, jsonify)
 from app.extensions import db
 from app.models import (Tab, Column, Bulletin, BulletinCategory,
                         BulletinAttachment, User, ReadRecord, Comment)
@@ -16,6 +16,54 @@ from app.decorators import login_required, require_role
 from app.utils import add_log, get_pagination, check_visible
 
 bulletin_bp = Blueprint('bulletin', __name__)
+
+
+@bulletin_bp.route('/<int:bulletin_id>/vote', methods=['POST'])
+@login_required
+def vote(bulletin_id):
+    """Create or revise the current account's single vote while the poll is open."""
+    import secrets
+    from sqlalchemy.exc import IntegrityError
+    from app.models import BulletinVote
+    bulletin = Bulletin.query.filter_by(id=bulletin_id, status='published', is_active=1).first_or_404()
+    user = User.query.get(session['user_id'])
+    if not user or not user.is_active or not (user.real_name or '').strip():
+        abort(403)
+    if not secrets.compare_digest(request.form.get('poll_token', '').encode('utf-8'), (session.get('poll_token', '') or 'missing').encode('utf-8')):
+        abort(400)
+    if bulletin.column_id:
+        column = Column.query.get(bulletin.column_id)
+        if column and not check_visible(column.visible_roles, user.role):
+            abort(403)
+    if not bulletin.poll or not bulletin.poll.enabled:
+        abort(403)
+    choice = request.form.get('choice', '')
+    if choice not in ('agree', 'disagree', 'abstain'):
+        abort(400)
+    target = url_for('index_bp.public_bulletin_detail', bulletin_id=bulletin.id) if request.form.get('return_view') == 'public' else url_for('bulletin.detail', bulletin_id=bulletin.id)
+    existing = BulletinVote.query.get((bulletin.id, user.id))
+    updating = existing is not None
+    if existing:
+        existing.choice = choice
+        existing.created_at = datetime.utcnow()
+    else:
+        db.session.add(BulletinVote(bulletin_id=bulletin.id, user_id=user.id, choice=choice))
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        # A simultaneous first submission may have inserted this account's row.
+        existing = BulletinVote.query.get((bulletin.id, user.id))
+        if existing is None:
+            raise
+        existing.choice = choice
+        existing.created_at = datetime.utcnow()
+        db.session.commit()
+        updating = True
+    add_log('vote_bulletin', 'bulletin', bulletin.id,
+            'Anonymous vote submitted' if bulletin.poll.is_anonymous else 'Voted: ' + choice)
+    flash('\u6295\u7968\u9009\u62e9\u5df2\u66f4\u65b0' if updating else '\u6295\u7968\u6210\u529f', 'success')
+    return redirect(target + '#bulletin-vote')
 
 
 def _optional_nextcloud_url():
@@ -76,6 +124,18 @@ def _read_status_users(target_id):
 def index():
     """Bulletin homepage - category filter with bulletin list and counts."""
     page, per_page = get_pagination()
+    rows = request.args.get('rows', 2, type=int)
+    if rows in (2, 5, 10):
+        # ``rows`` is the number of visual card rows.  The browser supplies
+        # the current responsive column count so a narrow iframe does not
+        # accidentally render an extra row.
+        columns = request.args.get('columns', 5, type=int)
+        if columns not in (1, 2, 3, 4, 5):
+            columns = 5
+        per_page = rows * columns
+    else:
+        rows = 2
+        columns = 5
     user_role = session['role']
 
     # Get active categories
@@ -88,12 +148,17 @@ def index():
     filter_cat_id = request.args.get('category_id', 0, type=int)
     if filter_cat_id and filter_cat_id not in [c.id for c in visible_cats]:
         filter_cat_id = 0
+    keyword = request.args.get('keyword', '').strip()[:100]
 
     # Build bulletin query
     query = Bulletin.query.filter(Bulletin.status != 'archived')
 
     if filter_cat_id:
         query = query.filter(Bulletin.category_id == filter_cat_id)
+    if keyword:
+        like = '%' + keyword + '%'
+        query = query.filter(db.or_(Bulletin.title.like(like),
+                                    Bulletin.content.like(like)))
 
     # Filter expired (keep pinned)
     today = date.today()
@@ -136,9 +201,15 @@ def index():
                            categories=visible_cats,
                            cat_counts=cat_counts,
                            filter_cat_id=filter_cat_id,
+                           keyword=keyword,
                            bulletins=bulletins,
                            read_ids=read_ids,
-                           pagination=pagination)
+                           pagination=pagination,
+                           rows=rows,
+                           columns=columns,
+                           recent_cutoffs=(datetime.utcnow() - timedelta(days=3),
+                                           datetime.utcnow() - timedelta(days=7),
+                                           datetime.utcnow() - timedelta(days=15)))
 
 
 @bulletin_bp.route('/column/<int:column_id>')
@@ -273,6 +344,7 @@ def detail(bulletin_id):
 @login_required
 def add_comment(bulletin_id):
     """Add a comment to a bulletin."""
+    abort(404)
     bulletin = Bulletin.query.get_or_404(bulletin_id)
     content = request.form.get('content', '').strip()
     if not content:
@@ -296,6 +368,7 @@ def add_comment(bulletin_id):
 @login_required
 def reply_comment(bulletin_id, comment_id):
     """Reply to a comment on a bulletin."""
+    abort(404)
     parent = Comment.query.get_or_404(comment_id)
     content = request.form.get('content', '').strip()
     if not content:
@@ -317,6 +390,7 @@ def reply_comment(bulletin_id, comment_id):
 @login_required
 def vote_comment(comment_id):
     """Like or dislike a comment on a bulletin."""
+    abort(404)
     from flask import jsonify
     comment = Comment.query.get_or_404(comment_id)
     vote_type = request.form.get('vote', 'like').strip()
@@ -424,6 +498,12 @@ def create():
         )
         db.session.add(bulletin)
         db.session.flush()
+        from app.bulletin_poll import save_poll
+        try:
+            save_poll(bulletin, request.form.get('voting_enabled') == '1', request.form.get('voting_mode', 'named'))
+        except ValueError:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': '\u6295\u7968\u8bb0\u540d\u65b9\u5f0f\u65e0\u6548'}), 400
 
         # Handle file uploads
         upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'bulletins', str(bulletin.id))
@@ -472,10 +552,10 @@ def create():
 
         add_log('create_bulletin', 'bulletin', bulletin.id, 'Published: ' + title)
 
+        flash('内容发布成功', 'success')
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'success': True, 'message': '内容发布成功', 'redirect': url_for('bulletin.detail', bulletin_id=bulletin.id)})
 
-        flash('内容发布成功', 'success')
         return redirect(url_for('bulletin.detail', bulletin_id=bulletin.id))
 
     # Load visible categories for the selector (no columns needed)
@@ -529,6 +609,8 @@ def edit(bulletin_id):
         column_id = request.form.get('column_id', 0, type=int)
 
         if not title:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': '\u6807\u9898\u4e0d\u80fd\u4e3a\u7a7a'}), 400
             flash('标题不能为空', 'warning')
             return redirect(url_for('bulletin.edit', bulletin_id=bulletin_id))
 
@@ -558,6 +640,13 @@ def edit(bulletin_id):
         except ValueError:
             bulletin.expire_date = None
 
+        from app.bulletin_poll import save_poll
+        mode = request.form.get('voting_mode', 'anonymous' if bulletin.poll and bulletin.poll.is_anonymous else 'named')
+        try:
+            save_poll(bulletin, request.form.get('voting_enabled') == '1', mode)
+        except ValueError:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': '\u5df2\u6709\u6295\u7968\u540e\u4e0d\u53ef\u4fee\u6539\u8bb0\u540d\u65b9\u5f0f\uff0c\u8bf7\u4fdd\u7559\u539f\u8bbe\u7f6e'}), 400
         bulletin.updated_at = datetime.utcnow()
 
         # Delete attachments marked for removal
@@ -625,6 +714,8 @@ def edit(bulletin_id):
         db.session.commit()
         add_log('edit_bulletin', 'bulletin', bulletin.id, 'Edited: ' + title)
         flash('内容更新成功', 'success')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'redirect': url_for('bulletin.detail', bulletin_id=bulletin.id)})
         return redirect(url_for('bulletin.detail', bulletin_id=bulletin_id))
 
     # Load categories for the picker

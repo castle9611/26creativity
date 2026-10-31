@@ -1,0 +1,22 @@
+{% set existing_poll = bulletin.poll if bulletin is defined else none %}
+{% set mode_locked = bulletin is defined and bulletin.poll_votes.first() %}
+{% set anonymous = existing_poll and existing_poll.is_anonymous %}
+<style>
+.poll-setting { padding:13px 15px; margin:0 0 16px; border:1px solid #dbe4ef; border-radius:6px; background:#f8fafc; color:#334155; }
+.poll-setting .poll-setting-head { margin-bottom:9px; overflow:hidden; font-size:14px; line-height:24px; }
+.poll-setting .poll-setting-switch { float:right; font-size:13px; font-weight:400; cursor:pointer; }
+.poll-setting .poll-setting-mode { display:inline-block; margin-right:8px; font-size:13px; }
+.poll-setting select { width:190px; height:32px; padding:3px 8px; border:1px solid #ccd8e8; border-radius:4px; background:#fff; color:#334155; font-size:13px; }
+.poll-setting select:focus { outline:2px solid #bfd5fa; outline-offset:1px; }
+.poll-setting .poll-setting-help { margin:8px 0 0; font-size:12px; line-height:1.7; color:#64748b; }
+</style>
+<div class="poll-setting">
+  <div class="poll-setting-head"><strong>公示投票</strong><label class="poll-setting-switch"><input type="checkbox" name="voting_enabled" value="1" {% if existing_poll and existing_poll.enabled %}checked{% endif %}> 开启投票</label></div>
+  <label class="poll-setting-mode" for="votingMode">记名方式</label>
+  <select id="votingMode" name="voting_mode" {% if mode_locked %}disabled{% endif %}>
+    <option value="named" {% if not anonymous %}selected{% endif %}>记名 · 显示投票人和选项</option>
+    <option value="anonymous" {% if anonymous %}selected{% endif %}>不记名 · 仅显示汇总票数</option>
+  </select>
+  {% if mode_locked %}<input type="hidden" name="voting_mode" value="{{ 'anonymous' if anonymous else 'named' }}">{% endif %}
+  <p class="poll-setting-help">每个账号计一票，投票开放时可修改选择。{% if mode_locked %}已有用户投票，记名方式已锁定。{% else %}有人投票后，记名方式将锁定。{% endif %}关闭投票后不能修改选择，已有票数保留。</p>
+</div>

@@ -51,6 +51,8 @@ body { background: #f1f5f9; }
     <p class="page-subtitle">管理系统用户账号和权限</p>
   </div>
   <div class="page-actions">
+    <a href="{{ url_for('admin.registrations') }}" class="btn">注册审核{% if registration_pending_count %}（{{ registration_pending_count }} 待审）{% endif %}</a>
+    <a href="{{ url_for('admin.users_export', search=search, role=role_filter) }}" class="btn">{{ icon('download') }} 导出用户</a>
     <button type="button" class="btn" id="importBtn" style="background:#10b981;color:white;">📥 批量导入</button>
     <button type="button" class="btn btn-primary" id="addBtn">{{ icon('user-add') }} 添加用户</button>
   </div>

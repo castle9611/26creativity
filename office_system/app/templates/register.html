@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>申请注册 - {{ app_name }}</title><link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<style>
+body.reg-page { margin:0; padding:30px 16px; background:#f1f5fb; color:#334155; font-family:"Microsoft YaHei",Arial,sans-serif; }
+.reg-shell { max-width:560px; margin:0 auto; }
+.reg-brand { margin-bottom:15px; font-size:14px; color:#536883; }
+.reg-card { padding:24px 28px; border:1px solid #dbe4ef; border-radius:9px; background:#fff; box-shadow:0 8px 28px rgba(24,52,91,.06); }
+.reg-card h1 { margin:0 0 8px; color:#203b63; font-size:23px; }
+.reg-help { margin:0 0 18px; font-size:13px; line-height:1.7; color:#64748b; }
+.reg-steps { margin-bottom:20px; padding:9px 12px; background:#edf3fc; border-radius:5px; color:#476180; font-size:12px; text-align:center; }
+.reg-steps span { margin:0 10px; color:#96a6bc; }
+.reg-field { margin-bottom:13px; }
+.reg-field label { display:block; margin-bottom:6px; font-size:13px; font-weight:600; }
+.reg-card .form-input { width:100%; min-height:38px; box-sizing:border-box; border-radius:5px; font-size:14px; }
+.reg-hint { margin-top:4px; color:#64748b; font-size:12px; line-height:1.6; }
+.reg-row { font-size:0; }
+.reg-row .reg-field { display:inline-block; width:48%; vertical-align:top; }
+.reg-row .reg-field:first-child { margin-right:4%; }
+.reg-card textarea.form-input { height:58px; min-height:58px; resize:vertical; }
+.reg-submit { display:block; width:100%; padding:0 15px; border:1px solid #246fe5; border-radius:5px; background:#246fe5; color:#fff; font:14px/38px "Microsoft YaHei",Arial,sans-serif; cursor:pointer; }
+.reg-submit:hover { background:#195ac1; }
+.reg-submit:focus, .reg-card input:focus, .reg-card textarea:focus { outline:2px solid #bfd5fa; outline-offset:1px; }
+.reg-footer { margin-top:16px; text-align:center; font-size:13px; color:#64748b; }
+.reg-footer a { margin:0 8px; color:#246fe5; }
+@media(max-width:480px) { body.reg-page { padding:16px 12px; } .reg-card { padding:20px 16px; } .reg-row .reg-field { width:100%; margin-right:0; } }
+</style></head><body class="reg-page"><main class="reg-shell">
+<div class="reg-brand">{{ app_name }}</div><section class="reg-card">
+<h1>申请注册</h1><p class="reg-help">请填写真实信息。管理员审核通过后，使用申请时的用户名和密码登录。</p>
+<div class="reg-steps">提交申请<span>→</span>管理员审核<span>→</span>账号可用</div>
+{% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert alert-{{ category }}" role="status">{{ message }}</div>{% endfor %}
+<form method="post" action="{{ url_for('auth.register') }}">
+  <input type="hidden" name="registration_token" value="{{ registration_token }}">
+  <div class="reg-field"><label for="regUsername">用户名</label><input id="regUsername" name="username" class="form-input" value="{{ request.form.get('username', '') }}" minlength="3" maxlength="50" pattern="[A-Za-z0-9_]{3,50}" autocomplete="username" required><div class="reg-hint">3–50 位字母、数字或下划线，用于登录。</div></div>
+  <div class="reg-row">
+    <div class="reg-field"><label for="regName">真实姓名</label><input id="regName" name="real_name" class="form-input" value="{{ request.form.get('real_name', '') }}" maxlength="50" autocomplete="name" required></div>
+    <div class="reg-field"><label for="regDepartment">所在部门</label><input id="regDepartment" name="department" class="form-input" value="{{ request.form.get('department', '') }}" maxlength="100" required></div>
+  </div>
+  <div class="reg-row">
+    <div class="reg-field"><label for="regPassword">密码</label><input id="regPassword" type="password" name="password" class="form-input" minlength="6" maxlength="128" placeholder="至少6位" autocomplete="new-password" required></div>
+    <div class="reg-field"><label for="regConfirm">确认密码</label><input id="regConfirm" type="password" name="confirm_password" class="form-input" minlength="6" maxlength="128" autocomplete="new-password" required></div>
+  </div>
+  <div class="reg-field"><label for="regNote">申请说明（选填）</label><textarea id="regNote" name="application_note" class="form-input" maxlength="500" rows="2" placeholder="可填写岗位或申请用途，方便管理员核对">{{ request.form.get('application_note', '') }}</textarea></div>
+  <button class="reg-submit" type="submit">提交注册申请</button>
+</form>
+<div class="reg-footer"><a href="{{ url_for('auth.login') }}">已有账号，去登录</a> · <a href="{{ url_for('index_bp.index') }}">返回首页</a></div>
+</section></main></body></html>

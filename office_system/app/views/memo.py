@@ -48,6 +48,17 @@ def _memo_form_options():
 def list_memos():
     """Memo list - private + visible public memos."""
     page, per_page = get_pagination()
+    rows = request.args.get('rows', 2, type=int)
+    if rows in (2, 5, 10):
+        # Keep the selected page size expressed as visual rows.  The column
+        # count is responsive and is synchronized by the page script.
+        columns = request.args.get('columns', 5, type=int)
+        if columns not in (1, 2, 3, 4, 5):
+            columns = 5
+        per_page = rows * columns
+    else:
+        rows = 2
+        columns = 5
     user_id = session['user_id']
     user_role = session['role']
 
@@ -138,8 +149,8 @@ def list_memos():
         ).all()
         for mid in memo_ids:
             memo_links[mid] = {
-                'docs': [{'id': d.id, 'title': d.title, 'url': url_for('docs.view_doc', doc_id=d.id)} for d in all_docs if d.related_id == mid],
-                'sheets': [{'id': s.id, 'name': s.name, 'url': url_for('sheets.edit_sheet', sheet_id=s.id)} for s in all_sheets if s.related_id == mid],
+                'docs': [],
+                'sheets': [],
             }
 
     # AJAX partial rendering for no-flash filtering
@@ -159,7 +170,9 @@ def list_memos():
                                public_count=public_count,
                                memo_total_count=memo_total_count,
                                past_count=past_count,
-                               memo_links=memo_links)
+                               memo_links=memo_links,
+                               rows=rows,
+                               columns=columns)
         return html
 
     return render_template('memo/list.html',
@@ -177,7 +190,9 @@ def list_memos():
                            public_count=public_count,
                            memo_total_count=memo_total_count,
                            past_count=past_count,
-                           memo_links=memo_links)
+                           memo_links=memo_links,
+                           rows=rows,
+                           columns=columns)
 
 
 @memo_bp.route('/create', methods=['GET', 'POST'])
@@ -191,6 +206,11 @@ def create_memo():
         memo_type = request.form.get('memo_type', 'private').strip()
         visible_roles = request.form.get('visible_roles', 'all').strip()
         group_id = request.form.get('group_id', 0, type=int)
+        category_id = request.form.get('category_id', 0, type=int)
+        column_id = request.form.get('column_id', 0, type=int)
+        selected_column = Column.query.filter_by(id=column_id, is_active=1).first() if column_id else None
+        if selected_column:
+            category_id = selected_column.category_id
         expires_raw = request.form.get('expires_at', '').strip()
         expires_at = datetime.strptime(expires_raw + ' 23:59:59', '%Y-%m-%d %H:%M:%S') if expires_raw else None
 
@@ -204,6 +224,8 @@ def create_memo():
             nextcloud_url=nextcloud_url,
             memo_type=memo_type,
             group_id=group_id if group_id > 0 else None,
+            category_id=category_id if category_id > 0 else None,
+            column_id=selected_column.id if selected_column else None,
             expires_at=expires_at,
             visible_roles=visible_roles,
             created_by=session['user_id']
@@ -270,6 +292,13 @@ def edit_memo(memo_id):
         memo.memo_type = request.form.get('memo_type', memo.memo_type).strip()
         group_id = request.form.get('group_id', 0, type=int)
         memo.group_id = group_id if group_id > 0 else None
+        category_id = request.form.get('category_id', 0, type=int)
+        column_id = request.form.get('column_id', 0, type=int)
+        selected_column = Column.query.filter_by(id=column_id, is_active=1).first() if column_id else None
+        if selected_column:
+            category_id = selected_column.category_id
+        memo.category_id = category_id if category_id > 0 else None
+        memo.column_id = selected_column.id if selected_column else None
         expires_raw = request.form.get('expires_at', '').strip()
         memo.expires_at = datetime.strptime(expires_raw + ' 23:59:59', '%Y-%m-%d %H:%M:%S') if expires_raw else None
         memo.visible_roles = request.form.get('visible_roles', memo.visible_roles).strip()

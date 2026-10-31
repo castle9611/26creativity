@@ -107,7 +107,7 @@ def check_import_child(module_name, label):
     try:
         with open(out_file, "wb") as output_stream:
             completed = subprocess.run(
-                [sys.executable, script_file],
+                [sys.executable] + ([] if IS_WINDOWS else ['-I']) + [script_file],
                 stdout=output_stream,
                 stderr=subprocess.STDOUT,
             )

@@ -25,6 +25,20 @@ def migrate():
         migrate_onlyoffice_schema()
         print('[MIG] ONLYOFFICE document schema ready')
 
+        # Homepage column layout and offline file search.
+        for table_name, additions in {
+            'tasks': [('column_id', 'INTEGER REFERENCES columns(id) ON DELETE SET NULL')],
+            'memos': [('category_id', 'INTEGER REFERENCES bulletin_categories(id)'),
+                      ('column_id', 'INTEGER REFERENCES columns(id) ON DELETE SET NULL')],
+        }.items():
+            names = [row[1] for row in db.session.execute(text('PRAGMA table_info(%s)' % table_name)).fetchall()]
+            for column_name, column_type in additions:
+                if column_name not in names:
+                    db.session.execute(text('ALTER TABLE %s ADD COLUMN %s %s' % (table_name, column_name, column_type)))
+                    db.session.execute(text('CREATE INDEX IF NOT EXISTS ix_%s_%s ON %s(%s)' % (table_name, column_name, table_name, column_name)))
+        db.create_all()
+        db.session.commit()
+
         # Get existing columns to check what needs adding
         existing_cols = db.session.execute(text("PRAGMA table_info(tabs)")).fetchall()
         existing_col_names = [row[1] for row in existing_cols]
@@ -351,6 +365,28 @@ def migrate():
                 db.session.execute(text(f"CREATE INDEX IF NOT EXISTS ix_sheet_versions_{idx_col} ON sheet_versions({idx_col})"))
             db.session.commit()
             print('[MIG]   Done')
+
+        # Per-assignee task progress
+        assignee_cols = [row[1] for row in db.session.execute(text("PRAGMA table_info(task_assignees)")).fetchall()]
+        if 'progress' not in assignee_cols:
+            db.session.execute(text("ALTER TABLE task_assignees ADD COLUMN progress INTEGER DEFAULT 0"))
+        if 'is_completed' not in assignee_cols:
+            db.session.execute(text("ALTER TABLE task_assignees ADD COLUMN is_completed INTEGER DEFAULT 0"))
+        if 'completed_at' not in assignee_cols:
+            db.session.execute(text("ALTER TABLE task_assignees ADD COLUMN completed_at DATETIME"))
+        db.session.execute(text("""
+            INSERT OR IGNORE INTO task_assignees (task_id, user_id, progress, is_completed, created_at)
+            SELECT id, assignee_id, COALESCE(progress, 0),
+                   CASE WHEN status = 'completed' THEN 1 ELSE 0 END, created_at
+            FROM tasks WHERE assignee_id IS NOT NULL
+        """))
+        db.session.execute(text("UPDATE tasks SET progress = 100 WHERE status = 'completed'"))
+        db.session.execute(text("""
+            UPDATE task_assignees SET progress = 100, is_completed = 1,
+                completed_at = COALESCE(completed_at, CURRENT_TIMESTAMP)
+            WHERE task_id IN (SELECT id FROM tasks WHERE status = 'completed')
+        """))
+        db.session.commit()
 
         print('[OK] Migration complete - no data lost')
         print('[INFO] Restart the server for changes to take effect')

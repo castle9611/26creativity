@@ -2,7 +2,7 @@
 """
 Statistics dashboard blueprint.
 """
-from flask import Blueprint, render_template, session
+from flask import Blueprint, render_template, session, abort
 from app.extensions import db
 from app.decorators import login_required
 from app.models import Task, Bulletin, Memo, User, Column, Tab
@@ -97,6 +97,7 @@ def index():
 @login_required
 def story():
     """Scrollytelling data story: bulletin + task analysis."""
+    abort(404)
     from app.models import BulletinCategory, Column as Col
 
     today = datetime.utcnow().date()

@@ -75,6 +75,12 @@ def should_skip(src_path, rel_path, fresh_data, target):
 
     # Handle python/ directory specially
     normalized = rel_path.replace("\\", "/").lower()
+    if fresh_data:
+        if any(normalized == folder or normalized.startswith(folder + '/') for folder in (
+                'data', 'app/static/uploads', 'app/static/avatars')):
+            return True
+        if normalized.endswith(('.db', '.db-wal', '.db-shm', '.sqlite', '.sqlite3')):
+            return True
     if target == "kylin-arm64":
         if normalized == "python" or normalized.startswith("python/"):
             return True
@@ -82,7 +88,7 @@ def should_skip(src_path, rel_path, fresh_data, target):
             return True
         if normalized.endswith((".bat", ".cmd", ".vbs", ".exe", ".dll", ".pyd", ".msu")):
             return True
-    elif normalized.endswith(".sh") or normalized == "requirements-kylin-arm64.txt":
+    elif normalized.endswith(".sh") or normalized == "requirements-kylin-arm64.txt" or normalized.startswith(('runtime_packages/', 'python-linux/')) or normalized in ('runtime_packages', 'python-linux'):
         return True
     if normalized.startswith("python/"):
         lower_name = name.lower()
@@ -152,6 +158,11 @@ def copy_tree(src_dir, dst_dir, fresh_data, target):
 
             dst_path = os.path.join(dst_dir, rel_path)
             copy_file_raw(src_path, dst_path)
+            if target == 'kylin-arm64' and filename.endswith('.sh'):
+                with open(dst_path, 'rb') as handle:
+                    script_bytes = handle.read().replace(b'\r\n', b'\n')
+                with open(dst_path, 'wb') as handle:
+                    handle.write(script_bytes)
             copied_files += 1
 
     # Always ensure data directories exist
@@ -204,7 +215,14 @@ def make_zip(package_dir, zip_path):
             for filename in files:
                 full_path = os.path.join(root, filename)
                 arcname = os.path.relpath(full_path, os.path.dirname(package_dir))
-                zf.write(full_path, arcname)
+                if filename.endswith('.sh'):
+                    info = zipfile.ZipInfo.from_file(full_path, arcname)
+                    info.create_system = 3
+                    info.external_attr = 0o100755 << 16
+                    with open(full_path, 'rb') as handle:
+                        zf.writestr(info, handle.read(), compress_type=zipfile.ZIP_DEFLATED)
+                else:
+                    zf.write(full_path, arcname)
 
 
 def dir_size(path):
@@ -222,7 +240,9 @@ def main():
     parser.add_argument("--no-zip", action="store_true",
                         help="only create release directory, do not create zip")
     parser.add_argument("--target", choices=("all", "windows", "kylin-arm64"), default="all")
+    parser.add_argument("--output-root", help="write a separate build without replacing previous releases")
     args = parser.parse_args()
+    release_root = os.path.abspath(args.output_root) if args.output_root else RELEASE_ROOT
 
     # Check for uncommitted changes (informational only)
     git_status_output = ""
@@ -247,7 +267,7 @@ def main():
     print("  Build Platform Release Packages")
     print("============================================")
     print("Source : " + BASE_DIR)
-    print("Output : " + RELEASE_ROOT)
+    print("Output : " + release_root)
     print("Mode   : " + ("fresh first-run data" if args.fresh_data else "include current data"))
 
     if has_uncommitted:
@@ -259,13 +279,15 @@ def main():
 
     print("")
 
-    if not os.path.isdir(RELEASE_ROOT):
-        os.makedirs(RELEASE_ROOT)
+    if not os.path.isdir(release_root):
+        os.makedirs(release_root)
     targets = ("windows", "kylin-arm64") if args.target == "all" else (args.target,)
     for target in targets:
         package_name = WINDOWS_PACKAGE_NAME if target == "windows" else KYLIN_PACKAGE_NAME
-        package_dir = os.path.join(RELEASE_ROOT, package_name)
-        zip_path = os.path.join(RELEASE_ROOT, target.replace("-", "_"), "office_system.zip")
+        package_dir = os.path.abspath(os.path.join(release_root, package_name))
+        zip_path = os.path.join(release_root, target.replace("-", "_"), "office_system.zip")
+        if os.path.commonpath([os.path.realpath(release_root), os.path.realpath(package_dir)]) != os.path.realpath(release_root):
+            raise ValueError('Package path escapes release root')
         if os.path.isdir(package_dir):
             shutil.rmtree(package_dir)
         copied, skipped = copy_tree(BASE_DIR, package_dir, args.fresh_data, target)

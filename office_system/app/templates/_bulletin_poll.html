@@ -1,0 +1,94 @@
+{% set poll = bulletin_poll(poll_bulletin) %}
+{% if poll.enabled %}
+{% set choices = [('agree', '赞成'), ('disagree', '反对'), ('abstain', '弃权')] %}
+{% set labels = dict(choices) %}
+{% set can_vote = comment_user and comment_user.is_active and comment_user.real_name|trim %}
+<style>
+#bulletin-vote.pv-section { margin:14px 0; padding:0 18px; border:1px solid #dbe4ef; border-radius:8px; background:#fff; background:var(--bg-card, #fff); color:#334155; color:var(--text-primary, #334155); }
+#bulletin-vote .pv-head { padding:13px 0 11px; border-bottom:1px solid #edf1f6; overflow:hidden; line-height:24px; }
+#bulletin-vote .pv-title { display:inline; margin:0; font-size:16px; font-weight:700; color:inherit; }
+#bulletin-vote .pv-mode { display:inline-block; margin-left:8px; padding:0 7px; border-radius:3px; background:#edf3fc; color:#35609d; font-size:11px; line-height:21px; vertical-align:middle; }
+#bulletin-vote .pv-total { float:right; font-size:12px; color:#64748b; }
+#bulletin-vote .pv-form { margin:0; }
+#bulletin-vote .pv-options { margin:12px -4px 0; font-size:0; }
+#bulletin-vote .pv-option { display:inline-block; position:relative; width:33.333%; padding:0 4px; box-sizing:border-box; vertical-align:top; font-size:13px; }
+#bulletin-vote .pv-card { display:block; padding:10px 12px; border:1px solid #dbe4ef; border-radius:5px; background:#f8fafc; background:var(--bg-body, #f8fafc); }
+#bulletin-vote .pv-selectable { cursor:pointer; }
+#bulletin-vote .pv-selectable .pv-card { padding-top:11px; }
+#bulletin-vote .pv-radio { position:absolute; left:15px; top:12px; width:14px; height:14px; margin:0; }
+#bulletin-vote .pv-radio:checked + .pv-card { border-color:#246fe5; background:#edf4ff; color:#204c91; }
+#bulletin-vote .pv-radio:focus + .pv-card { outline:2px solid #bfd5fa; outline-offset:1px; }
+#bulletin-vote .pv-selectable:hover .pv-card { border-color:#92b8f2; }
+#bulletin-vote .pv-label { display:block; font-size:13px; line-height:18px; font-weight:600; }
+#bulletin-vote .pv-selectable .pv-label { padding-left:23px; }
+#bulletin-vote .pv-numbers { display:block; margin-top:8px; line-height:24px; }
+#bulletin-vote .pv-number { font:600 23px/26px Arial,sans-serif; font-variant-numeric:tabular-nums; }
+#bulletin-vote .pv-unit { margin-left:3px; color:#64748b; font-size:12px; }
+#bulletin-vote .pv-percent { float:right; margin-top:3px; color:#64748b; font-size:12px; }
+#bulletin-vote .pv-track { display:block; height:3px; margin-top:7px; border-radius:3px; background:#e4ebf4; overflow:hidden; }
+#bulletin-vote .pv-fill { display:block; height:3px; background:#3977d5; }
+#bulletin-vote .pv-disagree .pv-fill { background:#bd745f; }
+#bulletin-vote .pv-abstain .pv-fill { background:#8898ad; }
+#bulletin-vote .pv-foot { padding:10px 0 12px; min-height:30px; overflow:hidden; font-size:12px; line-height:30px; color:#64748b; }
+#bulletin-vote .pv-note { margin:0; line-height:22px; padding-top:4px; }
+#bulletin-vote .pv-submit { float:right; margin-left:12px; padding:0 15px; min-height:30px; border:1px solid #246fe5; border-radius:4px; background:#246fe5; color:#fff; font:13px/28px "Microsoft YaHei",Arial,sans-serif; cursor:pointer; }
+#bulletin-vote .pv-submit:hover { background:#195ac1; }
+#bulletin-vote .pv-submit:focus { outline:2px solid #92b8f2; outline-offset:2px; }
+#bulletin-vote .pv-done { color:#35609d; font-weight:600; margin-right:10px; }
+#bulletin-vote .pv-details { padding:11px 0 12px; border-top:1px solid #edf1f6; }
+#bulletin-vote .pv-details h3 { margin:0 0 7px; font-size:13px; font-weight:600; }
+#bulletin-vote .pv-table-wrap { overflow-x:auto; }
+#bulletin-vote .pv-table { width:100%; border-collapse:collapse; font-size:12px; text-align:left; }
+#bulletin-vote .pv-table th { padding:7px 10px; color:#64748b; background:#f4f7fb; background:var(--bg-body, #f4f7fb); font-weight:400; white-space:nowrap; }
+#bulletin-vote .pv-table td { padding:8px 10px; border-bottom:1px solid #edf1f6; word-wrap:break-word; }
+#bulletin-vote .pv-table .pv-person { font-weight:600; }
+#bulletin-vote .pv-tag { display:inline-block; padding:1px 7px; border-radius:3px; color:#35609d; background:#edf3fc; white-space:nowrap; }
+#bulletin-vote .pv-tag-disagree { color:#975842; background:#fcf0eb; }
+#bulletin-vote .pv-tag-abstain { color:#64748b; background:#f0f3f7; }
+#bulletin-vote .pv-time { white-space:nowrap; color:#64748b; }
+#bulletin-vote .pv-empty { margin:0; padding:10px 0; font-size:12px; color:#64748b; }
+#bulletin-vote .pv-pages { margin-top:9px; text-align:right; color:#64748b; font-size:12px; }
+#bulletin-vote .pv-pages a { margin-left:10px; color:#35609d; }
+@media (max-width:520px) {
+  #bulletin-vote.pv-section { padding:0 12px; }
+  #bulletin-vote .pv-card { padding:9px 8px; }
+  #bulletin-vote .pv-radio { left:12px; }
+  #bulletin-vote .pv-number { font-size:20px; }
+  #bulletin-vote .pv-table th, #bulletin-vote .pv-table td { padding:7px 5px; }
+  #bulletin-vote .pv-table .pv-department { display:none; }
+}
+</style>
+<section id="bulletin-vote" class="pv-section" aria-label="公示投票">
+  <header class="pv-head"><h2 class="pv-title">公示投票</h2><span class="pv-mode">{{ '不记名' if poll.is_anonymous else '记名' }}</span><span class="pv-total">共 {{ poll.total }} 票</span></header>
+  {% if can_vote %}<form class="pv-form" method="post" action="{{ url_for('bulletin.vote', bulletin_id=poll_bulletin.id) }}">
+    <input type="hidden" name="poll_token" value="{{ poll.token }}">
+    <input type="hidden" name="return_view" value="{{ 'public' if detail_type is defined else 'workbench' }}">
+  {% endif %}
+  <div class="pv-options">
+  {% for key, label in choices %}
+    {% set count = poll.counts.get(key, 0) %}
+    {% set percent = (count * 100 / poll.total)|round(1) if poll.total else 0 %}
+    <label class="pv-option pv-{{ key }}{% if can_vote %} pv-selectable{% endif %}">
+      {% if can_vote %}<input class="pv-radio" type="radio" name="choice" value="{{ key }}" {% if poll.choice == key %}checked{% endif %} required aria-label="{{ label }}">{% endif %}
+      <span class="pv-card"><span class="pv-label">{{ label }}</span><span class="pv-numbers"><span class="pv-percent">{{ percent }}%</span><b class="pv-number">{{ count }}</b><span class="pv-unit">票</span></span><span class="pv-track"><span class="pv-fill" style="width:{{ percent }}%;"></span></span></span>
+    </label>
+  {% endfor %}
+  </div>
+  <div class="pv-foot">
+    {% if can_vote %}<button class="pv-submit" type="submit">{{ '修改选择' if poll.choice else '提交投票' }}</button>{% endif %}
+    <p class="pv-note">{% if poll.choice %}<span class="pv-done" role="status">当前选择 · {{ labels[poll.choice] }}</span>{% endif %}{% if not comment_user %}<a href="{{ url_for('auth.login') }}">登录后投票</a> · {% elif not comment_user.is_active or not comment_user.real_name|trim %}请使用有效实名账号投票 · {% endif %}每人一票，可修改选择 · {{ '不显示投票人和个人选项' if poll.is_anonymous else '投票人和选项将公开显示' }}</p>
+  </div>
+  {% if can_vote %}</form>{% endif %}
+  {% if not poll.is_anonymous %}
+  <div id="poll-voters" class="pv-details">
+    <h3>投票明细</h3>
+    {% if poll.voters.items %}
+    <div class="pv-table-wrap"><table class="pv-table"><thead><tr><th scope="col">投票人</th><th scope="col" class="pv-department">部门</th><th scope="col">选项</th><th scope="col">投票时间</th></tr></thead><tbody>
+    {% for voter in poll.voters.items %}<tr><td class="pv-person">{{ voter.real_name or '姓名未设置' }}</td><td class="pv-department">{{ voter.department or '—' }}</td><td><span class="pv-tag pv-tag-{{ voter.choice }}">{{ labels[voter.choice] }}</span></td><td class="pv-time">{{ voter.created_at|localtime }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}<p class="pv-empty">暂无投票，提交后将在这里显示。</p>{% endif %}
+    {% if poll.voters.pages > 1 %}<nav class="pv-pages" aria-label="投票明细分页">{{ poll.voters.page }} / {{ poll.voters.pages }} 页{% if poll.voters.has_prev %}<a href="?vote_page={{ poll.voters.prev_num }}#poll-voters">上一页</a>{% endif %}{% if poll.voters.has_next %}<a href="?vote_page={{ poll.voters.next_num }}#poll-voters">下一页</a>{% endif %}</nav>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
